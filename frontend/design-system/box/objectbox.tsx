@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { CatalogItem } from '@/lib/astro/catalog/catalog.type';
+import { Star, StarOff } from 'lucide-react'; // ou une autre lib d’icônes
 
 const statusColors: Record<CatalogItem['status'], string> = {
   visible: 'border-green-500 ',
@@ -11,9 +12,10 @@ const statusColors: Record<CatalogItem['status'], string> = {
 };
 
 export default function AstronomyObjectList({
-  objects,
+  objects, onToggle
 }: {
   objects: CatalogItem[];
+  onToggle: (index: number) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-4 items-center justify-center">
@@ -28,6 +30,13 @@ export default function AstronomyObjectList({
           </div>
 
           <div className="flex flex-row md:flex-row items-center gap-2">
+            <button
+              onClick={()=> {onToggle(index)}}
+              className="absolute top-2 right-2 text-yellow-400"
+              aria-label="Sélectionner"
+            >
+            {obj.isSelected ? <Star fill="currentColor" /> : <StarOff />}
+          </button>
             <Image
               src={`/api/image/${obj.image}`}
               alt={obj.name}
@@ -36,6 +45,7 @@ export default function AstronomyObjectList({
               className="rounded-full shadow"
             />
             <div className="flex-1">
+
               <h2 className="text-xl font-bold">{obj.name}</h2>
               <p className="text-sm text-gray-600">{obj.objectType}</p>
               <p className="text-sm">Magnitude : {obj.magnitude}</p>

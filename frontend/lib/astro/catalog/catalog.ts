@@ -60,6 +60,7 @@ export async function getCatalog(): Promise<CatalogItem[]> {
       imageCiel: get('Image ciel'),
       location: get('Location'),
       status: 'visible',
+      isSelected: false
     };
   });
 

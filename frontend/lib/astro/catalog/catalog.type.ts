@@ -25,6 +25,7 @@ export type CatalogItem = {
     meridian?: Date|null;
     moonAngularDistance?: number;
     status: 'visible' | 'non-visible' | 'partially-visible' | 'masked';
+    isSelected?: boolean;
 };
 
 //TYPE;NAME;NGC;Object type;Season;Magnitude;Constellation (EN);Constellation (FR);Constellation (Latin);RA;DEC;Distance;Size;Image;Image ciel;Constellation;Location

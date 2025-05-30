@@ -15,6 +15,11 @@ export default function CatalogPage() {
 
     const [catalog, setCatalog] = useState<null|CatalogItem[]>(null);
 
+    const onToggle = (index:number) =>{
+        const catalogTmp = catalog ? [...catalog] : [];
+        catalogTmp[index].isSelected = !catalogTmp[index].isSelected;
+        setCatalog(catalogTmp);
+    }
 
     useEffect(() => {
         const getCatalog = async () => {
@@ -32,7 +37,7 @@ export default function CatalogPage() {
             <h1>Catalog</h1>
             <CatalogFilters filters={filters} setFilters={setFilters} />
             { catalog && (
-                <AstronomyObjectList objects={catalog} />
+                <AstronomyObjectList objects={catalog} onToggle={onToggle} />
             )}
         </div>
     )
