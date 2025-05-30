@@ -1,4 +1,4 @@
-TYPE;NAME;NGC;Object type;Season;Magnitude;Constellation (EN);Constellation (FR);Constellation (Latin);RA;DEC;Distance;Size;Image;Image ciel;Constellation;Location
+Type;Name;NGC;Object type;Season;Magnitude;Constellation (EN);Constellation (FR);Constellation (Latin);RA;DEC;Distance;Size;Image;Image ciel;Constellation;Location
 1;Sun;Sun;star;N/A;-26.8;N/A;N/A;N/A;0;0;0;0;Sun.jpg;-;-;-
 1;Moon;Moon;satellite;N/A;-12.7;N/A;N/A;N/A;0;0;0;0;Moon.jpg;-;-;-
 1;Jupiter;Jupiter;planet;N/A;-2.7;N/A;N/A;N/A;0;0;0;0;Jupiter.jpg;-;-;-
