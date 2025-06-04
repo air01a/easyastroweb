@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/design-system/navbar/navbar";
+import { StoreInitializer } from "@/store/storeInitializer";
 
 
 const geistSans = Geist({
@@ -25,13 +26,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
 
-  const navbarItems = [{name: "Accueil", href: "/", matcher:'exact'}, {name: "Catalog", href: "/catalog"}, {name: "Location", href: "/location"}, {name: "Map", href: "/map"}];
+  const navbarItems = [{name: "Accueil", href: "/", matcher:'exact'}, {name: "Details", href:"/details"},{name: "Catalog", href: "/catalog"}, {name: "Location", href: "/location"}, {name: "Map", href: "/map"}];
 
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <StoreInitializer />
+
         <NavBar menu={navbarItems} />
         <main className="flex-1 p-4">{children}</main>
       </body>

@@ -3,9 +3,13 @@ import AstronomyObjectList from "@/design-system/box/objectbox";
 import { useEffect, useState } from "react";
 import CatalogFilters from "@/design-system/filters/catalogfilters";
 import { filterCatalog } from "@/actions/catalog/catalog";
-import { CatalogItem} from '@/lib/astro/catalog/catalog.type';
+import { useCatalogStore } from "@/store/store";
+import { CatalogItem } from '@/lib/astro/catalog/catalog.type';
 
 export default function CatalogPage() {
+
+    const { catalog, setSelected } = useCatalogStore()
+    const [localCatalog, setLocalCatalog] = useState<CatalogItem[]>([]);
 
     const [filters, setFilters] = useState({
         invisible: true,
@@ -13,31 +17,28 @@ export default function CatalogPage() {
         partial: true,
       });
 
-    const [catalog, setCatalog] = useState<null|CatalogItem[]>(null);
-
-    const onToggle = (index:number) =>{
+    const onToggle = async (index:number) =>{
         const catalogTmp = catalog ? [...catalog] : [];
         catalogTmp[index].isSelected = !catalogTmp[index].isSelected;
-        setCatalog(catalogTmp);
+        setSelected(catalogTmp[index].index, catalogTmp[index].isSelected)
     }
 
     useEffect(() => {
         const getCatalog = async () => {
-            const catalog = await filterCatalog('all', filters.invisible, filters.hidden, filters.partial);
-            console.log(catalog);
-            setCatalog(catalog);
+            const local = await filterCatalog(catalog, 'all', filters.invisible, filters.hidden, filters.partial);
+            setLocalCatalog(local);
+
         }
+
         getCatalog();
-    }, [filters]);
-
-
+    }, [catalog, filters]);
 
     return (
         <div>
             <h1>Catalog</h1>
             <CatalogFilters filters={filters} setFilters={setFilters} />
-            { catalog && (
-                <AstronomyObjectList objects={catalog} onToggle={onToggle} />
+            { localCatalog   && (
+                <AstronomyObjectList objects={localCatalog} onToggle={onToggle} />
             )}
         </div>
     )

@@ -1,4 +1,5 @@
 import { Observer, MakeTime, Equator, Horizon, Body, AstroTime, SearchRiseSet, DefineStar, SearchAltitude,SearchHourAngle } from 'astronomy-engine';
+import { AltitudeGraphType } from './astro-utils.type';
 
 
 export const getMoonCoordinates = (observer : Observer, astroTime: AstroTime ): { ra: number; dec: number } => {
@@ -77,4 +78,47 @@ export function getHoursForObject(observer: Observer, astroTime: AstroTime, ra: 
   const meridien = SearchHourAngle(Body.Star1, observer, 0, astroTime, 1);
 
   return { sunrise: sunRise, sunset: sunSet, meridian: meridien.time };
+}
+
+export function getAltitudeData(latitude: number, longitude: number, date: Date, ra: number, dec: number): AltitudeGraphType {
+  const observer = new Observer(latitude, longitude, 0); // Assuming altitude is 0 for horizon calculations
+  const times: { time: string; altitude: number, azimuth: number }[] = [];
+  let day = date.toISOString().split('T')[0]; 
+  const tmpDate = new Date(date.getTime()); // Create a copy of the date to avoid modifying the original
+  tmpDate.setHours(date.getHours()-4);
+  const startHour = tmpDate.getHours();;
+
+  for (let hour = startHour; hour < startHour + 20; hour++) {
+    if (hour == 24) {
+      day = new Date(tmpDate.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Increment day
+    }
+
+    try {
+      const isoTime = `${day}T${(hour%24).toString().padStart(2, '0')}:00:00Z`;
+      const astroTime = MakeTime(new Date(isoTime));
+      const horizontal = Horizon(astroTime, observer, ra, dec, 'normal');
+
+
+      times.push({
+        time: `${hour% 24}h`,
+        altitude: Math.round(horizontal.altitude),
+        azimuth: Math.round(horizontal.azimuth)
+      });
+  } catch (error) {
+      console.error('Error calculating horizon for hour', hour, error);
+      continue; // Skip this hour if there's an error
+    }
+  }
+  return times;
+
+}
+
+export function getInitialDate(latitude: number, longitude: number): Date {
+ 
+    let date = new Date();
+    const nextSunset = getNextSunsetDate( latitude||0,  longitude||0);
+    if (nextSunset) {
+       date = nextSunset.date;
+    }
+  return date;
 }

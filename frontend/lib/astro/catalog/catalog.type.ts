@@ -1,6 +1,7 @@
 import { AstroTime } from "astronomy-engine";
 
 export type CatalogItem = {
+    index : number;
     dynamic: boolean;
     name : string;
     ngc: string;
