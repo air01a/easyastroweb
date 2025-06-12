@@ -1,6 +1,6 @@
 import type { CatalogItem } from './catalog.type';
 import { Observer, MakeTime, Equator, Horizon, Body, MoonPhase  } from 'astronomy-engine';
-import { equCoordStringToDecimal, getMoonCoordinates, angularSeparation,  getHoursForObject, toRadians } from '../astro-utils';
+import { equCoordStringToDecimal, getMoonCoordinates, angularSeparation,  getHoursForObject, toRadians, getAltitudeData, getNextSunriseDate, isObjectVisible } from '../astro-utils';
 
 
 
@@ -15,13 +15,13 @@ export async function computeCatalog(
   const observer: Observer = new Observer(latitude, longitude, 0);
   const astroTime = MakeTime(date);
   const moonVector = getMoonCoordinates(observer, astroTime);
-
+  const sunrise=getNextSunriseDate(latitude, longitude, true)?.date || new Date();
   let descriptions=[]
   const descriptionFile = (await fetch('/catalog/objects.fr.json'));
   if (descriptionFile.ok) {
     descriptions = await descriptionFile.json();
-    console.log('descriptions', descriptions);
   }
+  
   const updatedCatalog = catalog.map((item) => {
     const newItem = { ...item }; // ← Cloner l'objet pour éviter la mutation
 
@@ -50,13 +50,7 @@ export async function computeCatalog(
       newItem.azimuth = horizontal.azimuth;
       newItem.altitude = horizontal.altitude||-100;
 
-      if (!newItem.altitude || newItem.altitude < 0) {
-        newItem.status = 'non-visible';
-      } else if (newItem?.altitude < 20) {
-        newItem.status = 'partially-visible';
-      } else {
-        newItem.status = 'visible';
-      }
+      
       newItem.description = descriptions[newItem.name] || '';
       newItem.moonAngularDistance = angularSeparation(
         moonVector.ra,
@@ -64,6 +58,32 @@ export async function computeCatalog(
         newItem.ra,
         newItem.dec
       );
+
+      newItem.altitudeData = getAltitudeData(latitude, longitude,  astroTime.date,  sunrise, newItem.ra, newItem.dec, 4);
+      const visibility: { [key: string]: number } = {
+        'visible': 0,
+        'masked': 0,
+        'partially': 0,
+        'non-visible':0
+      };
+
+      newItem.altitudeData.forEach((data,index) => {
+        data.visibility = isObjectVisible(data.altitude||-20, data.azimuth||-20);
+        if (index>4 && index<(newItem.altitudeData?.length|| 4)-4) {
+            visibility[data.visibility] = (visibility[data.visibility] || 0) + 1;
+        }
+      });
+
+      if (visibility['visible'] > 0) {
+        newItem.status = 'visible';
+      } else if (visibility['masked'] > 0) {
+        newItem.status = 'masked';
+      } else if (visibility['partially'] > 0) {
+        newItem.status = 'partially-visible';
+      } else {
+        newItem.status = 'non-visible';
+      }
+      newItem.nbHoursVisible = visibility['visible'];
       //newItem.description = t(`_${newItem.name}`);
     }
 
@@ -87,6 +107,10 @@ export async function filterCatalog(catalog : CatalogItem[], type:string, keywor
 
 }
 
+
+export async function getSelectedFromCatalog(catalog: CatalogItem[]): Promise<CatalogItem[]> {
+  return catalog.filter((item) => item.isSelected);
+}
 
 
 export async function loadCatalogFromCSV(csvText:string): Promise<CatalogItem[]> {

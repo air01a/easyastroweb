@@ -16,8 +16,10 @@ export type ObserverStore = {
   sunSet: Date
   sunRise: Date
   isLoaded: boolean
+
   initializeObserver: (latitude: number, longitude: number, date: Date, sunSet: Date, sunRise: Date) =>void,
 
 
   resetObserver: () => void
+  
 }

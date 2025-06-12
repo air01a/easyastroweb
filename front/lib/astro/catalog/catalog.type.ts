@@ -1,4 +1,4 @@
-import { AstroTime } from "astronomy-engine";
+import type { AltitudeGraphType } from "../astro-utils.type";
 
 export type CatalogItem = {
     index : number;
@@ -29,6 +29,8 @@ export type CatalogItem = {
     isSelected?: boolean;
     illumination?: number;
     description?: string;
+    altitudeData? : AltitudeGraphType| null;
+    nbHoursVisible?: number;
 };
 
 //TYPE;NAME;NGC;Object type;Season;Magnitude;Constellation (EN);Constellation (FR);Constellation (Latin);RA;DEC;Distance;Size;Image;Image ciel;Constellation;Location

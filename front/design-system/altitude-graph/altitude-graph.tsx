@@ -10,24 +10,30 @@ export type AltitudeGraphType = {
   azimuth: number;
 }[];
 
-interface AltitudeChartProps {
-  data: AltitudeGraphType;
+export interface SelectedRange {
+  start: number;
+  end: number;
+  color?: string;
 }
 
-const AltitudeChart: React.FC<AltitudeChartProps> = ({ data }: {data : AltitudeGraphType}) => {
-  const { x, y, minAltitude, maxAltitude, timeLabels, selectedRange1, selectedRange2 } = useMemo(() => {
-    const orderedData = data.map((d, index) => ({ ...d, index }));
+interface AltitudeChartProps {
+  data: AltitudeGraphType;
+  selectedRanges?: SelectedRange[];
+}
+
+const AltitudeChart: React.FC<AltitudeChartProps> = ({ 
+  data, 
+  selectedRanges = [] 
+}: AltitudeChartProps) => {
+  const { x, y, minAltitude, maxAltitude, timeLabels } = useMemo(() => {
+    const baseHour = data[0]?.time || 0;
+    const orderedData = data.map((d, index) => ({ ...d, index:(index*0.5+baseHour) }));
     const altitudes = orderedData.map((d) => d.altitude);
     const min = Math.min(...altitudes);
     const max = Math.max(...altitudes);
     const x = orderedData.map((d) => d.index);
     const y = orderedData.map((d) => d.altitude);
-    const timeLabels = data.map((d) => `${d.time} h`);
-
-    const selectedRange1 = data.length > 4 ? [orderedData[0].index, orderedData[3].index] : null;
-    const selectedRange2 = data.length > 4
-      ? [orderedData[orderedData.length - 5].index, orderedData[orderedData.length - 1].index]
-      : null;
+    const timeLabels = data.map((d) => `${Math.floor(d.time)} h ${Math.floor((d.time % 1) * 60).toString().padStart(2, '0')}`);
 
     return {
       x,
@@ -35,12 +41,24 @@ const AltitudeChart: React.FC<AltitudeChartProps> = ({ data }: {data : AltitudeG
       minAltitude: Math.floor(min - 5),
       maxAltitude: Math.ceil(max + 5),
       timeLabels,
-      selectedRange1,
-      selectedRange2,
     };
   }, [data]);
 
-  const [xRange, setXRange] = useState<[number, number]>([0, data.length - 1]);
+  const [xRange, setXRange] = useState<[number, number]>([data[0]?.time, (data[0]?.time+data.length*0.5 - 1)]);
+
+  // Génération des rectangles pour les selectedRanges
+  const selectedRangeShapes = useMemo(() => {
+    return selectedRanges.map((range) => ({
+      type: 'rect',
+      x0: range.start<14?range.start+24:range.start,
+      x1: range.end<14?range.end+24:range.end,
+      y0: minAltitude,
+      y1: maxAltitude,
+      fillcolor: range.color || 'blue',
+      opacity: 0.2,
+      line: { width: 0 },
+    }));
+  }, [selectedRanges, minAltitude, maxAltitude]);
 
   return (
     <Plot
@@ -63,17 +81,18 @@ const AltitudeChart: React.FC<AltitudeChartProps> = ({ data }: {data : AltitudeG
         const layout = event as Record<string, number | string | boolean>;
 
         if (layout['xaxis.range[0]'] && layout['xaxis.range[1]']) {
-          setXRange([0.001, data.length - 1]);
+          setXRange([data[0]?.time, (data[0]?.time+data.length*0.5 - 1)]);
         }
       }}
       layout={{
         paper_bgcolor: '#a4a4a8',
         plot_bgcolor: '#a4a4a8',
-        dragmode: 'zoom',
+        dragmode: 'select',
         margin: { l: 60, r: 20, t: 20, b: 50 },
         xaxis: {
           tickvals: x,
-          rangeslider: { visible: true },
+          dtick: 2,
+          rangeslider: { visible: false },
           showgrid: false,
           ticktext: timeLabels,
           title: { text: 'Temps' },
@@ -86,6 +105,7 @@ const AltitudeChart: React.FC<AltitudeChartProps> = ({ data }: {data : AltitudeG
           fixedrange: true,
         },
         shapes: [
+          // Lignes de référence
           {
             type: 'line',
             x0: x[0],
@@ -102,6 +122,7 @@ const AltitudeChart: React.FC<AltitudeChartProps> = ({ data }: {data : AltitudeG
             y1: 20,
             line: { color: 'orange', width: 2, dash: 'dot' },
           },
+          // Zones de couleur pour les altitudes
           {
             type: 'rect',
             xref: 'paper',
@@ -124,30 +145,8 @@ const AltitudeChart: React.FC<AltitudeChartProps> = ({ data }: {data : AltitudeG
             opacity: 0.1,
             line: { width: 0 },
           },
-          ...(selectedRange1 && selectedRange2
-            ? [
-                {
-                  type: 'rect',
-                  x0: selectedRange1[0],
-                  x1: selectedRange1[1],
-                  y0: minAltitude,
-                  y1: maxAltitude,
-                  fillcolor: 'blue',
-                  opacity: 0.2,
-                  line: { width: 0 },
-                },
-                {
-                  type: 'rect',
-                  x0: selectedRange2[0],
-                  x1: selectedRange2[1],
-                  y0: minAltitude,
-                  y1: maxAltitude,
-                  fillcolor: 'blue',
-                  opacity: 0.2,
-                  line: { width: 0 },
-                },
-              ]
-            : []),
+          // Rectangles pour les selectedRanges
+          ...selectedRangeShapes,
         ] as Partial<Shape>[],
         hovermode: 'closest',
       }}

@@ -13,6 +13,7 @@ interface FilterInteface {
     hidden: boolean;
     partial: boolean;
     keywords: string;
+    type : string;
 }
 
 export default function CatalogPage() {
@@ -25,7 +26,8 @@ export default function CatalogPage() {
         invisible: false,
         hidden: false,
         partial: true,
-        keywords: ''
+        keywords: '',
+        type: 'all'
       });
 
     const onToggle = async (index:number) =>{
@@ -34,9 +36,10 @@ export default function CatalogPage() {
         setSelected(catalogTmp[index].index, catalogTmp[index].isSelected)
     }
 
+
     useEffect(() => {
         const getCatalog = async () => {
-            const local = await filterCatalog(catalog, 'all', filters.keywords, filters.invisible, filters.hidden, filters.partial);
+            const local = await filterCatalog(catalog, filters.type, filters.keywords, filters.invisible, filters.hidden, filters.partial);
             setLocalCatalog(local);
 
         }

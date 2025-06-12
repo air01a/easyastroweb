@@ -22,7 +22,7 @@ export default function AstronomyObjectList({
       {objects.map((obj, index) => (
         <div
           key={index}
-          className={`relative w-1/3 min-w-150 border-4 rounded-lg p-2 ${statusColors[obj.status]}`}
+          className={`relative flex-grow min-w-[500px] max-w-sm border-4 rounded-lg p-2  ${statusColors[obj.status]}`}
           onClick={() => onClick(index)}
         >
           {/* Status centered on top */}
@@ -32,8 +32,8 @@ export default function AstronomyObjectList({
 
           <div className="flex flex-row md:flex-row items-center gap-2">
             <button
-              onClick={()=> {onToggle(index)}}
-              className="absolute top-2 right-2 text-yellow-400"
+              onClick={(e:React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onToggle(obj.index); }}
+              className="absolute top-2 z-150 right-2 text-yellow-400"
               aria-label="Sélectionner"
             >
             {obj.isSelected ? <Star fill="currentColor" /> : <StarOff />}
@@ -51,11 +51,16 @@ export default function AstronomyObjectList({
               <p className="text-sm text-gray-600">{obj.objectType}</p>
               <p className="text-sm">Magnitude : {obj.magnitude}</p>
               { obj.illumination && <p className="text-sm">Illumination : {obj.illumination}%</p> }
-              <p className="text-sm">Lever/Coucher : {obj.sunrise?.toLocaleString().split(' ')[1]} / {obj.sunset?.toLocaleString().split(' ')[1]} </p>
+              <p className="text-sm">
+                {obj.sunrise
+                  ? `Lever/Coucher : ${obj.sunrise.toLocaleString().split(' ')[1]} / ${obj.sunset?.toLocaleString().split(' ')[1]}`
+                  : 'Circumpolaire'}
+              </p>
               <p className="text-sm">Méridien : {obj.meridian?.toLocaleString().split(' ')[1]}  </p>
               
               <p className="text-sm">Azimuth : {obj.azimuth?.toFixed(0)}°</p>
               <p className="text-sm">Altitude :{obj.altitude?.toFixed(0)}°</p>
+              <p className="text-sm">Nombre heure visible : {obj.nbHoursVisible} h</p>
             </div>
           </div>
         </div>

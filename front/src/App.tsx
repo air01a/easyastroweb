@@ -9,6 +9,7 @@ import {computeCatalog, loadCatalogFromCSV} from "../lib/astro/catalog/catalog";
 import {  useEffect } from "react";
 import CatalogPage from "./catalog/catalog";
 import { getNextSunriseDate, getNextSunsetDate } from "../lib/astro/astro-utils";
+import PlanPage from "./plan/plan";
 
 function App() {  
   
@@ -50,6 +51,7 @@ const initializeObserver = useObserverStore((state) => state.initializeObserver)
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="catalog" element={<CatalogPage />} />
+          <Route path="plan" element={<PlanPage />} />
         </Route>
         
       </Routes>

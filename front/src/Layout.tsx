@@ -6,14 +6,10 @@ import NavBar from '../design-system/navbar/navbar'; // adapte le chemin si beso
 
 // On ne peut plus passer `params.locale`, donc on détecte le locale autrement (par ex. navigateur)
 const RootLayout: React.FC = () => {
-
-
-
   const navbarItems = [
     { name: 'Accueil', href: '/', matcher: 'exact' },
     { name: 'Catalog', href: '/catalog' },
-    { name: 'Location', href: '/location' },
-    { name: 'Map', href: '/map' },
+    { name: 'Plan', href: '/plan' },
   ];
 
 

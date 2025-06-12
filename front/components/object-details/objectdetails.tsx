@@ -1,15 +1,18 @@
 "use client";
 import {  useObserverStore } from "../../store/store";
-import { getAltitudeData } from "../../lib/astro/astro-utils";
 import AltitudeChart from "../../design-system/altitude-graph/altitude-graph";
 import type { CatalogItem } from "../../lib/astro/catalog/catalog.type";
+import { dateToNumber } from "../../lib/astro/astro-utils";
 
 
 export default function ObjectDetails({item}:{item : CatalogItem}) {
     const { latitude, longitude, date, sunRise, sunSet } = useObserverStore();
     console.log('ObjectDetails', item, latitude, longitude, date, sunRise, sunSet);
 
-
+    const selectedRanges = [
+        { start: 15, end: dateToNumber(sunSet), color: 'blue' },
+        { start: dateToNumber(sunRise), end: 100, color: 'blue' },
+        ];
     return (
         <div className="w-full h-full min-w-[90%]" >
             <h2 className="text-xl font-bold mb-2 mt-2 ">{item.name}</h2>
@@ -33,7 +36,7 @@ export default function ObjectDetails({item}:{item : CatalogItem}) {
                 <p>No item selected.</p>
             )}
             <div className="w-full h-100  bg-gray-800 rounded-lg shadow-lg">
-                <AltitudeChart data={getAltitudeData(latitude, longitude, sunSet, sunRise, item.ra, item.dec)} />
+                <AltitudeChart data={item.altitudeData||[]} selectedRanges={selectedRanges} />
             </div>
             
         </div>

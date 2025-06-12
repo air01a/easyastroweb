@@ -1,5 +1,5 @@
 import { Observer, MakeTime, Equator, Horizon, Body, AstroTime, DefineStar, SearchAltitude,SearchHourAngle } from 'astronomy-engine';
-import type { AltitudeGraphType } from './astro-utils.type';
+import type { AltitudeGraphType, VisibilityStatus } from './astro-utils.type';
 
 
 export const getMoonCoordinates = (observer : Observer, astroTime: AstroTime ): { ra: number; dec: number } => {
@@ -90,39 +90,39 @@ export function getHoursForObject(observer: Observer, astroTime: AstroTime, ra: 
   return { sunrise: sunRise, sunset: sunSet, meridian: meridien.time };
 }
 
-export function getAltitudeData(latitude: number, longitude: number, date: Date, dateEnd: Date, ra: number, dec: number): AltitudeGraphType {
+export function getAltitudeData(latitude: number, longitude: number, date: Date, dateEnd: Date, ra: number, dec: number, hoursBA: number): AltitudeGraphType {
   const observer = new Observer(latitude, longitude, 0); // Assuming altitude is 0 for horizon calculations
-  const times: { time: number; altitude: number, azimuth: number }[] = [];
-  console.log(date);
+  const times: AltitudeGraphType = [];
   let day = date.toISOString().split('T')[0]; 
   const tmpDate = new Date(date.getTime()); // Create a copy of the date to avoid modifying the original
-  tmpDate.setHours(date.getHours()-4);
+  tmpDate.setHours(date.getHours()-hoursBA);
   const startHour = tmpDate.getHours();;
   const diffInMs = Math.abs(dateEnd.getTime() - date.getTime());
   const endHour = Math.ceil(diffInMs / (1000 * 60 * 60));
-  console.log("Start hour:", startHour, "End hour:", endHour);
-  for (let hour = startHour; hour < startHour + endHour+8; hour++) {
+  for (let hour = startHour; hour < (startHour + endHour+2*hoursBA); hour+=0.5) {
     if (hour == 24) {
       day = new Date(tmpDate.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Increment day
     }
+    console.log(hour);
 
     try {
-      const isoTime = `${day}T${(hour%24).toString().padStart(2, '0')}:00:00Z`;
+      const isoTime = `${day}T${(Math.floor(hour%24)).toString().padStart(2, '0')}:${Math.floor((hour-Math.floor(hour))*60).toString().padStart(2, '0')}:00Z`;
       const astroTime = MakeTime(new Date(isoTime));
       const horizontal = Horizon(astroTime, observer, ra, dec, 'normal');
 
 
       times.push({
-        time: astroTime.date.getHours(),
+        time: astroTime.date.getHours()+astroTime.date.getMinutes()/60,
         altitude: Math.round(horizontal.altitude),
-        azimuth: Math.round(horizontal.azimuth)
+        azimuth: Math.round(horizontal.azimuth),
+        visibility:null
       });
   } catch (error) {
       console.error('Error calculating horizon for hour', hour, error);
       continue; // Skip this hour if there's an error
     }
   }
-  console.log("Altitude data for object:", times);
+  console.log('Altitude data:', times);
   return times;
 
 }
@@ -182,4 +182,22 @@ export function getPreciseMoonIllumination(date: Date, observer: Observer): numb
 
   const illumination = 0.5 * (1 - Math.cos(phaseAngle))
   return illumination * 100
+}
+
+
+export function isObjectVisible(altitude: number, azimuth: number): VisibilityStatus {
+  if (altitude < 0) {
+    return 'non-visible'; // Object is below the horizon
+  } else if (altitude < 20) {
+    return 'partially-visible'; // Object is low on the horizon
+  } else if (azimuth >= 0 && azimuth <= 360) {
+    return 'visible'; // Object is above the horizon and in view
+  } else {
+    return 'masked'; // Object is obscured or not in view
+  }
+
+}
+
+export function dateToNumber(date: Date) {
+  return date.getHours()+date.getMinutes()/60;
 }
