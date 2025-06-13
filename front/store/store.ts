@@ -2,7 +2,7 @@ import type { CatalogItem } from '../lib/astro/catalog/catalog.type'
 import { persist } from 'zustand/middleware'
 
 import { create } from 'zustand'
-import type { CatalogStore, ObserverStore } from './store.type';
+import type { CatalogStore, ObserverStore, WebSocketState } from './store.type';
 
 
 export const useCatalogStore = create<CatalogStore>()(
@@ -104,3 +104,44 @@ export const useObserverStore = create<ObserverStore>()(
     }
   )
 )
+
+
+export const useWebSocketStore = create<WebSocketState>((set, get) => ({
+  socket: null,
+  messages: [],
+  isConnected: false,
+
+  connect: () => {
+    const socket = new WebSocket('ws://127.0.0.1:8000/ws/observation');
+
+    socket.onopen = () => {
+      set({isConnected: true})
+      console.log('WebSocket connecté');
+    };
+
+    socket.onmessage = (event) => {
+      const data = event.data;//JSON.parse(event.data);
+      set((state) => ({ messages: [...state.messages, data] }));
+    };
+
+    socket.onerror = (err) => {
+      console.error('WebSocket erreur', err);
+    };
+
+    socket.onclose = () => {
+      console.log('WebSocket fermé');
+      set({ socket: null, isConnected: false });
+    };
+
+    set({ socket });
+  },
+
+  sendMessage: (msg: string) => {
+    const socket = get().socket;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(`${msg}\n`);
+    } else {
+      console.warn('Socket non connectée');
+    }
+  },
+}));

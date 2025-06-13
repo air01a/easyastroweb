@@ -10,8 +10,17 @@ const filters = ['Rouge', 'Vert', 'Bleu', 'Luminance', 'Ha'];
 // Générateur d’ID unique
 let nextId = 0;
 
-export default function ImageSettings( {  onUpdate} : {onUpdate : ( settings: ImageConfig[]) => void }) {
+export default function ImageSettings( {  onUpdate, maxDuration} : {onUpdate : ( settings: ImageConfig[]) => void , maxDuration:number}) {
   const [settings, setSettings] = useState<ImageConfig[]>([]);
+  //const [remaining, setRemaining] = useState<number>(0);
+
+
+
+  const getDuration = (settings : ImageConfig[]) => {
+        let newDuration=0;
+        settings.forEach((item)=>newDuration+=item.exposureTime*item.imageCount)
+        return newDuration/=3600;
+    }
 
   const handleChange = (id: number, field: keyof ImageConfig, value: string|number) => {
     const prev = settings.map(item =>
@@ -21,6 +30,7 @@ export default function ImageSettings( {  onUpdate} : {onUpdate : ( settings: Im
 
     setSettings(prev);
     onUpdate(prev);
+    if (getDuration(settings)> maxDuration) console.log("+++++ Depasse le temps possible")
       
 
   };
@@ -37,6 +47,8 @@ export default function ImageSettings( {  onUpdate} : {onUpdate : ( settings: Im
     ];
     setSettings(prev);
     onUpdate(prev);
+        if (getDuration(settings)> maxDuration) console.log("+++++ Depasse le temps possible")
+
   };
 
   const removeRow = (id: number) => {
@@ -45,12 +57,13 @@ export default function ImageSettings( {  onUpdate} : {onUpdate : ( settings: Im
   };
 
   return (
-    <div className="space-y-4 items-center">
+    <div className="space-y-4 mt-4 items-center">
       {settings.map((config) => (
         <div
           key={config.id}
-          className="flex items-center gap-2 bg-gray-100 p-2 rounded"
+          className="flex items-center gap-2 bg-gray-800 p-2 rounded"
         >
+          <span>Number of images</span>
           <TextInput
             type="number"
             min={1}
@@ -61,7 +74,8 @@ export default function ImageSettings( {  onUpdate} : {onUpdate : ( settings: Im
             className="w-20 p-1 border rounded"
             placeholder="Nb images"
           />
-          <span>images |</span>
+          <span> | </span>
+          <span>Exposition</span>
 
           <TextInput
             type="number"
@@ -73,7 +87,7 @@ export default function ImageSettings( {  onUpdate} : {onUpdate : ( settings: Im
             className="w-20 p-1 border rounded"
             placeholder="Exposition (s)"
           />
-          <span>s |</span>
+          <span>s | Filter </span>
 
           <SelectInput
             value={config.filter}

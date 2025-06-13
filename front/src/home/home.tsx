@@ -1,10 +1,14 @@
 
-import { useCatalogStore } from "../../store/store";
+import Button from "../../design-system/buttons/main";
+import { useCatalogStore,useWebSocketStore } from "../../store/store";
 
 
 export default function Home() {
 
   const { catalog } = useCatalogStore()
+  const messages = useWebSocketStore((state) => state.messages);
+  const isConnected = useWebSocketStore((state) => state.isConnected);
+  const connect = useWebSocketStore((state) => state.connect);
 
   const location = 'Paris'
   const sun = {
@@ -49,6 +53,19 @@ export default function Home() {
             />
           </div>
         </div>
+
+
+        <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md">
+          <h2 className="text-2xl font-semibold mb-4 text-yellow-300">🎤 Le téléscope</h2>
+          {!isConnected ? (
+
+              <Button onClick={() =>     connect() }>Connect</Button>
+          ) : (
+            <pre>{JSON.stringify(messages, null, 2)}</pre>
+          )}
+        </div>
+
+
       </div>
     </main>
   )

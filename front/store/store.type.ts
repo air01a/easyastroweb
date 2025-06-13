@@ -23,3 +23,12 @@ export type ObserverStore = {
   resetObserver: () => void
   
 }
+
+
+export type WebSocketState = {
+  socket: WebSocket | null;
+  isConnected: boolean;
+  messages: string[];
+  connect: () => void;
+  sendMessage: (msg: string) => void;
+};

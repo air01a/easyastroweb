@@ -6,16 +6,21 @@ import { useEffect, useState } from 'react';
 import type { ImageConfig } from './plan.type';
 
 export function ObjectPlanificator({index, sunrise, sunset, startDate, item, onUpdate}: { index:number,  sunrise: Date, sunset:Date, startDate: number, item:CatalogItem, onUpdate : (index:number, config: ImageConfig[]) => void}) {
+    const sunsetNum = dateToNumber(sunset);
+    const sunriseNum = dateToNumber(sunrise);
+
     const selectedRangesForNight = [
-            { start: dateToNumber(sunset), end: startDate, color: 'red'},
-            { start: 15, end: dateToNumber(sunset), color: 'blue' },
-            { start: dateToNumber(sunrise), end: 100, color: 'blue' },
+            { start: sunsetNum, end: startDate, color: 'red'},
+            { start: 15, end: sunsetNum, color: 'blue' },
+            { start: sunriseNum, end: 100, color: 'blue' },
             ];
-            console.log(selectedRangesForNight);
     const [settings, setSettings]=useState<ImageConfig[]>([]);
     const [selectedRange, setSelectedRange]=useState(selectedRangesForNight);
+    const [maxDuration, setMaxDuration]=useState<number>(0);
+
 
      useEffect(() => {
+        setMaxDuration(sunriseNum - startDate % 24)
         let newDuration=0;
         settings.forEach((item)=>newDuration+=item.exposureTime*item.imageCount)
         newDuration/=3600;
@@ -39,7 +44,7 @@ export function ObjectPlanificator({index, sunrise, sunset, startDate, item, onU
                     <div className="flex items-center w-100 h-[250px] bg-gray-800 rounded-lg shadow-lg">
                     <AltitudeChart data={item.altitudeData||[]}  selectedRanges={selectedRange}/>
                     </div>
-                <div className="flex items-centerflex justify-center"><ImageSettings onUpdate={setSettings} /></div>
+                <div className="flex items-centerflex justify-center"><ImageSettings onUpdate={setSettings} maxDuration={maxDuration} /></div>
                 </div>
             );
 

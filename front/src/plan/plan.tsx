@@ -49,7 +49,6 @@ export default function PlanPage() {
         for (let i=0;i<settings.length;i++) {
             const duration = getDuration(settings[i]);
             newStartDates[i]={startDate:startDate%24, endDate:(startDate+duration)%24}
-                   console.log(newStartDates[i])
 
             startDate+=duration%24;
        }
