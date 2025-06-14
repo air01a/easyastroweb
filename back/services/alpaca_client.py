@@ -324,6 +324,21 @@ class ASCOMAlpacaTelescopeClient(ASCOMAlpacaBaseClient):
             "RightAscension": ra,
             "Declination": dec
         })
+
+    async def set_utc_date(self, date:str) -> None:
+        await self._make_request("PUT", "utcdate",{
+            "UTCDate": date,
+        })
+
+    async def get_utc_date(self) -> str:
+        result = await self._make_request("GET", "utcdate")
+        return result.get("Value",'')
+                
+    async def sync_to_coordinates(self, ra: float, dec: float) -> None:
+        await self._make_request("PUT", "synctocoordinates",{
+            "RightAscension": ra,
+            "Declination": dec
+        })
     
     async def abort_slew(self) -> None:
         """Arrête le mouvement du télescope"""

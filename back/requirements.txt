@@ -4,3 +4,5 @@ uvicorn
 httpx
 pillow
 numpy
+starplot
+python-multipart
