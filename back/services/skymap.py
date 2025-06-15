@@ -60,8 +60,8 @@ def generate_map(object_name:str)-> io.BytesIO:
     print(dso)
     p = MapPlot(
         projection=Projection.MERCATOR,
-        ra_min=(dso.ra-2)*15,
-        ra_max=(dso.ra+2)*15,
+        ra_min=(dso.ra-30),
+        ra_max=(dso.ra+30),
         dec_min=(dso.dec-20),
         dec_max=(dso.dec+20),
         style=style,
@@ -92,7 +92,8 @@ def generate_map(object_name:str)-> io.BytesIO:
         label_fn=lambda d: d.ngc,
     )
 
-    p.galaxies()
+    #p.galaxies()
+    p.dsos(where=[_.magnitude < 8], labels=None)
 
     p.constellation_labels()
     p.milky_way()
