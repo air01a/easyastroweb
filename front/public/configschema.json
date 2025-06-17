@@ -1,0 +1,31 @@
+[
+  {
+    "fieldName": "age",
+    "description": "Your age",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 30
+  },
+  {
+    "fieldName": "username",
+    "description": "Username",
+    "fieldType": "INPUT",
+    "varType": "STR",
+    "defaultValue": ""
+  },
+  {
+    "fieldName": "newsletter",
+    "description": "Subscribe to newsletter",
+    "fieldType": "CHECKBOX",
+    "varType": "BOOL",
+    "defaultValue": true
+  },
+  {
+    "fieldName": "color",
+    "description": "Favorite color",
+    "fieldType": "SELECT",
+    "varType": "STR",
+    "defaultValue": "blue",
+    "possibleValue": ["red", "green", "blue"]
+  }
+]

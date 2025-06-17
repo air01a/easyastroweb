@@ -1,4 +1,5 @@
 import type { CatalogItem } from "../lib/astro/catalog/catalog.type"
+import type {Field} from '../components/forms/dynamicform.type'
 
 export type CatalogStore = {
   catalog: CatalogItem[]
@@ -32,3 +33,16 @@ export type WebSocketState = {
   connect: () => void;
   sendMessage: (msg: string) => void;
 };
+
+
+export type ConfigStore = {
+  config: Record<string, any>
+  configScheme : Field[]
+  azimuthSelection: boolean[]
+  setConfig: (config:Record<string,any>) => void,
+  setConfigScheme: (configScheme:Field[]) => void,
+  setAzimuth: (azimuth: boolean[]) =>void,
+  getAzimuth: () =>boolean[],
+  getItem:(name:string) => any
+  
+}

@@ -2,7 +2,7 @@
 from starplot import OpticPlot, DSO, _,  MapPlot, Projection
 from starplot.callables import color_by_bv
 from starplot.optics import Refractor
-from starplot.styles import PlotStyle, extensions
+from starplot.styles import PlotStyle, extensions, ColorStr
 from datetime import datetime, timezone
 import io
 
@@ -33,13 +33,13 @@ def generate_dso_image(object_name: str) -> io.BytesIO:
         ),
         dt=dt,
         style=style,
-        resolution=800,
+        resolution=400,
         autoscale=True,
     )
 
     plot.stars(where=[_.magnitude < 14], color_fn=color_by_bv, bayer_labels=True)
     plot.dsos(where=[_.magnitude < 4.1], labels=None)
-
+    plot.rectangle(    center=(dso.ra, dso.dec), height_degrees=2,width_degrees=2)
     image_bytes = io.BytesIO()
     plot.export(image_bytes, format="png", padding=0.1, transparent=True)
     image_bytes.seek(0)
@@ -50,14 +50,16 @@ def generate_map(object_name:str)-> io.BytesIO:
         extensions.BLUE_LIGHT,
         extensions.MAP,
     )
+    
 
+    if object_name.upper().startswith('M'):
+         object_name = object_name[1:]
     dso = DSO.get(m=object_name)
     if not dso:
         dso = DSO.get(name=object_name)
     
     if not dso:
             return None
-    print(dso)
     p = MapPlot(
         projection=Projection.MERCATOR,
         ra_min=(dso.ra-30),
@@ -65,14 +67,14 @@ def generate_map(object_name:str)-> io.BytesIO:
         dec_min=(dso.dec-20),
         dec_max=(dso.dec+20),
         style=style,
-        resolution=4096,
+        resolution=2000,
         autoscale=True,
     )
     p.gridlines()
     p.constellations()
     p.constellation_borders()
 
-    p.stars(where=[_.magnitude < 8], bayer_labels=True, where_labels=[_.magnitude < 5])
+    p.stars(where=[_.magnitude < 6], bayer_labels=True, where_labels=[_.magnitude < 5])
 
     p.open_clusters(
         where=[_.size < 1, _.magnitude < 9],
@@ -94,10 +96,33 @@ def generate_map(object_name:str)-> io.BytesIO:
 
     #p.galaxies()
     p.dsos(where=[_.magnitude < 8], labels=None)
-
+    
     p.constellation_labels()
     p.milky_way()
     p.ecliptic()
+
+    p.marker(
+        ra=dso.ra,
+        dec=dso.dec,
+        style={
+            "marker": {
+                "size": 80,
+                "symbol": "circle",
+                "fill": "full",
+                "color": "#ed7eed",
+                "edge_color": "#e0c1e0",
+                "alpha": 0.8,
+            },
+            "label": {
+                "font_size": 25,
+                "font_weight": "bold",
+                "font_color": "#c83cc8",
+                "font_alpha": 1,
+            },
+        },
+        label="Mel 111",
+    )
+
 
     image_bytes = io.BytesIO()
     p.export(image_bytes, format="png", padding=0.1, transparent=True)

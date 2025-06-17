@@ -22,6 +22,7 @@ export default function NavBar({menu}:NavBarProps) {
                     key={index}
                     href={item.href}
                     selected={checkSelection(item.href, page, item.matcher)}
+                    onClick={()=>setMenuOpen(false)}
                 >{item.name}</NavButton>
             );
         });

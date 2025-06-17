@@ -1,7 +1,7 @@
 "use client";
 import AstronomyObjectList from "../../design-system/box/objectbox";
 import { useEffect, useState } from "react";
-import CatalogFilters from "../../design-system/filters/catalogfilters";
+import CatalogFilters from "../../components/filters/catalogfilters";
 import { filterCatalog } from "../../lib/astro/catalog/catalog";
 import { useCatalogStore } from "../../store/store";
 import type { CatalogItem } from '../../lib/astro/catalog/catalog.type';

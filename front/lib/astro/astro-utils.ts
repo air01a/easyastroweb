@@ -103,7 +103,6 @@ export function getAltitudeData(latitude: number, longitude: number, date: Date,
     if (hour == 24) {
       day = new Date(tmpDate.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Increment day
     }
-    console.log(hour);
 
     try {
       const isoTime = `${day}T${(Math.floor(hour%24)).toString().padStart(2, '0')}:${Math.floor((hour-Math.floor(hour))*60).toString().padStart(2, '0')}:00Z`;
@@ -122,7 +121,6 @@ export function getAltitudeData(latitude: number, longitude: number, date: Date,
       continue; // Skip this hour if there's an error
     }
   }
-  console.log('Altitude data:', times);
   return times;
 
 }

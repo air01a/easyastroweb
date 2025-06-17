@@ -9,19 +9,19 @@ export default function Home() {
   const messages = useWebSocketStore((state) => state.messages);
   const isConnected = useWebSocketStore((state) => state.isConnected);
   const connect = useWebSocketStore((state) => state.connect);
-
+  
   const location = 'Paris'
   const sun = {
     rise: catalog[0]?.sunrise?.toLocaleString().split(' ')[1] || '',
     set: catalog[0]?.sunset?.toLocaleString().split(' ')[1] || '',
     meridian: catalog[0]?.meridian?.toLocaleString().split(' ')[1] || '',
   }
-  console.log(catalog[0].sunrise?.toLocaleString())
+  //console.log(catalog[0].sunrise?.toLocaleString())
   const moon = {
     rise: catalog[1]?.sunrise?.toLocaleString().split(' ')[1] || '', // Assure-toi que l'index est correct
     set: catalog[1]?.sunset?.toLocaleString().split(' ')[1] || '',
     illumination: catalog[1]?.illumination || 0, // Assure-toi que l'index est correct
-    image: catalog[1].image, // Remplace par le bon chemin
+    image: catalog[1]?.image||'', // Remplace par le bon chemin
   }
 
   return (

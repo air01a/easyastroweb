@@ -7,7 +7,6 @@ import { dateToNumber } from "../../lib/astro/astro-utils";
 
 export default function ObjectDetails({item}:{item : CatalogItem}) {
     const { latitude, longitude, date, sunRise, sunSet } = useObserverStore();
-    console.log('ObjectDetails', item, latitude, longitude, date, sunRise, sunSet);
 
     const selectedRanges = [
         { start: 15, end: dateToNumber(sunSet), color: 'blue' },
@@ -38,7 +37,13 @@ export default function ObjectDetails({item}:{item : CatalogItem}) {
             <div className="w-full h-100  bg-gray-800 rounded-lg shadow-lg">
                 <AltitudeChart data={item.altitudeData||[]} selectedRanges={selectedRanges} />
             </div>
-            
+            { (!item.dynamic)&& (
+            <div className="w-full h-100  bg-gray-800 rounded-lg shadow-lg">
+                <p className="w-full">Localisation {item.description}</p>
+
+               <img src={`/catalog/location/${item.name}.jpg`} />
+            </div>
+            )}
         </div>
         
     );

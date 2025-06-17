@@ -1,9 +1,8 @@
 import type { CatalogItem } from '../lib/astro/catalog/catalog.type'
-import { persist } from 'zustand/middleware'
-
+import { persist, createJSONStorage  } from 'zustand/middleware'
+import type {Field} from '../components/forms/dynamicform.type'
 import { create } from 'zustand'
-import type { CatalogStore, ObserverStore, WebSocketState } from './store.type';
-
+import type { CatalogStore, ObserverStore, WebSocketState, ConfigStore } from './store.type';
 
 export const useCatalogStore = create<CatalogStore>()(
   persist(
@@ -107,6 +106,7 @@ export const useObserverStore = create<ObserverStore>()(
 
 
 export const useWebSocketStore = create<WebSocketState>((set, get) => ({
+  
   socket: null,
   messages: [],
   isConnected: false,
@@ -145,3 +145,55 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
     }
   },
 }));
+
+
+//Record<string, any>
+
+
+export const useConfigStore = create<ConfigStore>()(
+  persist(
+
+    (set, get) => ({
+      config: {},
+      configScheme: [],
+      azimuthSelection: new Array(36).fill(true),
+     // defaultConfig: {}
+  
+      setConfig: (newConfig : Record<string,any>) => {
+        set({config:newConfig})
+      },
+
+      setConfigScheme: (configScheme : Field[]) => {
+
+        set({configScheme})
+      },
+
+      setAzimuth: (azimuth: boolean[]) => {
+        set ({azimuthSelection: azimuth});
+      },
+
+      getAzimuth:() => {
+        return get().azimuthSelection;
+      },
+
+
+    getItem: (key:string) => {
+      if (key in get().config) {
+        return get().config[key];
+      }
+  
+    // Sinon, on cherche le field correspondant dans configScheme
+      const field = get().configScheme.find(f => f.fieldName === key);
+    
+    // Si on trouve le field, on retourne sa defaultValue
+      if (field) {
+        return field.defaultValue;
+      }
+
+    }
+  })
+ , {
+      name: 'config-session-storage',
+      storage: createJSONStorage(() => sessionStorage), // utilise sessionStorage
+    })
+)
