@@ -10,7 +10,7 @@ export default function Configurator() {
     const [formDefinition, setFormDefinition] = useState<Field[]>([]);
     const [initialValues, setInitialValues] = useState({});
     const updateCatalog = useCatalogStore((state) => state.updateCatalog);
-    const [message, setMessage] = useState<String>("");
+    const [message, setMessage] = useState<string>("");
     const { config, setConfig, setAzimuth, getAzimuth } = useConfigStore();
 
 

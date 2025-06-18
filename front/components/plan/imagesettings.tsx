@@ -10,8 +10,8 @@ const filters = ['Rouge', 'Vert', 'Bleu', 'Luminance', 'Ha'];
 // Générateur d’ID unique
 let nextId = 0;
 
-export default function ImageSettings( {  onUpdate, maxDuration} : {onUpdate : ( settings: ImageConfig[]) => void , maxDuration:number}) {
-  const [settings, setSettings] = useState<ImageConfig[]>([]);
+export default function ImageSettings( { initialSettings,  onUpdate, maxDuration} : {initialSettings: ImageConfig[], onUpdate : ( settings: ImageConfig[]) => void , maxDuration:number}) {
+  const [settings, setSettings] = useState<ImageConfig[]>(initialSettings);
   //const [remaining, setRemaining] = useState<number>(0);
 
 

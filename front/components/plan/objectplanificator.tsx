@@ -5,7 +5,7 @@ import { dateToNumber } from "../../lib/astro/astro-utils";
 import { useEffect, useState } from 'react';
 import type { ImageConfig } from './plan.type';
 
-export function ObjectPlanificator({index, sunrise, sunset, startDate, item, onUpdate}: { index:number,  sunrise: Date, sunset:Date, startDate: number, item:CatalogItem, onUpdate : (index:number, config: ImageConfig[]) => void}) {
+export function ObjectPlanificator({index, sunrise, sunset, startDate, item, initialConfig, onUpdate}: { index:number,  sunrise: Date, sunset:Date, startDate: number, item:CatalogItem, initialConfig: ImageConfig[], onUpdate : (index:number, config: ImageConfig[]) => void}) {
     const sunsetNum = dateToNumber(sunset);
     const sunriseNum = dateToNumber(sunrise);
 
@@ -14,7 +14,7 @@ export function ObjectPlanificator({index, sunrise, sunset, startDate, item, onU
             { start: 15, end: sunsetNum, color: 'blue' },
             { start: sunriseNum, end: 100, color: 'blue' },
             ];
-    const [settings, setSettings]=useState<ImageConfig[]>([]);
+    const [settings, setSettings]=useState<ImageConfig[]>(initialConfig);
     const [selectedRange, setSelectedRange]=useState(selectedRangesForNight);
     const [maxDuration, setMaxDuration]=useState<number>(0);
 
@@ -44,7 +44,7 @@ export function ObjectPlanificator({index, sunrise, sunset, startDate, item, onU
                     <div className="flex items-center w-100 h-[250px] bg-gray-800 rounded-lg shadow-lg">
                     <AltitudeChart sunset={sunsetNum} sunrise={sunriseNum} data={item.altitudeData||[]}  selectedRanges={selectedRange}/>
                     </div>
-                <div className="flex items-centerflex justify-center"><ImageSettings onUpdate={setSettings} maxDuration={maxDuration} /></div>
+                <div className="flex items-centerflex justify-center"><ImageSettings initialSettings={initialConfig} onUpdate={setSettings} maxDuration={maxDuration} /></div>
                 </div>
             );
 
