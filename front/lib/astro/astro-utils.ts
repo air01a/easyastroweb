@@ -1,6 +1,7 @@
 import { Observer, MakeTime, Equator, Horizon, Body, AstroTime, DefineStar, SearchAltitude,SearchHourAngle } from 'astronomy-engine';
 import type { AltitudeGraphType, VisibilityStatus } from './astro-utils.type';
 
+export const AltitudeGraphStep=0.5;
 
 export const getMoonCoordinates = (observer : Observer, astroTime: AstroTime ): { ra: number; dec: number } => {
 
@@ -99,7 +100,7 @@ export function getAltitudeData(latitude: number, longitude: number, date: Date,
   const startHour = tmpDate.getHours();;
   const diffInMs = Math.abs(dateEnd.getTime() - date.getTime());
   const endHour = Math.ceil(diffInMs / (1000 * 60 * 60));
-  for (let hour = startHour; hour < (startHour + endHour+2*hoursBA); hour+=0.5) {
+  for (let hour = startHour; hour < (startHour + endHour+1/AltitudeGraphStep*hoursBA); hour+=AltitudeGraphStep) {
     if (hour == 24) {
       day = new Date(tmpDate.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Increment day
     }
@@ -183,15 +184,15 @@ export function getPreciseMoonIllumination(date: Date, observer: Observer): numb
 }
 
 
-export function isObjectVisible(altitude: number, azimuth: number): VisibilityStatus {
+export function isObjectVisible(altitude: number, azimuth: number, azimuthMask: boolean[]): VisibilityStatus {
   if (altitude < 0) {
     return 'non-visible'; // Object is below the horizon
-  } else if (altitude < 20) {
+  } else if (!azimuthMask[Math.floor(azimuth / 10)]) {
+    return 'masked';
+  }  if (altitude < 20) {
     return 'partially-visible'; // Object is low on the horizon
-  } else if (azimuth >= 0 && azimuth <= 360) {
+  } else  {
     return 'visible'; // Object is above the horizon and in view
-  } else {
-    return 'masked'; // Object is obscured or not in view
   }
 
 }

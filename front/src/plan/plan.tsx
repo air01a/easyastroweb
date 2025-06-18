@@ -32,7 +32,7 @@ export default function PlanPage() {
         const getCatalog = async () => {
             const local = (await getSelectedFromCatalog(catalog)).sort((a, b) => {
                 if (a.meridian && b.meridian) {
-                    return (b.meridian.getHours()*60+b.meridian.getMinutes()-(a.meridian.getHours()*60+a.meridian.getMinutes()));
+                    return -(b.meridian.getHours()*60+b.meridian.getMinutes()-(a.meridian.getHours()*60+a.meridian.getMinutes()));
                 } else return 0;
             });
             setLocalCatalog(local);

@@ -1,6 +1,6 @@
 import type { CatalogItem } from './catalog.type';
 import { Observer, MakeTime, Equator, Horizon, Body, MoonPhase  } from 'astronomy-engine';
-import { equCoordStringToDecimal, getMoonCoordinates, angularSeparation,  getHoursForObject, toRadians, getAltitudeData, getNextSunriseDate, isObjectVisible } from '../astro-utils';
+import { equCoordStringToDecimal, getMoonCoordinates, angularSeparation,  getHoursForObject, toRadians, getAltitudeData, getNextSunsetDate, getNextSunriseDate, isObjectVisible } from '../astro-utils';
 
 
 
@@ -9,13 +9,14 @@ export async function computeCatalog(
   catalog: CatalogItem[],
   latitude: number,
   longitude: number,
-  date: Date
-  
+  date: Date,
+  azimuthRestriction : boolean[]
 ): Promise<CatalogItem[]> {
   const observer: Observer = new Observer(latitude, longitude, 0);
   const astroTime = MakeTime(date);
   const moonVector = getMoonCoordinates(observer, astroTime);
   const sunrise=getNextSunriseDate(latitude, longitude, true)?.date || new Date();
+  console.log(azimuthRestriction)
   let descriptions=[]
   const descriptionFile = (await fetch('/catalog/objects.fr.json'));
   if (descriptionFile.ok) {
@@ -68,11 +69,13 @@ export async function computeCatalog(
       };
 
       newItem.altitudeData.forEach((data,index) => {
-        data.visibility = isObjectVisible(data.altitude||-20, data.azimuth||-20);
-        if (index>4 && index<(newItem.altitudeData?.length|| 4)-4) {
-            visibility[data.visibility] = (visibility[data.visibility] || 0) + 1;
+        data.visibility = isObjectVisible(data.altitude||-20, data.azimuth||-20, azimuthRestriction);
+        if (newItem.altitudeData) newItem.altitudeData[index].visibility=data.visibility;
+        if (index>8 && index<(newItem.altitudeData?.length|| 4)-8) {
+              visibility[data.visibility] = (visibility[data.visibility] || 0) + 1;
         }
       });
+      console.log(visibility['masked'])
 
       if (visibility['visible'] > 0) {
         newItem.status = 'visible';
@@ -147,4 +150,17 @@ export async function loadCatalogFromCSV(csvText:string): Promise<CatalogItem[]>
         };
     });
     return catalog;
+}
+
+export async function loadCatalog(azimuthRestriction: boolean[]) {
+
+  const response = await fetch("/catalog/catalog.csv");
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
+  }
+  const data: CatalogItem[] = await loadCatalogFromCSV(await response.text());
+  const date = getNextSunsetDate(50.6667,3.15,true)?.date||new Date();
+  
+  const catalog = await computeCatalog(data, 50.6667,3.15, date, azimuthRestriction);
+  return catalog;
 }

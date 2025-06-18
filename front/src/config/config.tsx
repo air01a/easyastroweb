@@ -2,12 +2,15 @@ import  DynamicForm  from "../../components/forms/dynamicform";
 import type { Field } from "../../components/forms/dynamicform.type";
 import CircularButtonSelection from "../../components/forms/circularbutton";
 import { useEffect, useState } from "react";
-import { useConfigStore } from "../../store/store";
+import { useConfigStore, useCatalogStore} from "../../store/store";
+import {loadCatalog} from "../../lib/astro/catalog/catalog";
+import { FlashMessage } from "../../design-system/messages/flashmessages";
 
 export default function Configurator() {
     const [formDefinition, setFormDefinition] = useState<Field[]>([]);
     const [initialValues, setInitialValues] = useState({});
-
+    const updateCatalog = useCatalogStore((state) => state.updateCatalog);
+    const [message, setMessage] = useState<String>("");
     const { config, setConfig, setAzimuth, getAzimuth } = useConfigStore();
 
 
@@ -30,10 +33,11 @@ export default function Configurator() {
         setCompassSelection(values);
     };
 
-    const onSave = () => {
+    const  onSave = async () => {
         setConfig(initialValues)
         setAzimuth(compassSelection);
-
+        updateCatalog(await loadCatalog(compassSelection));
+        setMessage("Configuration saved")
     }
 
     return (<div>
@@ -47,7 +51,7 @@ export default function Configurator() {
       /> 
               
               
-    <div className="flex justify-center  items-center">
+    <div className="flex flex-col justify-center  items-center">
         <button
           type="submit"
           className="bg-white text-black px-4 py-2 rounded"
@@ -55,6 +59,16 @@ export default function Configurator() {
         >
           Enregistrer
         </button>
+        {message.length>1 && (
+        
+                <FlashMessage
+                    type="success"
+                    message="Configuration sauvegardée avec succès !"
+                    onClose={() => setMessage("")}
+                    duration={3000} 
+                />
+
+      )}
       </div>
         </div>
 

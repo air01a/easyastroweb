@@ -42,7 +42,7 @@ export function ObjectPlanificator({index, sunrise, sunset, startDate, item, onU
                         <p className="text-sm">Visibility: {item.nbHoursVisible} hours</p>
                     </div>
                     <div className="flex items-center w-100 h-[250px] bg-gray-800 rounded-lg shadow-lg">
-                    <AltitudeChart data={item.altitudeData||[]}  selectedRanges={selectedRange}/>
+                    <AltitudeChart sunset={sunsetNum} sunrise={sunriseNum} data={item.altitudeData||[]}  selectedRanges={selectedRange}/>
                     </div>
                 <div className="flex items-centerflex justify-center"><ImageSettings onUpdate={setSettings} maxDuration={maxDuration} /></div>
                 </div>

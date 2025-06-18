@@ -3,13 +3,8 @@ import React, { useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { Shape } from 'plotly.js';
 
-// Typage à adapter selon ta structure réelle
-export type AltitudeGraphType = {
-  time: number;
-  altitude: number;
-  azimuth: number;
-}[];
-
+import type { AltitudeGraphType } from "../../lib/astro/astro-utils.type"
+import {AltitudeGraphStep} from '../../lib/astro/astro-utils';
 export interface SelectedRange {
   start: number;
   end: number;
@@ -19,15 +14,17 @@ export interface SelectedRange {
 interface AltitudeChartProps {
   data: AltitudeGraphType;
   selectedRanges?: SelectedRange[];
+  sunset : number;
+  sunrise : number; 
 }
 
 const AltitudeChart: React.FC<AltitudeChartProps> = ({ 
   data, 
-  selectedRanges = [] 
+  selectedRanges = [] , sunrise, sunset
 }: AltitudeChartProps) => {
   const { x, y, minAltitude, maxAltitude, timeLabels } = useMemo(() => {
     const baseHour = data[0]?.time || 0;
-    const orderedData = data.map((d, index) => ({ ...d, index:(index*0.5+baseHour) }));
+    const orderedData = data.map((d, index) => ({ ...d, index:(index*AltitudeGraphStep+baseHour) }));
     const altitudes = orderedData.map((d) => d.altitude);
     const min = Math.min(...altitudes);
     const max = Math.max(...altitudes);
@@ -44,11 +41,36 @@ const AltitudeChart: React.FC<AltitudeChartProps> = ({
     };
   }, [data]);
 
-  const [xRange, setXRange] = useState<[number, number]>([data[0]?.time, (data[0]?.time+data.length*0.5 - 1)]);
+  const [xRange, setXRange] = useState<[number, number]>([data[0]?.time, (data[0]?.time+data.length*AltitudeGraphStep - 1)]);
 
   // Génération des rectangles pour les selectedRanges
   const selectedRangeShapes = useMemo(() => {
-    return selectedRanges.map((range) => ({
+    data.forEach((element) => console.log(element.visibility))
+    data.forEach((element, index)=> {
+      if (element.visibility && element.visibility=='masked') {
+        if ((index*AltitudeGraphStep+data[0]?.time>sunset) && ((index*AltitudeGraphStep+data[0]?.time)<sunrise+24)) {
+          let start = (index*AltitudeGraphStep+data[0]?.time);
+          let shift=AltitudeGraphStep;
+          if (start<sunset+AltitudeGraphStep) {
+            shift+= start - sunset ;
+            start=sunset;
+          }
+          start %= 24;
+          let end = (start+shift)%24;
+          if (end<15 && end>sunrise) end=sunrise;
+
+          selectedRanges.push({
+            start,
+            end,
+            color: "violet"
+          });
+        }
+      }
+    })
+
+
+
+     return selectedRanges.map((range) => ({
       type: 'rect',
       x0: range.start<14?range.start+24:range.start,
       x1: range.end<14?range.end+24:range.end,
@@ -81,7 +103,7 @@ const AltitudeChart: React.FC<AltitudeChartProps> = ({
         const layout = event as Record<string, number | string | boolean>;
 
         if (layout['xaxis.range[0]'] && layout['xaxis.range[1]']) {
-          setXRange([data[0]?.time, (data[0]?.time+data.length*0.5 - 1)]);
+          setXRange([data[0]?.time, (data[0]?.time+data.length*AltitudeGraphStep - 1)]);
         }
       }}
       layout={{

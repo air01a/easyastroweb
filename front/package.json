@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "astronomy-engine": "^2.1.19",
+    "classnames": "^2.5.1",
     "lucide-react": "^0.513.0",
     "plotly.js": "^3.0.1",
     "react": "^19.1.0",

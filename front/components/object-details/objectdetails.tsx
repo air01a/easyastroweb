@@ -35,7 +35,7 @@ export default function ObjectDetails({item}:{item : CatalogItem}) {
                 <p>No item selected.</p>
             )}
             <div className="w-full h-100  bg-gray-800 rounded-lg shadow-lg">
-                <AltitudeChart data={item.altitudeData||[]} selectedRanges={selectedRanges} />
+                <AltitudeChart data={item.altitudeData||[]} selectedRanges={selectedRanges} sunrise={dateToNumber(sunRise)} sunset={dateToNumber(sunSet)} />
             </div>
             { (!item.dynamic)&& (
             <div className="w-full h-100  bg-gray-800 rounded-lg shadow-lg">
