@@ -6,6 +6,9 @@ import type { CatalogItem } from '../../lib/astro/catalog/catalog.type';
 import { ObjectPlanificator } from '../../components/plan/objectplanificator';
 import type { ImageConfig } from "../../components/plan/plan.type";
 import { dateToNumber } from "../../lib/astro/astro-utils";
+import  Button  from "../../design-system/buttons/main";
+import { apiService } from "../../api/api";
+
 
 import {
   DndContext,
@@ -20,6 +23,7 @@ import type {
   DragEndEvent,
 } from '@dnd-kit/core';
 
+import type { PlanType } from '../../api/api.type'
 
 import {
   arrayMove,
@@ -31,7 +35,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
+import Spacer from '../../components/plan/spacer';
 // Composant wrapper sortable pour chaque ObjectPlanificator
 function SortableObjectPlanificator({ 
   id, 
@@ -132,6 +136,7 @@ export default function PlanPage() {
     const [localCatalog, setLocalCatalog] = useState<CatalogItem[]>([]);
     const { sunRise, sunSet } = useObserverStore();
     const [settings, setSettings] = useState<ImageConfig[][]>([]);
+    const [ spacer, setSpacer] = useState<number[]>([])
     const [startDates, setStartDates] = useState<{startDate:number, endDate:number}[]>([]);
 
     const sensors = useSensors(
@@ -177,7 +182,9 @@ export default function PlanPage() {
                     return a.meridian.getTime() - b.meridian.getTime();
                 } else return 0;
             });
+
             setLocalCatalog(local);
+            setSpacer(new Array(local.length).fill(0));
         }
 
         getCatalog();
@@ -185,15 +192,54 @@ export default function PlanPage() {
 
     useEffect(() => {
         let startDate = dateToNumber(sunSet);
+
         const newStartDates: {startDate: number, endDate: number}[] = [];
 
         for (let i = 0; i < settings.length; i++) {
-            const duration = getDuration(settings[i]);
-            newStartDates[i] = {startDate: startDate % 24, endDate: (startDate + duration) % 24}
+            const duration = spacer[i]/3600+getDuration(settings[i]);
+            newStartDates[i] = {startDate: (startDate+spacer[i]/3600) % 24, endDate: (startDate + duration+spacer[i]/3600) % 24}
             startDate += duration % 24;
         }
         setStartDates(newStartDates);
     }, [settings])
+
+    const addSpacer = (id: number, value: number) => {
+        const newSpacer = [...spacer];
+        newSpacer[id] = value;
+        setSpacer(newSpacer);
+        setSettings([...settings])
+    }
+
+    const run = () => {
+      console.log(spacer, settings, sunSet,localCatalog);
+      const plan : PlanType[] = [];
+      let start=dateToNumber(sunSet);
+      console.log(start);
+      settings.forEach((element, index) => {
+        start+=spacer[index]/3600;
+        console.log(start);
+        element.forEach((capture) =>{
+          const expo = capture.exposureTime;
+          const nExpo = capture.imageCount;
+          const object = localCatalog[index].name;
+          const ra = localCatalog[index].ra;
+          const dec = localCatalog[index].dec;
+          const filter = capture.filter;
+          plan.push({
+              start,
+              expo,
+              ra,
+              dec,
+              filter,
+              object,
+          });
+          start+=expo*nExpo / 3600;
+        });
+      });
+      console.log(start);
+      console.log(plan);
+      apiService.sendPlans(plan);
+    }
 
     return (
         <div>
@@ -209,7 +255,7 @@ export default function PlanPage() {
                 >
                     {localCatalog.map((item, index) => (
                         <div>
-                            <div className="flex flex-col justify-center  items-center">➕ Add delay</div>
+                            <Spacer initialValue={0} onUpdate={addSpacer} id={index} />
 
                             <SortableObjectPlanificator
                                 key={item.index}
@@ -226,6 +272,7 @@ export default function PlanPage() {
                     ))}
                 </SortableContext>
             </DndContext>
+            <div className="flex items-center justify-center"><Button onClick={() => run()}>Run</Button></div>
         </div>
     )
 }
