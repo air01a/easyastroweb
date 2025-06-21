@@ -9,3 +9,7 @@ python-multipart
 astroalign
 astropy
 opencv-python
+colour_demosaicing
+scipy 
+scikit-image 
+PyWavelets
