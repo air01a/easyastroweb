@@ -162,8 +162,12 @@ class LiveStacker:
             blended_input = np.where(mask, aligned, local_avg)
 
             # Étape 3 : update stack
-            self.stack = (self.stack * self.weight_sum + blended_input * weight) / (self.weight_sum + weight)
+            alpha = weight / (self.weight_sum + weight)
+            self.stack = (1 - alpha) * self.stack + alpha * blended_input
             self.weight_sum += weight
+
+            #self.stack = (self.stack * self.weight_sum + blended_input * weight) / (self.weight_sum + weight)
+            #self.weight_sum += weight
 
 
         self.stacked_images+=1
