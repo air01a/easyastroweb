@@ -7,18 +7,23 @@ import cv2
 import time
 
 class LiveStacker:
-    def __init__(self, max_images=20, mode="sigma", clip_extremes=False, extreme_min=5, extreme_max=65500):
+    def __init__(self, max_images=20, mode="sigma", clip_extremes=False, extreme_min=5, extreme_max=65500, epsilon=1e-6, clip_threshold=0.2):
         self.max_images = max_images
         self.mode = mode
         self.clip_extremes = clip_extremes
         self.extreme_min = extreme_min
         self.extreme_max = extreme_max
 
-        self.image_queue = deque(maxlen=max_images) if mode == "sigma" else None
-        self.quality_weights = deque(maxlen=max_images) if mode == "sigma" else None
+        self.image_queue = deque(maxlen=max_images) if mode == "sigma" or "hybrid" else None
+        self.quality_weights = deque(maxlen=max_images) if mode == "sigma" or "hybrid" else None
         self.stack = None
         self.weight_sum = 0
         self.reference_image = None
+        self.stacked_images = 0
+        self.epsilon = epsilon
+        self.clip_threshold = clip_threshold
+
+
 
     def mask_extremes(self, image):
         if image.ndim == 2:
@@ -94,7 +99,8 @@ class LiveStacker:
 
         print(f"[Timer] Calcul bruit : {time.perf_counter() - t0:.3f} sec")
         t0 = time.perf_counter()
-        if self.mode == "sigma":
+        if self.mode == "sigma" or (self.mode=="hybrid" and self.stacked_images<self.max_images):
+            print("+++++++++++ Sigma clipping use")
             self.image_queue.append(aligned)
             self.quality_weights.append(weight)
 
@@ -120,7 +126,9 @@ class LiveStacker:
                     mean_b.filled(0)
                 ], axis=-1)
 
-        elif self.mode == "average":
+        elif self.mode == "average" or self.stack is None:
+            print("+++++++++++ average use")
+
             image_to_add = aligned
             if self.clip_extremes:
                 image_to_add = self.mask_extremes(image_to_add)
@@ -131,9 +139,21 @@ class LiveStacker:
             else:
                 self.stack = np.nan_to_num((self.stack * self.weight_sum + np.nan_to_num(image_to_add) * weight) / (self.weight_sum + weight))
                 self.weight_sum += weight
+        elif self.mode == "hybrid":
+            print("+++++++++++ Hybrid use after sigma")
+
+            relative_diff = np.abs(aligned - self.stack) / (self.stack + self.epsilon)
+            mask = relative_diff < self.clip_threshold
+
+            self.stack = np.where(
+                mask,
+                (self.stack * self.weight_sum + aligned * weight) / (self.weight_sum + weight),
+                self.stack
+            )
+            self.weight_sum += weight
 
 
-        
+        self.stacked_images+=1
         print(f"###################################################################")
         print(f"[Timer] Sigma clipping / moyenne : {time.perf_counter() - t0:.3f} sec")
         print(f"[Timer] Total add_frame : {time.perf_counter() - start_total:.3f} sec")
@@ -149,19 +169,24 @@ def load_fits_image(path):
 if __name__ == "__main__":
     from glob import glob
     from fitsprocessor import FitsImageManager
+    from filters import AstroFilters
+
 
     fits_files = sorted(glob("../../utils/01-observation-m16/01-images-initial/*.fits"))  # Répertoire avec images FITS
-    stacker = LiveStacker(max_images=10, mode="average",clip_extremes=True, extreme_min=10, extreme_max=64000)
-    fits = FitsImageManager()
+    stacker = LiveStacker(max_images=10, mode="hybrid",clip_extremes=True, extreme_min=10, extreme_max=64000)
+    fits = FitsImageManager(auto_normalize=True)
+    filters = AstroFilters()
     index=0
     for path in fits_files:
         print(f"Empile {path}")
-        fits.open_fits(path)
-        fits.debayer()
-        img = fits.processed_data
+        image = fits.open_fits(path)
+        img = image.data
         result = stacker.add_frame(img)
-        if index % 10==0:
-            fits.save_as_image(f"test1baverage{index}.jpg")
+        if index % 30==0:
+            fits.save_as_image(image, f"test1baverage{index}.tif")
+            image.data = filters.auto_stretch(result, 0.25, algo=1, shadow_clip=-1)
+            fits.save_as_image(image, f"test1baverage{index}.jpg")
+
         index+=1
     fits.processed_data=result
     fits.save_as_image("test1baverage.jpg")

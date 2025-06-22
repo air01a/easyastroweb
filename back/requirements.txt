@@ -13,3 +13,4 @@ colour_demosaicing
 scipy 
 scikit-image 
 PyWavelets
+tifffile

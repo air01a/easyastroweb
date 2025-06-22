@@ -7,6 +7,119 @@ from skimage.restoration import denoise_wavelet, denoise_bilateral
 import cv2
 import warnings
 
+
+import numpy as np
+
+
+"""
+This product is based on software from the PixInsight project, developed by
+Pleiades Astrophoto and its contributors (http://pixinsight.com/).
+"""
+
+
+class Stretch:
+
+    def __init__(self, target_bkg=0.25, shadows_clip=-2):
+        self.shadows_clip = shadows_clip
+        self.target_bkg = target_bkg
+
+ 
+    def _get_avg_dev(self, data):
+        """Return the average deviation from the median.
+
+        Args:
+            data (np.array): array of floats, presumably the image data
+        """
+        median = np.median(data)
+        n = data.size
+        median_deviation = lambda x: abs(x - median)
+        avg_dev = np.sum( median_deviation(data) / n )
+        return avg_dev
+
+    def _mtf(self, m, x):
+        """Midtones Transfer Function
+
+        MTF(m, x) = {
+            0                for x == 0,
+            1/2              for x == m,
+            1                for x == 1,
+
+            (m - 1)x
+            --------------   otherwise.
+            (2m - 1)x - m
+        }
+
+        See the section "Midtones Balance" from
+        https://pixinsight.com/doc/tools/HistogramTransformation/HistogramTransformation.html
+
+        Args:
+            m (float): midtones balance parameter
+                       a value below 0.5 darkens the midtones
+                       a value above 0.5 lightens the midtones
+            x (np.array): the data that we want to copy and transform.
+        """
+        shape = x.shape
+        x = x.flatten()
+        zeros = x==0
+        halfs = x==m
+        ones = x==1
+        others = np.logical_xor((x==x), (zeros + halfs + ones))
+
+        x[zeros] = 0
+        x[halfs] = 0.5
+        x[ones] = 1
+        x[others] = (m - 1) * x[others] / ((((2 * m) - 1) * x[others]) - m)
+        return x.reshape(shape)
+
+    def _get_stretch_parameters(self, data):
+        """ Get the stretch parameters automatically.
+        m (float) is the midtones balance
+        c0 (float) is the shadows clipping point
+        c1 (float) is the highlights clipping point
+        """
+        median = np.median(data)
+        avg_dev = self._get_avg_dev(data)
+
+        c0 = np.clip(median + (self.shadows_clip * avg_dev), 0, 1)
+        m = self._mtf(self.target_bkg, median - c0)
+
+        return {
+            "c0": c0,
+            "c1": 1,
+            "m": m
+        }
+
+    def stretch(self, data):
+        """ Stretch the image.
+
+        Args:
+            data (np.array): the original image data array.
+
+        Returns:
+            np.array: the stretched image data
+        """
+
+        # Normalize the data
+        d = data / np.max(data)
+
+        # Obtain the stretch parameters
+        stretch_params = self._get_stretch_parameters(d)
+        m = stretch_params["m"]
+        c0 = stretch_params["c0"]
+        c1 = stretch_params["c1"]
+
+        # Selectors for pixels that lie below or above the shadows clipping point
+        below = d < c0
+        above = d >= c0
+
+        # Clip everything below the shadows clipping point
+        d[below] = 0
+
+        # For the rest of the pixels: apply the midtones transfer function
+        d[above] = self._mtf(m, (d[above] - c0)/(1 - c0))
+        return d
+
+
 class AstroFilters:
     """
     Librairie de filtres pour l'astronomie
@@ -14,7 +127,7 @@ class AstroFilters:
     Gère automatiquement la normalisation selon les besoins de chaque filtre
     """
     
-    def __init__(self, auto_normalize=True):
+    def __init__(self, auto_normalize=False):
         self.version = "1.0.0"
         self.auto_normalize = auto_normalize
         
@@ -39,6 +152,23 @@ class AstroFilters:
         if original_min is None or original_max is None:
             return image
         return image * (original_max - original_min) + original_min
+    
+    def _re_normalize_input(self, image, low=1, high=99):
+        """
+        Normalise dynamiquement une image, même si elle est déjà dans [0,1].
+        Utilise les percentiles pour s'adapter au contenu utile.
+        """
+        image_f = image.astype(np.float32)
+
+        # Calcul des bornes dynamiques réelles
+        p_low = np.percentile(image_f, low)
+        p_high = np.percentile(image_f, high)
+
+        if p_high - p_low <= 0:
+            return np.zeros_like(image_f), 0.0, 1.0
+
+        norm = np.clip((image_f - p_low) / (p_high - p_low), 0, 1)
+        return norm, p_low, p_high
     
     # ===========================================
     # ÉTIREMENT D'HISTOGRAMME
@@ -75,43 +205,179 @@ class AstroFilters:
         
         return result
     
-    def stretch_histogram_asinh(self, image, stretch_factor=3.0, black_point=0.0):
+
+
+    def stretch_histogram_asinh(self, image, beta=0.1, offset=0.0):
         """
-        Étirement asinh (arcsin hyperbolique) - très populaire en astronomie
-        NÉCESSITE une normalisation automatique
+        Applique un étirement d'histogramme utilisant la fonction asinh.
         
-        Args:
-            image: Image numpy array - valeurs RAW acceptées
-            stretch_factor: Facteur d'étirement
-            black_point: Point noir (en valeurs normalisées 0-1)
+        Cette implémentation suit l'algorithme utilisé dans Siril pour l'étirement asinh.
+        
+        Parameters:
+        -----------
+        image : numpy.ndarray
+            Image d'entrée (valeurs entre 0 et 1 typiquement)
+        beta : float, default=0.1
+            Paramètre de contrôle de l'intensité de l'étirement
+            - Valeurs plus petites = étirement plus fort
+            - Valeurs plus grandes = étirement plus doux
+        offset : float, default=0.0
+            Décalage appliqué avant l'étirement
+        
+        Returns:
+        --------
+        numpy.ndarray
+            Image étirée avec les mêmes dimensions que l'entrée
         """
-        # Normalisation automatique
-        image_norm, orig_min, orig_max = self._auto_normalize_input(image)
         
-        image_f = image_norm.astype(np.float32)
-        image_f = np.maximum(image_f - black_point, 0)
+        # Conversion en float pour éviter les problèmes de précision
+        img = image.astype(np.float64)
         
-        if len(image.shape) == 3:
-            result = np.zeros_like(image_f)
-            for i in range(image.shape[2]):
-                channel = image_f[:, :, i]
-                if stretch_factor > 0:
-                    result[:, :, i] = np.arcsinh(stretch_factor * channel) / np.arcsinh(stretch_factor)
-                else:
-                    result[:, :, i] = channel
-        else:
-            if stretch_factor > 0:
-                result = np.arcsinh(stretch_factor * image_f) / np.arcsinh(stretch_factor)
-            else:
-                result = image_f
+        # Application de l'offset
+        img_offset = img + offset
         
-        result = np.clip(result, 0, 1)
+        # Calcul de l'étirement asinh
+        # Formule Siril: asinh(img_offset / beta) / asinh(1 / beta)
+        stretched = np.arcsinh(img_offset / beta) / np.arcsinh(1.0 / beta)
         
-        # Retour à l'échelle originale si demandé
-        if not self.auto_normalize:
-            return self._denormalize_output(result, orig_min, orig_max)
-        return result
+        # Clamp des valeurs entre 0 et 1
+        stretched = np.clip(stretched, 0.0, 1.0)
+        
+        return stretched
     
+
+
+
+    def stretch_histogram_asinh_advanced(self, image, beta=0.1, offset=0.0, preserve_range=True):
+        """
+        Version avancée de l'étirement asinh avec gestion automatique des plages.
+        
+        Parameters:
+        -----------
+        image : numpy.ndarray
+            Image d'entrée
+        beta : float, default=0.1
+            Paramètre de contrôle de l'intensité
+        offset : float, default=0.0
+            Décalage
+        preserve_range : bool, default=True
+            Si True, préserve la plage de valeurs originale de l'image
+        
+        Returns:
+        --------
+        numpy.ndarray
+            Image étirée
+        """
+        
+        # Sauvegarde du type et de la plage originale
+        original_dtype = image.dtype
+        original_min = np.min(image)
+        original_max = np.max(image)
+        
+        # Normalisation vers [0, 1]
+        if preserve_range and (original_min != 0 or original_max != 1):
+            img_norm = (image.astype(np.float64) - original_min) / (original_max - original_min)
+        else:
+            img_norm = image.astype(np.float64)
+        
+        # Application de l'étirement
+        stretched = self.stretch_histogram_asinh(img_norm, beta, offset)
+        
+        # Restauration de la plage originale si demandée
+        if preserve_range and (original_min != 0 or original_max != 1):
+            stretched = stretched * (original_max - original_min) + original_min
+        
+        # Restauration du type original si c'était un entier
+        if np.issubdtype(original_dtype, np.integer):
+            stretched = np.round(stretched).astype(original_dtype)
+        
+        return stretched
+
+
+    def asinh_stretch_color(self, image, beta=0.1, offset=0.0, method='per_channel'):
+        """
+        Étirement asinh spécialisé pour les images couleur.
+        
+        Parameters:
+        -----------
+        image : numpy.ndarray
+            Image couleur (H, W, C) où C est le nombre de canaux (3 pour RGB)
+        beta : float or array-like, default=0.1
+            Paramètre de contrôle. Peut être:
+            - Un float: même valeur pour tous les canaux
+            - Un array: valeur différente par canal [beta_R, beta_G, beta_B]
+        offset : float or array-like, default=0.0
+            Décalage par canal
+        method : str, default='per_channel'
+            Méthode d'étirement:
+            - 'per_channel': étirement indépendant par canal
+            - 'luminance': préserve les couleurs, étire seulement la luminance
+            - 'saturation_preserve': préserve la saturation tout en étirant
+        
+        Returns:
+        --------
+        numpy.ndarray
+            Image couleur étirée
+        """
+        
+        if len(image.shape) < 3:
+            # Image en niveaux de gris, utilise la fonction de base
+            return self.stretch_histogram_asinh(image, beta, offset)
+        
+        img = image.astype(np.float64)
+        
+        if method == 'per_channel':
+            # Étirement indépendant par canal (méthode par défaut de Siril)
+            result = np.zeros_like(img)
+            
+            # Gestion des paramètres par canal
+            if np.isscalar(beta):
+                beta = [beta] * img.shape[2]
+            if np.isscalar(offset):
+                offset = [offset] * img.shape[2]
+                
+            for c in range(img.shape[2]):
+                result[:, :, c] = self.stretch_histogram_asinh(img[:, :, c], beta[c], offset[c])
+                
+            return result
+        
+        elif method == 'luminance':
+            # Conversion en YUV, étirement de la luminance Y seulement
+            # Coefficients de luminance standard (Rec. 709)
+            if img.shape[2] >= 3:
+                Y = 0.2126 * img[:, :, 0] + 0.7152 * img[:, :, 1] + 0.0722 * img[:, :, 2]
+                Y_stretched = self.stretch_histogram_asinh(Y, beta, offset)
+                
+                # Préservation des chrominances
+                result = img.copy()
+                for c in range(3):
+                    # Évite la division par zéro
+                    mask = Y > 1e-10
+                    result[mask, c] = img[mask, c] * (Y_stretched[mask] / Y[mask])
+                    result[~mask, c] = Y_stretched[~mask]
+                
+                return np.clip(result, 0, 1)
+        
+        elif method == 'saturation_preserve':
+            # Méthode qui préserve mieux la saturation des couleurs
+            if img.shape[2] >= 3:
+                # Calcul de l'intensité maximale par pixel
+                intensity = np.max(img[:, :, :3], axis=2)
+                intensity_stretched = self.stretch_histogram_asinh(intensity, beta, offset)
+                
+                result = img.copy()
+                mask = intensity > 1e-10
+                ratio = np.zeros_like(intensity)
+                ratio[mask] = intensity_stretched[mask] / intensity[mask]
+                
+                for c in range(img.shape[2]):
+                    result[:, :, c] = img[:, :, c] * ratio
+                
+                return np.clip(result, 0, 1)
+        
+        # Fallback: étirement par canal
+        return self.asinh_stretch_color(image, beta, offset, 'per_channel')
+
     def stretch_histogram_power(self, image, gamma=0.5):
         """
         Étirement par loi de puissance (gamma correction)
@@ -626,7 +892,48 @@ class AstroFilters:
         }
         return stats
 
+    def auto_stretch(self, image , strength : float, shadow_clip : int = -2, algo: int =0):
+        #n=1
+        print(image.shape)
+        if (algo==0): # algo stretch with clipping (strength 0:1, default = 0.1)
+            # Best for stars imaging
+            if (image.shape[2]>1):
+                for i in range(0,image.data.shape[2]):
+                    min_val = np.percentile(image[:,:,i], strength)
+                    max_val = np.percentile(image[:,:,i], 100 - strength)
+                    image[:,:,i] = np.clip((image[:,:,i] - min_val) * (1.0 / (max_val - min_val)), 0, 1)
+            else:
+                    min_val = np.percentile(image, strength)
+                    max_val = np.percentile(image, 100 - strength)
+                    image = np.clip((image - min_val) * (1.0 / (max_val - min_val)), 0, 1)
+        elif (algo==1):
+            # strength float : 0-1
+            # Pixinsight MTF algorithm, best with nebula
+            #image = np.interp(image,
+            #                            (image.min(), image.max()),
+            #                            (0, 1))
+            if image.shape[2]>1:
+                for channel in range(3):
+                    image[:,:,channel] = Stretch(target_bkg=strength, shadows_clip=shadow_clip).stretch(image[:,:,channel])
+                else:
+                    image = Stretch(target_bkg=strength).stretch(image)
 
+        elif (algo==2):
+            # stddev method
+            # strength between 0-8
+            mean = np.mean(image)
+            stddev = np.std(image)
+
+            # Soustraire la moyenne et diviser par l'écart-type multiplié par le facteur de contraste
+            contrast_factor = 1/(2000*strength)
+            stretched_image = (image - mean) / (stddev * contrast_factor)
+
+            # Tronquer les valeurs des pixels en dessous de zéro à zéro et au-dessus de 255 à 255
+            stretched_image = np.clip(stretched_image, 0, 1)
+
+            # Convertir les valeurs des pixels en entiers
+            image = stretched_image
+        return image
 
 # Exemple d'utilisation
 if __name__ == "__main__":
