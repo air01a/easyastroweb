@@ -95,6 +95,7 @@ class LiveStacker:
 
         noise = self.compute_noise_level(aligned_gray)
         weight = 1.0 / (noise ** 2 + 1e-8)
+        weight=1.0
 
 
         print(f"[Timer] Calcul bruit : {time.perf_counter() - t0:.3f} sec")
@@ -144,12 +145,24 @@ class LiveStacker:
 
             relative_diff = np.abs(aligned - self.stack) / (self.stack + self.epsilon)
             mask = relative_diff < self.clip_threshold
+            print("Valeur true : ", mask.sum(), "Valeur false", (~mask).sum())
 
-            self.stack = np.where(
-                mask,
-                (self.stack * self.weight_sum + aligned * weight) / (self.weight_sum + weight),
-                self.stack
-            )
+            # Étape 1 : calculer la moyenne locale
+            from scipy.ndimage import uniform_filter
+
+            def local_mean(image, size=3):
+                if image.ndim == 2:
+                    return uniform_filter(image, size=size, mode='reflect')
+                else:
+                    return np.stack([uniform_filter(image[:, :, i], size=size, mode='reflect') for i in range(3)], axis=-1)
+
+            local_avg = local_mean(aligned, size=3)
+
+            # Étape 2 : pixels à utiliser
+            blended_input = np.where(mask, aligned, local_avg)
+
+            # Étape 3 : update stack
+            self.stack = (self.stack * self.weight_sum + blended_input * weight) / (self.weight_sum + weight)
             self.weight_sum += weight
 
 
@@ -173,7 +186,7 @@ if __name__ == "__main__":
 
 
     fits_files = sorted(glob("../../utils/01-observation-m16/01-images-initial/*.fits"))  # Répertoire avec images FITS
-    stacker = LiveStacker(max_images=10, mode="hybrid",clip_extremes=True, extreme_min=10, extreme_max=64000)
+    stacker = LiveStacker(max_images=10, mode="hybrid",clip_extremes=True, extreme_min=10, extreme_max=64000, clip_threshold=0.2)
     fits = FitsImageManager(auto_normalize=True)
     filters = AstroFilters()
     index=0
@@ -184,7 +197,7 @@ if __name__ == "__main__":
         result = stacker.add_frame(img)
         if index % 30==0:
             fits.save_as_image(image, f"test1baverage{index}.tif")
-            image.data = filters.auto_stretch(result, 0.25, algo=1, shadow_clip=-1)
+            image.data = filters.auto_stretch(result, 0.2, algo=1, shadow_clip=-2)
             fits.save_as_image(image, f"test1baverage{index}.jpg")
 
         index+=1
