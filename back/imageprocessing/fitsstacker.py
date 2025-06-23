@@ -69,16 +69,25 @@ class LiveStacker:
             print(f"Erreur d'alignement : {e}")
             return None
 
+
+    def get_statistics(self):
+        return { "stacked": self.stacked_images, "rejected":self.rejected_images, "total":self.stacked_images+self.rejected_images, "method":self.mode}
+    
     def add_frame(self, image):
         image = image.astype(np.float32)
         start_total = time.perf_counter()
 
         t0 = time.perf_counter()
-        if self.reference_image is None:
-            self.reference_image = image
-            aligned = image.copy()
-        else:
-            aligned, _ = aa.register(image, self.reference_image)
+        
+        try:
+            if self.reference_image is None:
+                self.reference_image = image
+                aligned = image.copy()
+            else:
+                aligned, _ = aa.register(image, self.reference_image)
+        except:
+            print("----------------- stack rejected for bad alignmenet")
+            aligned=None
 
         if aligned is None:
             self.rejected_images+=1
@@ -189,8 +198,7 @@ if __name__ == "__main__":
             fits.save_as_image(image, f"test1baverage{index}.jpg")
 
         index+=1
-    fits.processed_data=image.data
-    fits.save_as_image("test1baverage.jpg")
-    fits.save_fits("test1baverage.fits")
-
+    fits.save_as_image(image, "test1baverage.jpg")
+    fits.save_fits(image,"test1baverage.fits")
+    print(stacker.get_statistics())
 
