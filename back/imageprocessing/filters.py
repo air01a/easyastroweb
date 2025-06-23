@@ -934,6 +934,22 @@ class AstroFilters:
             # Convertir les valeurs des pixels en entiers
             image = stretched_image
         return image
+    
+    def replace_lowest_percent_by_zero(self, image, percent):
+        """
+        Remplace les `percent`% des valeurs les plus basses de `array` par 0.
+        
+        Args:
+            array (np.ndarray): tableau d'entrée
+            percent (float): pourcentage entre 0 et 100
+
+        Returns:
+            np.ndarray: tableau avec les plus basses valeurs remplacées par 0
+        """
+        array = image.copy()
+        threshold = np.percentile(array, percent)
+        array[array <= threshold] = 0
+        return array
 
 # Exemple d'utilisation
 if __name__ == "__main__":

@@ -20,6 +20,8 @@ class LiveStacker:
         self.weight_sum = 0
         self.reference_image = None
         self.stacked_images = 0
+        self.rejected_images = 0
+
         self.epsilon = epsilon
         self.clip_threshold = clip_threshold
 
@@ -72,30 +74,26 @@ class LiveStacker:
         start_total = time.perf_counter()
 
         t0 = time.perf_counter()
-
-        if image.ndim == 3 and image.shape[2] == 3:
-            gray_for_align = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        if self.reference_image is None:
+            self.reference_image = image
+            aligned = image.copy()
         else:
-            gray_for_align = image
-        print(f"[Timer] Conversion grayscale : {time.perf_counter() - t0:.3f} sec")
+            aligned, _ = aa.register(image, self.reference_image)
+
+        if aligned is None:
+            self.rejected_images+=1
+            return self.stack.copy()
         
-        t0 = time.perf_counter()
-
-        aligned_gray = self.align_image(gray_for_align)
-        if aligned_gray is None:
-            return self.stack
-
         if image.ndim == 3 and image.shape[2] == 3:
-            aligned_rgb, _ = aa.register(image, self.reference_image)
-            aligned = aligned_rgb
+            aligned_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         else:
-            aligned = aligned_gray
+            aligned_gray = image
+
         print(f"[Timer] Alignement : {time.perf_counter() - t0:.3f} sec")
         t0 = time.perf_counter()
 
         noise = self.compute_noise_level(aligned_gray)
         weight = 1.0 / (noise ** 2 + 1e-8)
-        weight=1.0
 
 
         print(f"[Timer] Calcul bruit : {time.perf_counter() - t0:.3f} sec")
@@ -144,26 +142,12 @@ class LiveStacker:
             print("+++++++++++ Hybrid use after sigma")
 
             relative_diff = np.abs(aligned - self.stack) / (self.stack + self.epsilon)
-            mask = relative_diff < self.clip_threshold
+            mask = relative_diff > self.clip_threshold
+            aligned[mask]=self.stack[mask]
             print("Valeur true : ", mask.sum(), "Valeur false", (~mask).sum())
-
-            # Étape 1 : calculer la moyenne locale
-            from scipy.ndimage import uniform_filter
-
-            def local_mean(image, size=3):
-                if image.ndim == 2:
-                    return uniform_filter(image, size=size, mode='reflect')
-                else:
-                    return np.stack([uniform_filter(image[:, :, i], size=size, mode='reflect') for i in range(3)], axis=-1)
-
-            local_avg = local_mean(aligned, size=3)
-
-            # Étape 2 : pixels à utiliser
-            blended_input = np.where(mask, aligned, local_avg)
-
             # Étape 3 : update stack
             alpha = weight / (self.weight_sum + weight)
-            self.stack = (1 - alpha) * self.stack + alpha * blended_input
+            self.stack = (1 - alpha) * self.stack + alpha * aligned
             self.weight_sum += weight
 
             #self.stack = (self.stack * self.weight_sum + blended_input * weight) / (self.weight_sum + weight)
@@ -175,7 +159,7 @@ class LiveStacker:
         print(f"[Timer] Sigma clipping / moyenne : {time.perf_counter() - t0:.3f} sec")
         print(f"[Timer] Total add_frame : {time.perf_counter() - start_total:.3f} sec")
 
-        return self.stack
+        return self.stack.copy()
 
 
 def load_fits_image(path):
@@ -198,14 +182,14 @@ if __name__ == "__main__":
         print(f"Empile {path}")
         image = fits.open_fits(path)
         img = image.data
-        result = stacker.add_frame(img)
-        if index % 30==0:
+        image.data = stacker.add_frame(img)
+        if index % 20==0:
             fits.save_as_image(image, f"test1baverage{index}.tif")
-            image.data = filters.auto_stretch(result, 0.2, algo=1, shadow_clip=-2)
+            image.data = filters.denoise_gaussian(filters.replace_lowest_percent_by_zero(filters.auto_stretch(img, 0.15, algo=1, shadow_clip=-2),88))
             fits.save_as_image(image, f"test1baverage{index}.jpg")
 
         index+=1
-    fits.processed_data=result
+    fits.processed_data=image.data
     fits.save_as_image("test1baverage.jpg")
     fits.save_fits("test1baverage.fits")
 
