@@ -17,7 +17,7 @@ except ImportError:
 
 
 class FitsImage:
-    def __init__(self, data: np.ndarray, header: fits.Header, is_color: bool, bayer_pattern: Optional[str], filename: Optional[str] = None, is_debayered: Optional[bool]=False, is_normalized: Optional[bool]=False, has_flat: Optional[bool]=False):
+    def __init__(self, data: np.ndarray, header: fits.Header, is_color: bool, bayer_pattern: Optional[str], filename: Optional[str] = None, is_debayered: Optional[bool]=False, is_normalized: Optional[bool]=False, has_flat: Optional[bool]=False, is_inversed: Optional[bool]=False):
         self.data = data
         self.header = header
         self.filename = filename
@@ -25,6 +25,7 @@ class FitsImage:
         self.is_color = is_color
         self.is_debayered = is_debayered
         self.is_normalized = is_normalized
+        self.is_inversed = is_inversed
     
     def copy(self) -> 'FitsImage':
         return FitsImage(self.data.copy(), self.header.copy(), self.filename)
@@ -67,10 +68,12 @@ class FitsImageManager:
             filename: Chemin vers le fichier FITS
             hdu_index: Index de l'HDU à charger (défaut: 0)
         """
+        print (filename)
         if not os.path.exists(filename):
             raise FileNotFoundError(f"Fichier non trouvé: {filename}")
         is_debayerd = False
-        
+        inversed=False
+
         with fits.open(filename) as hdul:
             # Vérifier que l'HDU existe
             if hdu_index >= len(hdul):
@@ -80,12 +83,19 @@ class FitsImageManager:
             original_data = hdu.data.copy()
             header = hdu.header.copy()
             original_shape = original_data.shape
-            
+
+        if len(original_shape)==3:
+            is_color=True
+            bayer_pattern=""
+            if original_shape[0]==3:
+                original_data = np.moveaxis(original_data, 0, -1)
+                inversed = True
+        else:
         # Détecter le pattern Bayer
-        (is_color, bayer_pattern)=self._detect_bayer_pattern(header, original_shape)
-        if (is_color and self.auto_debayer):
-            original_data = self.debayer(original_data, bayer_pattern)
-            is_debayerd=True
+            (is_color, bayer_pattern)=self._detect_bayer_pattern(header, original_shape)
+            if (is_color and self.auto_debayer and bayer_pattern!=None):
+                original_data = self.debayer(original_data, bayer_pattern)
+                is_debayerd=True
 
         
         print(f"Fichier ouvert: {filename}")
@@ -99,7 +109,7 @@ class FitsImageManager:
         if self.auto_normalize:
             return FitsImage(self.normalize(original_data), header = header, is_color=is_color, bayer_pattern=bayer_pattern, filename = filename, is_debayered=is_debayerd, is_normalized=True)
         else:
-            return FitsImage(original_data, header, is_color, bayer_pattern, filename, is_debayerd)
+            return FitsImage(original_data, header, is_color, bayer_pattern, filename, is_debayerd, inversed)
     
     def normalize(self, image: np.ndarray, clip: bool = True) -> np.ndarray:
         """
@@ -133,6 +143,9 @@ class FitsImageManager:
         """Détecte le pattern Bayer à partir des métadonnées du header."""
         bayer_pattern = None
         is_color = False
+
+        if len(original_shape)>2 : 
+            return (True, None)
         
         # Rechercher dans différents champs possibles
         bayer_keys = ['BAYERPAT', 'COLORTYP', 'XBAYROFF', 'YBAYROFF']
@@ -247,6 +260,8 @@ class FitsImageManager:
         header_to_save = image.header.copy()
         if image.is_normalized:
             data_to_save = (data_to_save* 65535).astype(np.uint16)
+        if image.is_inversed: 
+            data_to_save =  np.moveaxis(data_to_save, -1, 0)
 
         # Si on veut préserver le format original et que l'image était Bayer
         if preserve_original_format and image.bayer_pattern and image.is_debayered:
@@ -399,19 +414,20 @@ class FitsImageManager:
 # Exemple d'utilisation
 if __name__ == "__main__":
     # Créer une instance du gestionnaire
-    fits_manager = FitsImageManager(auto_normalize=True)
-    file='../../utils/01-observation-m16/01-images-initial/TargetSet.M27.8.00.LIGHT.329.2023-10-01_21-39-23.fits.fits'
+    fits_manager = FitsImageManager(auto_normalize=True, auto_debayer=True)
+    file="..\\..\\utils\\01-observation-m16\\01-images-initial\\TargetSet.M27.6.00.LIGHT.215.2023-10-01_22-01-54.fits.fits"
+    file="./astro_session/final/final2.fit"
     import matplotlib.pyplot as plt
 
-    try:
+    #try:
         # Ouvrir un fichier FITS
-        image = fits_manager.open_fits(file)
-        plt.imshow(np.clip(image.data / np.max(image.data), 0, 1),  origin='upper')
-        print()
+    image = fits_manager.open_fits(file)
+    plt.imshow(np.clip(image.data / np.max(image.data), 0, 1),  origin='upper')
+    print()
 
-        plt.colorbar()
-        plt.title("Image FITS")
-        plt.show()
+    plt.colorbar()
+    plt.title("Image FITS")
+    plt.show()
         # Afficher les informations
         #print("\nInformations sur l'image:")
         #info = fits_manager.get_info()
@@ -431,9 +447,9 @@ if __name__ == "__main__":
         
         # Sauvegarder le résultat
         #fits_manager.save_fits(image, "resultat.fits", preserve_original_format=True)
-        print(image)
-        fits_manager.save_as_image(image, "resultat.tif", stretch=False)
-        fits_manager.save_as_image(image, "resultat.jpg", stretch=False)
+    print(image)
+    fits_manager.save_as_image(image, "resultat.tif", stretch=False)
+    fits_manager.save_as_image(image, "resultat.jpg", stretch=False)
         
-    except Exception as e:
-        print(f"Erreur: {e}")
+    #except Exception as e:
+    #    print(f"Erreur: {e}")

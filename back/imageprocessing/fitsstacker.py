@@ -51,7 +51,7 @@ class LiveStacker:
 
     def reduce_image(self, image, scale=0.25):
         """Reduit la taille de l'image pour alignement rapide."""
-        height, width = image.shape
+        height, width, _ = image.shape
         new_size = (int(width * scale), int(height * scale))
         return cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
 
@@ -63,7 +63,7 @@ class LiveStacker:
             reduced_ref = self.reduce_image(self.reference_image)
             reduced_img = self.reduce_image(image)
             matrix, _ = aa.find_transform(reduced_img, reduced_ref)
-            aligned = aa.apply_transform(matrix, image, self.reference_image)
+            aligned,_ = aa.apply_transform(matrix, image, self.reference_image)
             return aligned
         except Exception as e:
             print(f"Erreur d'alignement : {e}")
@@ -84,7 +84,8 @@ class LiveStacker:
                 self.reference_image = image
                 aligned = image.copy()
             else:
-                aligned, _ = aa.register(image, self.reference_image)
+                #aligned, _ = aa.register(image, self.reference_image)
+                aligned=self.align_image(image)
         except:
             print("----------------- stack rejected for bad alignmenet")
             aligned=None
