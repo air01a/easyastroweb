@@ -126,7 +126,7 @@ filters = AstroFilters()
 
 image = fits_manager.open_fits(f"astro_session/final/final21.fit")
 image.data = filters.auto_stretch(image.data, 0.1, algo=1, shadow_clip=-2)
-optimal_clip_percent = adaptive_clipping(image.data, method='auto')
+optimal_clip_percent = filters.adaptive_clipping(image.data, method='auto')
 print("opti : ", optimal_clip_percent)
 #image.data  = filters.denoise_gaussian(filters.replace_lowest_percent_by_zero(image.data,optimal_clip_percent))
 fits_manager.save_as_image(image,"test2.jpg")
