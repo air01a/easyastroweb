@@ -130,21 +130,18 @@ class LiveStacker:
     def siril_batch_processor(self):
         """Process batches with Siril in separate thread"""
         while self.running:
-            #try:
-            # Wait for batch to be ready
-            if not self.batch_ready_queue.empty():
-                batch_images = self.batch_ready_queue.get(timeout=1)
-                if batch_images:
-                    self.process_batch_with_siril(batch_images)
-                
-            else:
-                time.sleep(1)
+            try:
+                # Wait for batch to be ready
+                if not self.batch_ready_queue.empty():
+                    batch_images = self.batch_ready_queue.get(timeout=1)
+                    if batch_images:
+                        self.process_batch_with_siril(batch_images)
+                    
+                else:
+                    time.sleep(1)
             
-
-            #except queue.Empty:
-            #    continue
-            #except Exception as e:
-            #    self.logger.error(f"Error in batch processor: {e}")
+            except Exception as e:
+                self.logger.error(f"Error in batch processor: {e}")
     
     def process_batch_with_siril(self, batch_images: List[Path]):
         """Process a batch of images with Siril"""
@@ -152,32 +149,32 @@ class LiveStacker:
         batch_dir = self.config.processed_dir / batch_id
         batch_dir.mkdir(exist_ok=True)
         
-        #try:
-        self.logger.info(f"Processing batch {batch_id} with {len(batch_images)} images")
+        try:
+            self.logger.info(f"Processing batch {batch_id} with {len(batch_images)} images")
 
-        result_path = self.stack_batch(batch_images, batch_dir)
-        
-        if result_path and result_path.exists():
-            # Save batch metadata
-            metadata = {
-                'batch_id': batch_id,
-                'image_count': len(batch_images),
-                'timestamp': datetime.now().isoformat(),
-                'result_path': str(result_path),
-                'source_images': [str(img) for img in batch_images]
-            }
+            result_path = self.stack_batch(batch_images, batch_dir)
             
-            with open(self.config.log_dir / f"{batch_id}.json", 'w') as f:
-                json.dump(metadata, f, indent=2)
+            if result_path and result_path.exists():
+                # Save batch metadata
+                metadata = {
+                    'batch_id': batch_id,
+                    'image_count': len(batch_images),
+                    'timestamp': datetime.now().isoformat(),
+                    'result_path': str(result_path),
+                    'source_images': [str(img) for img in batch_images]
+                }
+                
+                with open(self.config.log_dir / f"{batch_id}.json", 'w') as f:
+                    json.dump(metadata, f, indent=2)
+                
+                self.stats['processed_batches'] += 1
+                self.stats['last_batch_time'] = datetime.now()
+                
+                self.logger.info(f"Batch {batch_id} completed successfully")
+                self.stack_processed_batches()
             
-            self.stats['processed_batches'] += 1
-            self.stats['last_batch_time'] = datetime.now()
-            
-            self.logger.info(f"Batch {batch_id} completed successfully")
-            self.stack_processed_batches()
-            
-        #except Exception as e:
-        #    self.logger.error(f"Error processing batch {batch_id}: {e}")
+        except Exception as e:
+            self.logger.error(f"Error processing batch {batch_id}: {e}")
     
     def clear_directory(self, directory: Path):
         """Supprime le contenu avec gestion d'erreurs"""
@@ -225,7 +222,6 @@ class LiveStacker:
             for result_file in self.config.stack_result.glob("*.fit"):
                 batch_results.append(result_file)
             
-            print(batch_results)
             if len(batch_results) < 2:
                 return
             
@@ -241,7 +237,7 @@ class LiveStacker:
             self.siril.stack('r_light', type='rej', sigma_low=3, sigma_high=3, norm='addscale', output_norm=True, out=f"{result_path}")
             # Stack with rejection
             if (self.on_image_processed):
-                self.on_image_processed(result_path)
+                self.on_image_processed(result_path,)
             self.clear_directory(self.config.processed_dir)
             
             
@@ -314,15 +310,16 @@ def main():
     from glob import glob
     from fitsprocessor import FitsImageManager
     from filters import AstroFilters
+
     fits_manager = FitsImageManager(auto_normalize=True)
     filters = AstroFilters()
     current_dir = f"{Path.cwd()}"
-    print(current_dir)
+    
     def on_image_update(path : Path):
         print("===++++===++++ on image update")
         image = fits_manager.open_fits(f"{path}")
         image.data  = filters.denoise_gaussian(filters.replace_lowest_percent_by_zero(filters.auto_stretch(image.data, 0.15, algo=1, shadow_clip=-2),88))
-        fits_manager.save_as_image(image, output_filename=f"{current_dir}/test.jpg")
+        fits_manager.save_as_image(image, output_filename=f"{path}".replace(".fit",".jpg"))
         print("/===++++===++++ on image update")
 
 
