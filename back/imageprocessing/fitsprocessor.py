@@ -17,7 +17,19 @@ except ImportError:
 
 
 class FitsImage:
-    def __init__(self, data: np.ndarray, header: fits.Header, is_color: bool, bayer_pattern: Optional[str], filename: Optional[str] = None, is_debayered: Optional[bool]=False, is_normalized: Optional[bool]=False, has_flat: Optional[bool]=False, is_inversed: Optional[bool]=False):
+    def __init__(self, 
+                data: np.ndarray, 
+                header: fits.Header, 
+                is_color: bool, 
+                bayer_pattern: Optional[str], 
+                filename: Optional[str] = None, 
+                is_debayered: Optional[bool]=False, 
+                is_normalized: Optional[bool]=False, 
+                has_dark: Optional[bool]=False, 
+                is_inversed: Optional[bool]=False,
+                ):
+        
+
         self.data = data
         self.header = header
         self.filename = filename
@@ -26,7 +38,10 @@ class FitsImage:
         self.is_debayered = is_debayered
         self.is_normalized = is_normalized
         self.is_inversed = is_inversed
-    
+        self.has_dark = has_dark    
+
+
+
     def copy(self) -> 'FitsImage':
         return FitsImage(self.data.copy(), self.header.copy(), self.filename)
 
@@ -58,8 +73,11 @@ class FitsImageManager:
     def __init__(self, auto_debayer: Optional[bool]=True, auto_normalize: Optional[bool]=False):
         self.auto_normalize = auto_normalize
         self.auto_debayer = auto_debayer
+        self.dark = None
         
-        
+    def set_dark(self, dark: np.ndarray):
+        self.dark = dark
+ 
     def open_fits(self, filename: str, hdu_index: int = 0) -> None:
         """
         Ouvre un fichier FITS et charge les données.
@@ -68,11 +86,11 @@ class FitsImageManager:
             filename: Chemin vers le fichier FITS
             hdu_index: Index de l'HDU à charger (défaut: 0)
         """
-        print (filename)
         if not os.path.exists(filename):
             raise FileNotFoundError(f"Fichier non trouvé: {filename}")
         is_debayerd = False
         inversed=False
+        dark_applied = False
 
         with fits.open(filename) as hdul:
             # Vérifier que l'HDU existe
@@ -83,6 +101,11 @@ class FitsImageManager:
             original_data = hdu.data.copy()
             header = hdu.header.copy()
             original_shape = original_data.shape
+
+        if self.dark and self.dark.shape == original_shape:
+            original_data -= self.dark
+            dark_applied=True
+            print("dark applied")
 
         if len(original_shape)==3:
             is_color=True
@@ -107,9 +130,9 @@ class FitsImageManager:
             print("Aucun pattern Bayer détecté (image couleur ou monochrome)")
 
         if self.auto_normalize:
-            return FitsImage(self.normalize(original_data), header = header, is_color=is_color, bayer_pattern=bayer_pattern, filename = filename, is_debayered=is_debayerd, is_normalized=True)
+            return FitsImage(self.normalize(original_data), header = header, is_color=is_color, bayer_pattern=bayer_pattern, filename = filename, is_debayered=is_debayerd, is_normalized=True, has_dark=dark_applied, is_inversed=inversed)
         else:
-            return FitsImage(original_data, header, is_color, bayer_pattern, filename, is_debayerd, inversed)
+            return FitsImage(original_data, header = header, is_color=is_color, bayer_pattern=bayer_pattern, filename = filename, is_debayered=is_debayerd, is_normalized=False, has_dark=dark_applied, is_inversed=inversed)
     
     def normalize(self, image: np.ndarray, clip: bool = True) -> np.ndarray:
         """

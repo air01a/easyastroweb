@@ -892,6 +892,8 @@ class AstroFilters:
         }
         return stats
 
+    
+
     def auto_stretch(self, image , strength : float, shadow_clip : int = -2, algo: int =0):
         #n=1
         print(image.shape)

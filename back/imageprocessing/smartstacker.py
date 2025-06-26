@@ -33,11 +33,9 @@ class Config:
         self.final_dir = self.base_dir / "final"
         self.log_dir = self.base_dir / "log"
         self.current_dir = Path.cwd()
-        
         # Processing parameters
-        self.batch_size = 5
-        self.initial_batch_size = 10  # Smaller for first batch
-        self.max_processed_batches = 40  # Keep last N batches for final stacking
+        self.batch_size = 20
+        self.initial_batch_size = 40  # Smaller for first batch
         
         # File patterns
         self.image_extensions = ['.fit', '.fits', '.tif', '.tiff']
@@ -53,10 +51,11 @@ class Config:
             dir_path.mkdir(parents=True, exist_ok=True)
 
 class LiveStacker:
-    def __init__(self, config: Config, on_image_processed: Optional[Callable[[Path], None]] = None,):
+    def __init__(self, config: Config, on_image_processed: Optional[Callable[[Path], None]] = None, dark: Optional[Path]=None):
         self.config = config
         self.siril = None
         self.running = False
+        self.is_live_stacking = False
         self.on_image_processed = on_image_processed
         for path in [self.config.stack_result, self.config.raw_dir, self.config.processed_dir]:
             self.clear_directory(path)
@@ -64,6 +63,11 @@ class LiveStacker:
         self.new_images_queue = queue.Queue()
         self.batch_ready_queue = queue.Queue()
         self.current_batch_files : List[Path] = []
+        self.event_stop = threading.Event()
+        self.is_processing = False
+        self.dark = dark
+
+
         # Statistics
         self.stats = {
             'total_images': 0,
@@ -98,7 +102,26 @@ class LiveStacker:
             self.logger.error(f"Failed to initialize Siril: {e}")
             return False
     
-    
+    def initial_live_stack_init(self):
+        self.logger.info("-> Siril start live stacking")
+
+        self.siril.cd(f"{self.config.processed_dir}")
+        self.siril.start_ls(rotate=True, dark=f"{self.dark}" if self.dark else None)
+        self.is_live_stacking = True
+
+    def add_initial_live_stack_image(self, img_path: Path):
+        self.siril.livestack(f"{img_path}")
+        shutil.copy("live_stack_00001.fit",f"{self.config.final_dir / Path("livestack.fit")}")
+        self.on_image_processed(self.config.final_dir / Path("livestack.fit"))
+
+
+    def stop_initial_live_stack(self):
+        self.logger.info("<- Siril stop live stacking")
+
+        self.siril.stop_ls()
+        self.is_live_stacking = False
+
+
     def process_new_image(self, img_path: Path):
         """Process a new image from camera"""
         try:
@@ -112,11 +135,19 @@ class LiveStacker:
             self.stats['current_batch_count'] += 1
             
             self.logger.info(f"New image: {img_path} (Total: {self.stats['total_images']})")
-            
+
+
+
             # Check if batch is ready
             batch_size = self.config.initial_batch_size if self.stats['processed_batches'] == 0 else self.config.batch_size
-            
+            if (self.stats['total_images']<batch_size and self.is_live_stacking):
+                self.add_initial_live_stack_image(raw_dest)
+                self.logger.info(f"Initial Live Stacking {raw_dest}")
+
+
             if self.stats['current_batch_count'] >= batch_size:
+                if self.is_live_stacking:
+                    self.stop_initial_live_stack()
                 self.batch_ready_queue.put(self.current_batch_files.copy())
                 self.current_batch_files.clear()
 
@@ -129,20 +160,24 @@ class LiveStacker:
     
     def siril_batch_processor(self):
         """Process batches with Siril in separate thread"""
-        while self.running:
+        while not self.event_stop.is_set():
             try:
                 # Wait for batch to be ready
                 if not self.batch_ready_queue.empty():
                     batch_images = self.batch_ready_queue.get(timeout=1)
                     if batch_images:
+                        self.is_processing=True
                         self.process_batch_with_siril(batch_images)
-                    
+                        self.is_processing=False
+
                 else:
                     time.sleep(1)
             
             except Exception as e:
                 self.logger.error(f"Error in batch processor: {e}")
-    
+        self.logger.info("----- Quitting main thread ")
+
+
     def process_batch_with_siril(self, batch_images: List[Path]):
         """Process a batch of images with Siril"""
         batch_id = f"batch_{self.stats['processed_batches']:03d}_{int(time.time())}"
@@ -185,7 +220,7 @@ class LiveStacker:
                 elif item.is_dir():
                     shutil.rmtree(item)  # Plus efficace pour les dossiers
         except Exception as e:
-            print(f"Erreur lors du nettoyage de {directory}: {e}")
+            self.logger.error(f"Erreur lors du nettoyage de {directory}: {e}")
 
     def stack_batch(self, batch_images: List[Path], output_dir: Path) -> Optional[Path]:
         """Stack a batch of images with Siril"""
@@ -199,6 +234,7 @@ class LiveStacker:
             # Convert and register images
             self.siril.convert( 'light', out=f"{self.config.processed_dir}", debayer=True)
             self.siril.cd(f"{self.config.processed_dir}")
+            self.siril.preprocess( 'light', dark=f"{self.dark}" if self.dark else None, cfa=True, equalize_cfa=True, debayer=True )
             self.siril.register('light')
             result_path = self.config.stack_result / f"{sequence_name}_stacked.fit"
             self.siril.stack('r_light', type='rej', sigma_low=3, sigma_high=3, norm='addscale', output_norm=True, out=f"{result_path}")
@@ -259,12 +295,13 @@ class LiveStacker:
             'last_batch_time': self.stats['last_batch_time'].isoformat() if self.stats['last_batch_time'] else None
         }
     
-    def start_live_stacking(self, camera_dir: Path):
+    def start_live_stacking(self):
         """Start the live stacking process"""
         if not self.initialize_siril():
             return False
         
         self.running = True
+        self.initial_live_stack_init()
 
         
         self.processor_thread = threading.Thread(
@@ -272,7 +309,6 @@ class LiveStacker:
             daemon=True
         )
         
-        #monitor_thread.start()
         self.processor_thread.start()
         
         self.logger.info("Live stacking started")
@@ -287,17 +323,18 @@ class LiveStacker:
             remaining_images = self.current_batch_files
             if remaining_images:
                 self.batch_ready_queue.put(remaining_images)
+        while not self.batch_ready_queue.empty() or self.is_processing:
+            time.sleep(3)
+
         
         # Close Siril
         if self.siril:
             self.siril.close()
-        
-       
+            self.app.Close()
+
+        self.event_stop.set()
+        self.processor_thread.join()
         self.logger.info("Live stacking stopped")
-
-
-
-
 
 
 
@@ -312,31 +349,33 @@ def main():
     from filters import AstroFilters
 
     fits_manager = FitsImageManager(auto_normalize=True)
+    
     filters = AstroFilters()
     current_dir = f"{Path.cwd()}"
     
     def on_image_update(path : Path):
         print("===++++===++++ on image update")
         image = fits_manager.open_fits(f"{path}")
-        image.data  = filters.denoise_gaussian(filters.replace_lowest_percent_by_zero(filters.auto_stretch(image.data, 0.15, algo=1, shadow_clip=-2),88))
+        image.data  = filters.denoise_gaussian(filters.replace_lowest_percent_by_zero(filters.auto_stretch(image.data, 0.25, algo=1, shadow_clip=-2),80))
         fits_manager.save_as_image(image, output_filename=f"{path}".replace(".fit",".jpg"))
         print("/===++++===++++ on image update")
 
 
     config = Config()
-    stacker = LiveStacker(config, on_image_processed=on_image_update)
+    stacker = LiveStacker(config, on_image_processed=on_image_update, dark= "C:/Users/eniquet/Documents/dev/easyastroweb/utils/01-observation-m16/01-images-initial/dark/master.fit")
     # Replace with your camera output directory
-    camera_dir = Path("../../utils/01-observation-m16/01-images-initial/")
-    #fits_files = sorted(glob("../../utils/01-observation-m16/01-images-initial/*.fits"))  # Répertoire avec images FITS
     fits_dir = Path("C:/Users/eniquet/Documents/dev/easyastroweb/utils/01-observation-m16/01-images-initial")
-    fits_files =  list(fits_dir.glob("*.fit")) + list(fits_dir.glob("*.fits"))
-    print(fits_files)
+    fits_files =  (list(fits_dir.glob("*.fit")) + list(fits_dir.glob("*.fits")))
+    fits_files.sort()
+
+    for i in fits_files:
+        print(f"livestack {i}")
 
     try:
         print("Starting live stacking...")
         print(f"Output: {config.final_dir}")
         
-        if stacker.start_live_stacking(camera_dir):
+        if stacker.start_live_stacking():
             # Monitor status
 
 
@@ -345,11 +384,12 @@ def main():
                 status = stacker.get_status()
                 print(f"\rImages: {status['total_images']} | "
                       f"Batches: {status['processed_batches']} | "
-                      f"Progress: {status['current_batch_progress']}/{config.batch_size}", 
+                      f"Progress: {status['current_batch_progress']}/{config.initial_batch_size if status['processed_batches']==0 else config.batch_size}", 
                       end='', flush=True)
                 
                 time.sleep(2)
             stacker.stop_live_stacking()
+            del stacker
         
     except KeyboardInterrupt:
         print("\nStopping...")
