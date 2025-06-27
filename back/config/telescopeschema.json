@@ -1,0 +1,31 @@
+[
+  {
+    "fieldName": "name",
+    "description": "Telescope Name",
+    "fieldType": "INPUT",
+    "varType": "STR",
+    "defaultValue": ""
+  },
+  {
+    "fieldName": "focale",
+    "description": "Telescope focale",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 650
+  },
+  {
+    "fieldName": "pixelsize",
+    "description": "Telescope focale",
+    "fieldType": "INPUT",
+    "varType": "FLOAT",
+    "defaultValue": 2.4
+  },
+  {
+    "fieldName": "pixelsize",
+    "description": "Telescope focale",
+    "fieldType": "CHECKBOX",
+    "varType": "BOOL",
+    "defaultValue": 0
+  }
+]
+

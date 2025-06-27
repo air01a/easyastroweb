@@ -10,6 +10,7 @@ import CatalogPage from "./catalog/catalog";
 import { getNextSunriseDate, getNextSunsetDate } from "../lib/astro/astro-utils";
 import PlanPage from "./plan/plan";
 import Configurator from './config/config';
+import { apiService } from '../api/api'
 
 function App() {  
   
@@ -32,12 +33,12 @@ const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
             initializeObserver(50.6667, 3.15, date, getNextSunsetDate(50.6667,3.15,true)?.date||new Date(), getNextSunriseDate(50.6667,3.15,false)?.date||new Date());
         }
         
-        const initial = await fetch('/config.json');
-        const initialData = initial?.body ? await initial.json():{};
+        const initial = await apiService.getConfig();
+        const initialData = initial ? initial:{};
         setConfig(initialData);
 
-        const configSchema = await fetch('/configschema.json');
-        const formDefinition = configSchema?.body ? await configSchema.json():[];
+        const configSchema = await apiService.getConfigScheme();
+        const formDefinition = configSchema? configSchema:[];
         setConfigScheme(formDefinition);
 
       } catch (error) {

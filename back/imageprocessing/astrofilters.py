@@ -408,6 +408,30 @@ class AstroFilters:
         result = scaling * np.log1p(image_f) / np.log1p(1.0)
         return np.clip(result, 0, 1)
     
+
+    def stretch_mtf_luminance(self, image_rgb, black_point=0.0, white_point=1.0, midtones=0.5):
+        """
+        Applique MTF sur la luminance et réapplique la chrominance.
+        """
+        denom = white_point - black_point
+        denom = denom if denom != 0 else 1e-6
+
+        # Luminance simple : moyenne des canaux
+        luminance = np.mean(image_rgb, axis=2)
+
+        # MTF sur luminance
+        x = np.clip((luminance - black_point) / denom, 0, 1)
+        lum_stretched = ((midtones - black_point) * x) / (
+            x * (midtones - black_point) + (1 - x) * (midtones - black_point + 1e-6)
+        )
+        lum_stretched = np.clip(lum_stretched, 0, 1)
+
+        # Réappliquer chrominance
+        # Évite division par zéro
+        luminance_safe = np.maximum(luminance, 1e-6)
+        ratio = lum_stretched / luminance_safe
+        image_stretched = image_rgb * ratio[..., np.newaxis]
+        return np.clip(image_stretched, 0, 1)
     # ===========================================
     # CORRECTION DE GRADIENT
     # ===========================================
@@ -945,7 +969,7 @@ class AstroFilters:
     # ===========================================
     # Automatic black clipping
     # ===========================================
-    def replace_lowest_percent_by_zero(self, image, percent):
+    def replace_lowest_percent_by_zero(self, image_data, percent_or_thresholds):
         """
         Remplace les `percent`% des valeurs les plus basses de `array` par 0.
         
@@ -956,11 +980,40 @@ class AstroFilters:
         Returns:
             np.ndarray: tableau avec les plus basses valeurs remplacées par 0
         """
-        array = image.copy()
-        threshold = np.percentile(array, percent)
-        array[array <= threshold] = 0
-        return array
-    
+        if len(image_data.shape) == 3:  # Image RGB
+            result = image_data.copy()
+            
+            if isinstance(percent_or_thresholds, (list, tuple)):
+                # Seuils spécifiques par canal
+                for channel in range(image_data.shape[2]):
+                    threshold = percent_or_thresholds[channel]
+                    result[:, :, channel] = np.where(
+                        image_data[:, :, channel] < threshold, 
+                        0, 
+                        image_data[:, :, channel]
+                    )
+            else:
+                # Pourcentage uniforme sur tous les canaux
+                for channel in range(image_data.shape[2]):
+                    threshold = np.percentile(image_data[:, :, channel], percent_or_thresholds)
+                    result[:, :, channel] = np.where(
+                        image_data[:, :, channel] < threshold, 
+                        0, 
+                        image_data[:, :, channel]
+                    )
+            
+            return result
+            
+        else:  # Image en niveaux de gris
+            if isinstance(percent_or_thresholds, (list, tuple)):
+                threshold = percent_or_thresholds[0]  # Prend le premier seuil
+            else:
+                threshold = np.percentile(image_data, percent_or_thresholds)
+            
+            return np.where(image_data < threshold, 0, image_data)
+
+
+
     def find_noise_level(self, image_data):
         """Trouve automatiquement le niveau de bruit de l'image"""
         # Utilise la médiane des déviations absolues (MAD) pour estimer le bruit
@@ -979,7 +1032,7 @@ class AstroFilters:
     def sky_background_analysis(self, image_data, sample_size=1000):
         """Analyse le fond de ciel pour déterminer le niveau de clipping"""
         # Échantillonne des zones "vides" de l'image (coins par exemple)
-        h, w = image_data.shape
+        h, w  = image_data.shape
         corners = [
             image_data[:h//10, :w//10],  # coin haut-gauche
             image_data[:h//10, -w//10:], # coin haut-droit
@@ -1032,8 +1085,114 @@ class AstroFilters:
         except:
             # Fallback sur une méthode plus simple
             return np.percentile(image_data, 99.5)
+        
+    def sky_background_analysis_rgb(self, image_data, sample_size=1000):
+        """Analyse le fond de ciel pour une image RGB"""
+        if len(image_data.shape) == 3:  # Image RGB
+            h, w, c = image_data.shape
+            
+            # Échantillonne les coins pour chaque canal
+            corners_per_channel = []
+            for channel in range(c):
+                corners = [
+                    image_data[:h//10, :w//10, channel],  # coin haut-gauche
+                    image_data[:h//10, -w//10:, channel], # coin haut-droit
+                    image_data[-h//10:, :w//10, channel], # coin bas-gauche
+                    image_data[-h//10:, -w//10:, channel] # coin bas-droit
+                ]
+                corners_per_channel.append(np.concatenate([corner.flatten() for corner in corners]))
+            
+            # Calcule le seuil pour chaque canal
+            thresholds = []
+            for channel_samples in corners_per_channel:
+                sky_mean = np.mean(channel_samples)
+                sky_std = np.std(channel_samples)
+                threshold = sky_mean + 2 * sky_std
+                thresholds.append(threshold)
+            
+            return thresholds  # Retourne une liste de seuils [R, G, B]
+        
+        else:  # Image en niveaux de gris
+            return self.sky_background_analysis(image_data, sample_size)
+        
 
-    def adaptive_clipping(self, image_data, method='auto'):
+    def adaptive_clipping(self,image_data, method='auto', per_channel=True):
+        """
+        Détermine automatiquement le niveau de clipping pour images RGB
+        
+        Args:
+            image_data: données de l'image (H,W) ou (H,W,C)
+            method: méthode d'analyse
+            per_channel: si True, analyse chaque canal séparément
+        """
+        
+        if len(image_data.shape) == 2:  # Image monochrome
+            return self.adaptive_clipping_mono(image_data, method)
+        
+        # Image RGB
+        if per_channel:
+            # Analyse chaque canal séparément
+            if method == 'sky_background':
+                thresholds = self.sky_background_analysis_rgb(image_data)
+                percents = []
+                for channel in range(image_data.shape[2]):
+                    channel_data = image_data[:, :, channel]
+                    percent_to_clip = np.sum(channel_data < thresholds[channel]) / channel_data.size * 100
+                    percents.append(min(95, max(50, percent_to_clip)))
+                return percents
+            
+            elif method == 'noise_analysis':
+                percents = []
+                for channel in range(image_data.shape[2]):
+                    channel_data = image_data[:, :, channel]
+                    threshold = self.adaptive_clipping_threshold(channel_data)
+                    percent_to_clip = np.sum(channel_data < threshold) / channel_data.size * 100
+                    percents.append(min(95, max(50, percent_to_clip)))
+                return percents
+            
+            elif method == 'auto':
+                # Combine plusieurs méthodes pour chaque canal
+                all_percents = []
+                for channel in range(image_data.shape[2]):
+                    channel_data = image_data[:, :, channel]
+                    
+                    channel_thresholds = []
+                    try:
+                        thresh = self.adaptive_clipping_threshold(channel_data)
+                        channel_thresholds.append(np.sum(channel_data < thresh) / channel_data.size * 100)
+                    except:
+                        pass
+                    
+                    try:
+                        # Pour le sky background sur un canal
+                        sky_mean = np.mean(channel_data)
+                        sky_std = np.std(channel_data)
+                        thresh = sky_mean + 2 * sky_std
+                        channel_thresholds.append(np.sum(channel_data < thresh) / channel_data.size * 100)
+                    except:
+                        pass
+                    
+                    if channel_thresholds:
+                        optimal_percent = np.median(channel_thresholds)
+                    else:
+                        optimal_percent = 80  # Fallback
+                    
+                    all_percents.append(min(95, max(50, optimal_percent)))
+                
+                return all_percents
+        
+        else:
+            # Analyse globale (moyenne des canaux)
+            if image_data.shape[2] == 3:  # RGB
+                # Convertit en luminance pour analyse globale
+                luminance = 0.299 * image_data[:,:,0] + 0.587 * image_data[:,:,1] + 0.114 * image_data[:,:,2]
+                return self.adaptive_clipping(luminance, method)
+            else:
+                # Prend la moyenne des canaux
+                mean_channel = np.mean(image_data, axis=2)
+                return self.adaptive_clipping(mean_channel, method)
+            
+    def adaptive_clipping_mono(self, image_data, method='auto'):
         """
         Détermine automatiquement le niveau de clipping optimal
         

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Union, Dict
 
 class PlanType(BaseModel):
     start: float
@@ -8,3 +8,8 @@ class PlanType(BaseModel):
     dec: float
     filter: str
     object: str
+
+ConfigAllowedValue = Union[str, int, float]
+
+ConfigPayload = Dict[str, ConfigAllowedValue]
+

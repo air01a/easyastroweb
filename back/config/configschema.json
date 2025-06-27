@@ -32,7 +32,7 @@
     "description": "Astap downsample factor",
     "fieldType": "INPUT",
     "varType": "INT",
-    "defaultValue": "0"
+    "defaultValue": 0
   },  
   {
     "fieldName": "astap_default_search_radius",
@@ -53,7 +53,21 @@
     "description": "ASCOM server IP port",
     "fieldType": "INPUT",
     "varType": "INT",
-    "defaultValue": "11111"
+    "defaultValue": 11111
+  },
+  {
+    "fieldName": "server_ip",
+    "description": "server IP ",
+    "fieldType": "INPUT",
+    "varType": "STR",
+    "defaultValue": "127.0.0.1"
+  },
+  {
+    "fieldName": "server_port",
+    "description": "server Port",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 8000
   }
 
 

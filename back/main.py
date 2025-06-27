@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes import api_router
+from services import config
+
+
+
+
 
 app = FastAPI(title="EasyAstro API", version="1.0.0")
 
@@ -11,7 +16,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-    ],
+    ], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -25,5 +30,5 @@ async def root():
     return {"message": "Telescope Control API is running"}
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    import uvicorn 
+    uvicorn.run("main:app", host=config.CONFIG["server_ip"], port=config.CONFIG["server_port"], reload=True)

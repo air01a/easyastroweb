@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useConfigStore, useCatalogStore} from "../../store/store";
 import {loadCatalog} from "../../lib/astro/catalog/catalog";
 import { FlashMessage } from "../../design-system/messages/flashmessages";
+import { ApiService } from '../../api/api';
 
 export default function Configurator() {
     const [formDefinition, setFormDefinition] = useState<Field[]>([]);
@@ -13,6 +14,7 @@ export default function Configurator() {
     const [message, setMessage] = useState<string>("");
     const { config, setConfig, setAzimuth, getAzimuth } = useConfigStore();
 
+    const apiService = new ApiService();
 
     const init=config;
     useEffect(() => {
@@ -35,6 +37,7 @@ export default function Configurator() {
 
     const  onSave = async () => {
         setConfig(initialValues)
+        apiService.sendConfig(initialValues)
         setAzimuth(compassSelection);
         updateCatalog(await loadCatalog(compassSelection));
         setMessage("Configuration saved")

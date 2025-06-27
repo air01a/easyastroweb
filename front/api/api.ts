@@ -1,5 +1,7 @@
 // services/api.ts
 import type { PlanType } from "./api.type";
+import type { ConfigItems } from "../store/config.type";
+import type {Field} from '../components/forms/dynamicform.type'
 
 export class ApiService {
   private baseUrl: string;
@@ -41,10 +43,30 @@ export class ApiService {
   }
 
   // Exemple de méthode métier
-  async sendPlans(plans: PlanType[]): Promise<any> {
-    return this.request<any>('/observation/plans', {
+  async sendPlans(plans: PlanType[]): Promise<boolean> {
+    return this.request<boolean>('/observation/plans', {
       method: 'POST',
       body: JSON.stringify(plans),
+    });
+  }
+
+  async sendConfig(config : ConfigItems) {
+    return this.request<boolean>('/config', {
+      method: 'POST',
+      body: JSON.stringify(config),
+    });
+  }
+
+  async getConfig() {
+    return this.request<ConfigItems>('/config', {
+      method: 'GET'
+    });
+  }
+
+
+  async getConfigScheme(): Promise<Field[]> {
+    return this.request<Field[]>('/config/scheme', {
+      method: 'GET'
     });
   }
 

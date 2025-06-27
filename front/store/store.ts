@@ -3,6 +3,8 @@ import { persist, createJSONStorage  } from 'zustand/middleware'
 import type {Field} from '../components/forms/dynamicform.type'
 import { create } from 'zustand'
 import type { CatalogStore, ObserverStore, WebSocketState, ConfigStore } from './store.type';
+import type { ConfigItem } from './config.type';
+
 
 export const useCatalogStore = create<CatalogStore>()(
   persist(
@@ -159,7 +161,7 @@ export const useConfigStore = create<ConfigStore>()(
       azimuthSelection: new Array(36).fill(true),
      // defaultConfig: {}
   
-      setConfig: (newConfig : Record<string,any>) => {
+      setConfig: (newConfig : Record<string,ConfigItem>) => {
         set({config:newConfig})
       },
 
@@ -177,15 +179,15 @@ export const useConfigStore = create<ConfigStore>()(
       },
 
 
-    getItem: (key:string) => {
-      if (key in get().config) {
-        return get().config[key];
+    getItem: (name:string) => {
+      if (name in get().config) {
+        return get().config[name];
       }
   
-    // Sinon, on cherche le field correspondant dans configScheme
-      const field = get().configScheme.find(f => f.fieldName === key);
+      // Sinon, on cherche le field correspondant dans configScheme
+      const field = get().configScheme.find(f => f.fieldName === name);
     
-    // Si on trouve le field, on retourne sa defaultValue
+      // Si on trouve le field, on retourne sa defaultValue
       if (field) {
         return field.defaultValue;
       }
