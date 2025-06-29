@@ -17,7 +17,8 @@ CONFIG_PATH = CURRENT_DIR.parent / "config" / "config.json"
 CONFIG_SCHEMA_PATH = CURRENT_DIR.parent / "config" / "configschema.json"
 OBSERVATORY_PATH = CURRENT_DIR.parent / "config" / "observatory.json"
 OBSERVATORY_SCHEMA_PATH = CURRENT_DIR.parent / "config" / "observatoryschema.json"
-
+TELESCOPE_PATH = CURRENT_DIR.parent / "config" / "telescope.json"
+TELESCOPE_SCHEMA_PATH = CURRENT_DIR.parent / "config" / "telescopeschema.json"
 # Helper function to read JSON asynchronously
 async def read_json(path: Path) -> Any:
     loop = asyncio.get_running_loop()
@@ -70,5 +71,14 @@ async def get_observatory_schema() -> Dict[str, AllowedValue]:
 
 async def save_observatory(observatory: List[Dict[str, AllowedValue]]):
     await write_json(OBSERVATORY_PATH, observatory)
+
+async def get_telescope() -> ConfigList:
+    return await read_json(TELESCOPE_PATH)
+
+async def get_telescope_schema() -> Dict[str, AllowedValue]:
+    return await read_json(TELESCOPE_SCHEMA_PATH)
+
+async def save_telescope(observatory: List[Dict[str, AllowedValue]]):
+    await write_json(TELESCOPE_PATH, observatory)
 
 load_config()

@@ -11,6 +11,8 @@ import { getNextSunriseDate, getNextSunsetDate } from "../lib/astro/astro-utils"
 import PlanPage from "./plan/plan";
 import Configurator from './config/config';
 import ObservatoryConfig from "./config/observatory";
+import TelescopeConfig from "./config/telescope";
+
 import { apiService } from '../api/api';
 function App() {  
   
@@ -59,6 +61,8 @@ const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
           <Route path="plan" element={<PlanPage />} />
           <Route path="config" element={<Configurator />} />
           <Route path="config/observatory" element={ <ObservatoryConfig/> }/>
+          <Route path="config/telescope" element={ <TelescopeConfig/> }/>
+
         </Route>
         
       </Routes>

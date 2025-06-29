@@ -89,6 +89,25 @@ export class ApiService {
     });
   }
 
+  async getTelescope(): Promise<ConfigItems[]> {
+    return this.request<ConfigItems[]>('/config/telescope', {
+      method: 'GET'
+    });
+  }
+
+  async getTelescopeSchema(): Promise<Field[]> {
+    return this.request<Field[]>('/config/telescope/schema', {
+      method: 'GET'
+    });
+  }
+  async setTelescope(telescopeConfiguration : ConfigItems[]) : Promise<void> {
+    this.request<ConfigItems[]>('/config/telescope', {
+      method: 'POST',
+      body: JSON.stringify(telescopeConfiguration)
+    });
+  }
+
+
   // Exemple pour un GET générique
   async getSomething<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {

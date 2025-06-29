@@ -15,14 +15,14 @@
   },
   {
     "fieldName": "pixelsize",
-    "description": "Telescope focale",
+    "description": "Pixel size",
     "fieldType": "INPUT",
     "varType": "FLOAT",
     "defaultValue": 2.4
   },
   {
     "fieldName": "pixelsize",
-    "description": "Telescope focale",
+    "description": "AltAz",
     "fieldType": "CHECKBOX",
     "varType": "BOOL",
     "defaultValue": 0

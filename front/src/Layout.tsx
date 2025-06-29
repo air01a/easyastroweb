@@ -11,7 +11,9 @@ const RootLayout: React.FC = () => {
     { name: 'Catalog', href: '/catalog' },
     { name: 'Plan', href: '/plan' },
     { name: 'Config', href: '/config', matcher: 'exact' },
-    { name: 'Observatory', href:'/config/observatory',  matcher: 'exact'}
+    { name: 'Observatory', href:'/config/observatory',  matcher: 'exact'},
+        { name: 'Telescope', href:'/config/telescope',  matcher: 'exact'}
+
   ];
 
 
