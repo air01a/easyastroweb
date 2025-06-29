@@ -3,12 +3,12 @@ import SelectInput  from '../../design-system/inputs/select'
 import Input  from '../../design-system/inputs/input'
 import Checkbox  from '../../design-system/inputs/checkbox'
 
-import type {Field} from './dynamicform.type'
+import type {Field, FieldType} from './dynamicform.type'
 
 type Props = {
   formDefinition: Field[];
-  initialValues?: Record<string, any>;
-  onChange?: (values: Record<string, any>) => void;
+  initialValues?: Record<string, FieldType>;
+  onChange?: (values: Record<string, FieldType>) => void;
 };
 
 const DynamicForm: React.FC<Props> = ({
@@ -55,12 +55,14 @@ const DynamicForm: React.FC<Props> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   
-  const validate = (field: Field, value: any): string | null => {
+  const validate = (field: Field, value: string): string | null => {
+    console.log(field, value.length);
+    if (field.required===true && value.length===0) return "Parameter required"
     switch (field.varType) {
       case "INT":
-        return /^-?\d+$/.test(String(value)) ? null : "Entier attendu";
+        return /^-?\d*$/.test(String(value)) ? null : "Entier attendu";
       case "REAL":
-        return /^-?\d+(\.\d+)?$/.test(String(value)) ? null : "Nombre réel attendu";
+        return /^-?\d*(\.\d+)?$/.test(String(value)) ? null : "Nombre réel attendu";
       case "STR":
         return typeof value === "string" ? null : "Texte invalide";
       case "BOOL":
@@ -70,19 +72,18 @@ const DynamicForm: React.FC<Props> = ({
     }
   };
 
-  const handleChange = (field: Field, rawValue: any) => {
-    let value: any = rawValue;
+  const handleChange = (field: Field, rawValue: string) => {
+    let value: FieldType = rawValue;
 
     if (field.fieldType === "CHECKBOX") {
-      value = !!rawValue;
+      value = !!parseInt(rawValue);
     }
 
-    const error = validate(field, value);
+    const error = validate(field, rawValue);
     setErrors((prev) => ({ ...prev, [field.fieldName]: error || "" }));
-
     if (!error) {
-      if (field.varType === "INT") value = parseInt(value);
-      else if (field.varType === "REAL") value = parseFloat(value);
+      if (field.varType === "INT") value = parseInt(value as string)||0;
+      else if (field.varType === "REAL") value = parseFloat(value as string)||0.0;
       const newFormData = { ...formData, [field.fieldName]: value };
       setFormData(newFormData);
       onChange?.(newFormData);
@@ -95,7 +96,7 @@ const DynamicForm: React.FC<Props> = ({
   return (
     <form >
       {formDefinition.map((field) => {
-        const value = formData[field.fieldName];
+        const value = formData[field.fieldName] as string;
         const error = errors[field.fieldName];
 
         return (
@@ -126,8 +127,8 @@ const DynamicForm: React.FC<Props> = ({
             {field.fieldType === "CHECKBOX" && (
               <Checkbox
                 
-                checked={value}
-                onChange={(e) => handleChange(field, e.target.checked)}
+                checked={value==='1'}
+                onChange={(e) => handleChange(field, e.target.checked ? '1':'0')}
               />
             )}
 

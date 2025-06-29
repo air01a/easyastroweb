@@ -4,70 +4,81 @@
     "description": "Fits process directory",
     "fieldType": "INPUT",
     "varType": "STR",
-    "defaultValue": ""
+    "defaultValue": "",
+    "required":false
   },
   {
     "fieldName": "fits_batch_size",
     "description": "Number of fits files to perform stacking with sigma clipping",
     "fieldType": "INPUT",
     "varType": "INT",
-    "defaultValue": 40
+    "defaultValue": 40,
+    "required":true
+
   },
   {
     "fieldName": "initial_batch_size",
     "description": "Perfom live stacking without sigma clipping on first images",
     "fieldType": "INPUT",
     "varType": "INT",
-    "defaultValue": 20
+    "defaultValue": 20,
+    "required":true
   },
   {
     "fieldName": "astap_max_stars",
     "description": "Maximum of stars to use with Astap for plate solving",
     "fieldType": "INPUT",
     "varType": "STR",
-    "defaultValue": 400
+    "defaultValue": 400,
+    "required":true
   },
   {
     "fieldName": "astap_downsample_factor",
     "description": "Astap downsample factor",
     "fieldType": "INPUT",
     "varType": "INT",
-    "defaultValue": 0
+    "defaultValue": 0,
+    "required":false
   },  
   {
     "fieldName": "astap_default_search_radius",
     "description": "Astap default search radius (search around fit dec and ad coordinates for PS)",
     "fieldType": "INPUT",
     "varType": "INT",
-    "defaultValue": "0"
+    "defaultValue": 10,
+    "required":true
   },
   {
     "fieldName": "ASCOM_server_ip",
     "description": "ASCOM server IP",
     "fieldType": "INPUT",
     "varType": "STR",
-    "defaultValue": "127.0.0.1"
+    "defaultValue": "127.0.0.1",
+    "required":true
   },
   {
     "fieldName": "ASCOM_server_port",
     "description": "ASCOM server IP port",
     "fieldType": "INPUT",
     "varType": "INT",
-    "defaultValue": 11111
+    "defaultValue": 11111,
+    "required":true
   },
   {
     "fieldName": "server_ip",
     "description": "server IP ",
     "fieldType": "INPUT",
     "varType": "STR",
-    "defaultValue": "127.0.0.1"
+    "defaultValue": "127.0.0.1",
+    "required":true
   },
   {
     "fieldName": "server_port",
     "description": "server Port",
     "fieldType": "INPUT",
     "varType": "INT",
-    "defaultValue": 8000
+    "defaultValue": 8000,
+    "required":true
   }
 
 

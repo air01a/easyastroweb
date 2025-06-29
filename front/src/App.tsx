@@ -10,8 +10,8 @@ import CatalogPage from "./catalog/catalog";
 import { getNextSunriseDate, getNextSunsetDate } from "../lib/astro/astro-utils";
 import PlanPage from "./plan/plan";
 import Configurator from './config/config';
-import { apiService } from '../api/api'
-
+import ObservatoryConfig from "./config/observatory";
+import { apiService } from '../api/api';
 function App() {  
   
 const isLoaded = useCatalogStore((state) => state.isLoaded);
@@ -49,7 +49,7 @@ const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
   }, [isLoaded, updateCatalog, isObserverLoaded, initializeObserver]);
 
 
-
+   
   return (
     <BrowserRouter>
       <Routes>
@@ -58,6 +58,7 @@ const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
           <Route path="catalog" element={<CatalogPage />} />
           <Route path="plan" element={<PlanPage />} />
           <Route path="config" element={<Configurator />} />
+          <Route path="config/observatory" element={ <ObservatoryConfig/> }/>
         </Route>
         
       </Routes>

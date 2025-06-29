@@ -63,9 +63,21 @@ export class ApiService {
     });
   }
 
-
   async getConfigScheme(): Promise<Field[]> {
     return this.request<Field[]>('/config/scheme', {
+      method: 'GET'
+    });
+  }
+
+  
+  async getObservatory() : Promise<ConfigItems[]> {
+    return this.request<ConfigItems[]>('/config/observatory', {
+      method: 'GET'
+    });
+  }
+
+  async getObservatoryScheme(): Promise<Field[]> {
+    return this.request<Field[]>('/config/observatory/schema', {
       method: 'GET'
     });
   }

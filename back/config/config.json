@@ -1,10 +1,12 @@
 {
-    "fits_process_dir": "test342",
-    "fits_batch_size": 40,
-    "initial_batch_size": 20,
+    "fits_process_dir": "",
+    "fits_batch_size": 20,
+    "initial_batch_size": 40,
     "astap_max_stars": 400,
     "astap_downsample_factor": 0,
     "astap_default_search_radius": "0",
     "ASCOM_server_ip": "127.0.0.1",
-    "ASCOM_server_port": 11111
+    "ASCOM_server_port": 11111,
+    "server_ip": "127.0.0.1",
+    "server_port": 8000
 }

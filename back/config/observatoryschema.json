@@ -1,0 +1,32 @@
+[
+  {
+    "fieldName": "name",
+    "description": "Observatory Name",
+    "fieldType": "INPUT",
+    "varType": "STR",
+    "defaultValue": "",
+    "required": true
+  },
+  {
+    "fieldName": "longitude",
+    "description": "Site longitude",
+    "fieldType": "INPUT",
+    "varType": "FLOAT",
+    "defaultValue": 0.0
+  },
+  {
+    "fieldName": "latitude",
+    "description": "Site Latitude",
+    "fieldType": "INPUT",
+    "varType": "FLOAT",
+    "defaultValue": 0.0
+  },
+  {
+    "fieldName": "altitude",
+    "description": "Site Altitude",
+    "fieldType": "INPUT",
+    "varType": "FLOAT",
+    "defaultValue": 0.0
+  }
+]
+

@@ -24,7 +24,16 @@ export async function getBinaryFile(filePath: string): Promise<Buffer | null> {
   try {
     const data = await fs.readFile(filePath);
     return data;
-  } catch (error) {
+  } catch {
      return null;
   }
+}
+
+export function generateRandomName(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routes import api_router
 from services import config
 
-
+from contextlib import asynccontextmanager
 
 
 
@@ -24,6 +24,9 @@ app.add_middleware(
 
 # Inclusion du router principal
 app.include_router(api_router, prefix="/api/v1")
+
+
+
 
 @app.get("/")
 async def root():
