@@ -20,8 +20,11 @@ const ObservatoryConfig = () => {
         loadObservatory();
     },[])
 
-    const handleEdit = (item: ConfigItems[]) => {
-        alert(`Éditer: ${item}`);
+    const handleEdit = async (items: ConfigItems[]) => {
+        apiService.setObservatory(items);
+        const obs = await apiService.getObservatory();
+        setItems(obs);
+
     };
 
 

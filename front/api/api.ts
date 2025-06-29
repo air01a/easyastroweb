@@ -76,6 +76,13 @@ export class ApiService {
     });
   }
 
+  async setObservatory(observatoryConfiguration : ConfigItems[]) : Promise<void> {
+    this.request<ConfigItems[]>('/config/observatory', {
+      method: 'POST',
+      body: JSON.stringify(observatoryConfiguration)
+    });
+  }
+
   async getObservatoryScheme(): Promise<Field[]> {
     return this.request<Field[]>('/config/observatory/schema', {
       method: 'GET'

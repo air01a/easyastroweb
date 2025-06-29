@@ -25,7 +25,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit  }) => {
 
   const [currentItems, setCurrentItems] = useState<ConfigItems[]> ([]);
   const [edit, setEdit] = useState<string | null>(null);
-
+  const [currentEdit, setCurrentEdit] = useState<ConfigItems|null>(null);
 
   useEffect(()=> {
     setCurrentItems(items);
@@ -40,21 +40,21 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit  }) => {
     setEdit(id.name as string || null);
   }
 
-  const handleSave = (updatedItem : ConfigItems) => {
+  const handleSave = async (updatedItem : ConfigItems|null, index:number) => {
  
-
-        const newItems = items.map((item) =>
-                            item.name === updatedItem.name ? updatedItem : item
+        if (updatedItem===null) return;
+        const newItems = items.map((item, newindex) =>
+                            index === newindex ? updatedItem : item
                         );
-        onEdit(newItems);
+        await onEdit(newItems);
         setEdit(null);
   }
 
-  const handleDelete = (deletedItem : ConfigItems) => {
+  const handleDelete = async (deletedItem : ConfigItems) => {
     if (confirm(`Supprimer: ${deletedItem.name} ?`)) {
         const newItems = items.filter((item) => item.name !== deletedItem.name);
 
-        onEdit(newItems);
+        await onEdit(newItems);
         setEdit(null);
     }
   }
@@ -65,6 +65,10 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit  }) => {
     setEdit(name)
   }
 
+  const dynamicFormChange = (change : ConfigItems) => {
+
+    setCurrentEdit(change);
+  }
 
   return (
     <div className="flex flex-col items-center space-y-4">
@@ -103,7 +107,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit  }) => {
               </button>
             </div>
             { isEdit ? (
-                <div><DynamicForm  formDefinition={formLayout} initialValues={item}/> <Button onClick={() => {handleSave(item)}}>Enregister</Button></div>
+                <div><DynamicForm  onChange={dynamicFormChange} formDefinition={formLayout} initialValues={item}/> <Button onClick={() => {handleSave(currentEdit, index)}}>Enregister</Button></div>
              ) : ( 
                 <div>
                     <h3 className="text-lg font-semibold">{item.name}</h3>

@@ -1,18 +1,18 @@
 [
-    { 
-        "name":"Wasquehal",
+    {
+        "name": "Wasquehal",
         "longitude": 3.14,
         "latitude": 2.4,
         "altitude": 30
     },
-    { 
-        "name":"Crouesty",
+    {
+        "name": "Crouesty",
         "longitude": 2.14,
         "latitude": 2.1,
         "altitude": 0
     },
-    { 
-        "name":"Montreal",
+    {
+        "name": "Montreal",
         "longitude": 1.2,
         "latitude": 2.4,
         "altitude": 30

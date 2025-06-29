@@ -68,4 +68,7 @@ async def get_observatory() -> ConfigList:
 async def get_observatory_schema() -> Dict[str, AllowedValue]:
     return await read_json(OBSERVATORY_SCHEMA_PATH)
 
+async def save_observatory(observatory: List[Dict[str, AllowedValue]]):
+    await write_json(OBSERVATORY_PATH, observatory)
+
 load_config()
