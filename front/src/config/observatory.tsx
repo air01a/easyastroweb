@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 //import type { Field } from "../../components/forms/dynamicform.type";
 import type {  ConfigItems } from '../../store/config.type';
 import type { Field } from '../../components/forms/dynamicform.type';
-
+import { ObservatoryCard } from '../../components/observatory/observatoryCard';
 const ObservatoryConfig = () => {
     const [items, setItems] = useState<ConfigItems[]>([]);
     const [layout, setLayout] = useState<Field[]>([]);
@@ -29,7 +29,7 @@ const ObservatoryConfig = () => {
 
 
 
-    return ( <ObservatoryList items={items}  onEdit={handleEdit} formLayout={layout}/>)
+    return ( <ObservatoryList items={items}  onEdit={handleEdit} formLayout={layout} CardComponent={ObservatoryCard}/>)
 
 }
 

@@ -11,16 +11,14 @@ export type Props = {
     items: ConfigItems[];
     onEdit: (item: ConfigItems[]) => void;
     formLayout : Field[];
+    CardComponent: React.ComponentType<{ item: ConfigItems }>;
 }
 const colors = [
-  "bg-red-200",
-  "bg-green-200",
-  "bg-blue-200",
-  "bg-yellow-200",
-  "bg-purple-200",
+  "bg-blue-400",
+  "bg-blue-600",
 ];
 
-const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit  }) => {
+const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardComponent  }) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const [currentItems, setCurrentItems] = useState<ConfigItems[]> ([]);
@@ -109,10 +107,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit  }) => {
             { isEdit ? (
                 <div><DynamicForm  onChange={dynamicFormChange} formDefinition={formLayout} initialValues={item}/> <Button onClick={() => {handleSave(currentEdit, index)}}>Enregister</Button></div>
              ) : ( 
-                <div>
-                    <h3 className="text-lg font-semibold">{item.name}</h3>
-                    <p className="text-gray-700">{item.longitude} / {item.latitude} / { item.altitude }</p>
-                </div>)
+                <CardComponent item={item}/>)
             }
           </div>
         );
