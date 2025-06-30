@@ -27,6 +27,57 @@
     "fieldType": "INPUT",
     "varType": "FLOAT",
     "defaultValue": 0.0
+  },
+  {
+    "fieldName": "default",
+    "description": "Is default",
+    "fieldType": "CHECKBOX",
+    "varType": "BOOL",
+    "defaultValue": 0
+  },
+  {
+    "fieldName": "visibility",
+    "description" :"Set visibility",
+    "fieldType": "CIRCULAR",
+    "varType" : "BOOLARRAY",
+    "defaultValue": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+    ]
   }
 ]
 

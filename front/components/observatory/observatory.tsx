@@ -14,8 +14,8 @@ export type Props = {
     CardComponent: React.ComponentType<{ item: ConfigItems }>;
 }
 const colors = [
-  "bg-blue-400",
-  "bg-blue-600",
+  "bg-gray-400",
+  "bg-gray-600",
 ];
 
 const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardComponent  }) => {
@@ -24,6 +24,8 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
   const [currentItems, setCurrentItems] = useState<ConfigItems[]> ([]);
   const [edit, setEdit] = useState<string | null>(null);
   const [currentEdit, setCurrentEdit] = useState<ConfigItems|null>(null);
+  const [hasError, setHasError] = useState<boolean>(false);
+
 
   useEffect(()=> {
     setCurrentItems(items);
@@ -39,7 +41,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
   }
 
   const handleSave = async (updatedItem : ConfigItems|null, index:number) => {
- 
+        if (hasError) return; 
         if (updatedItem===null) return;
         const newItems = items.map((item, newindex) =>
                             index === newindex ? updatedItem : item
@@ -63,8 +65,8 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
     setEdit(name)
   }
 
-  const dynamicFormChange = (change : ConfigItems) => {
-
+  const dynamicFormChange = (change : ConfigItems, error: boolean) => {
+    setHasError(error);
     setCurrentEdit(change);
   }
 
@@ -105,7 +107,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
               </button>
             </div>
             { isEdit ? (
-                <div><DynamicForm  onChange={dynamicFormChange} formDefinition={formLayout} initialValues={item}/> <Button onClick={() => {handleSave(currentEdit, index)}}>Enregister</Button></div>
+                <div><DynamicForm  onChange={dynamicFormChange} formDefinition={formLayout} initialValues={item}/> <Button disabled={hasError} onClick={() => {handleSave(currentEdit, index)}}>Enregister</Button></div>
              ) : ( 
                 <CardComponent item={item}/>)
             }

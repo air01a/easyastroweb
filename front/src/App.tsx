@@ -9,11 +9,12 @@ import {  useEffect } from "react";
 import CatalogPage from "./catalog/catalog";
 import { getNextSunriseDate, getNextSunsetDate } from "../lib/astro/astro-utils";
 import PlanPage from "./plan/plan";
-import Configurator from './config/config';
-import ObservatoryConfig from "./config/observatory";
-import TelescopeConfig from "./config/telescope";
+import ConfigDashboard from './config/config';
+import ObservatoryConfig from "./config/observatories";
+import TelescopeConfig from "./config/telescopes";
 
 import { apiService } from '../api/api';
+import GeneralConfig from "./config/general";
 function App() {  
   
 const isLoaded = useCatalogStore((state) => state.isLoaded);
@@ -59,9 +60,10 @@ const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
           <Route index element={<Home />} />
           <Route path="catalog" element={<CatalogPage />} />
           <Route path="plan" element={<PlanPage />} />
-          <Route path="config" element={<Configurator />} />
-          <Route path="config/observatory" element={ <ObservatoryConfig/> }/>
-          <Route path="config/telescope" element={ <TelescopeConfig/> }/>
+          <Route path="config" element={<ConfigDashboard />} />
+          <Route path="config/observatories" element={ <ObservatoryConfig/> }/>
+          <Route path="config/telescopes" element={ <TelescopeConfig/> }/>
+          <Route path="config/general" element={<GeneralConfig />} />
 
         </Route>
         

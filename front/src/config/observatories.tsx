@@ -8,7 +8,7 @@ import { ObservatoryCard } from '../../components/observatory/observatoryCard';
 const ObservatoryConfig = () => {
     const [items, setItems] = useState<ConfigItems[]>([]);
     const [layout, setLayout] = useState<Field[]>([]);
-
+    
     useEffect(() => {
         const loadObservatory = async () => {
             const obs = await apiService.getObservatory();

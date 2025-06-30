@@ -1,80 +1,49 @@
-import  DynamicForm  from "../../components/forms/dynamicform";
-import type { Field } from "../../components/forms/dynamicform.type";
-import CircularButtonSelection from "../../components/forms/circularbutton";
-import { useEffect, useState } from "react";
-import { useConfigStore, useCatalogStore} from "../../store/store";
-import {loadCatalog} from "../../lib/astro/catalog/catalog";
-import { FlashMessage } from "../../design-system/messages/flashmessages";
-import { apiService } from '../../api/api';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Settings, Telescope, MapPin } from "lucide-react";
 
-export default function Configurator() {
-    const [formDefinition, setFormDefinition] = useState<Field[]>([]);
-    const [initialValues, setInitialValues] = useState({});
-    const updateCatalog = useCatalogStore((state) => state.updateCatalog);
-    const [message, setMessage] = useState<string>("");
-    const { config, setConfig, setAzimuth, getAzimuth } = useConfigStore();
+const ConfigDashboard: React.FC = () => {
+  const navigate = useNavigate();
 
+  const cards = [
+    {
+      title: "Configuration Générale",
+      description: "Modifier les paramètres globaux de l'application.",
+      icon: <Settings className="w-8 h-8 text-blue-600" />,
+      route: "/config/general",
+    },
+    {
+      title: "Télescopes",
+      description: "Configurer les différents télescopes.",
+      icon: <Telescope className="w-8 h-8 text-green-600" />,
+      route: "/config/telescopes",
+    },
+    {
+      title: "Lieux d'observation",
+      description: "Gérer les sites d'observation.",
+      icon: <MapPin className="w-8 h-8 text-purple-600" />,
+      route: "/config/observatories",
+    },
+  ];
 
-    const init=config;
-    useEffect(() => {
-        const  fetchData =async () => {
-            const data = await apiService.getConfigScheme()
-            const formDefinition = data ? await data :[];
-            setFormDefinition(formDefinition);
-            setInitialValues(config);
-            console.log(formDefinition)
-        }
-        fetchData();
-    },[])
-
-    const [compassSelection, setCompassSelection] = useState<boolean[]>(
-        getAzimuth()
-    );
-
-    const handleCallback = (name: string, values: boolean[]) => {
-        setCompassSelection(values);
-    };
-
-    const  onSave = async () => {
-        setConfig(initialValues)
-        apiService.sendConfig(initialValues)
-        setAzimuth(compassSelection);
-        updateCatalog(await loadCatalog(compassSelection));
-        setMessage("Configuration saved")
-    }
-
-    return (<div>
-        <DynamicForm formDefinition={formDefinition } initialValues={init}
-            onChange={(values) => setInitialValues(values)}
-        />
-        <CircularButtonSelection
-            name="compass"
-            callBack={handleCallback}
-            selectedButtons={compassSelection}
-      /> 
-              
-              
-    <div className="flex flex-col justify-center  items-center">
-        <button
-          type="submit"
-          className="bg-white text-black px-4 py-2 rounded"
-          onClick={()=> {onSave()}}
-        >
-          Enregistrer
-        </button>
-        {message.length>1 && (
-        
-                <FlashMessage
-                    type="success"
-                    message="Configuration sauvegardée avec succès !"
-                    onClose={() => setMessage("")}
-                    duration={3000} 
-                />
-
-      )}
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-top p-6 space-y-6">
+      <h1 className="text-2xl font-bold mb-4">Configuration</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
+        {cards.map((card) => (
+          <div
+            key={card.route}
+            onClick={() => navigate(card.route)}
+            className="cursor-pointer bg-white rounded-lg shadow hover:shadow-lg transition p-6 flex flex-col items-center text-center border border-gray-200 hover:border-blue-400"
+          >
+            {card.icon}
+            <h2 className="text-lg font-semibold mt-2">{card.title}</h2>
+            <p className="text-gray-600 mt-1">{card.description}</p>
+          </div>
+        ))}
       </div>
-        </div>
+    </div>
+  );
+};
 
-        
-    )
-}
+export default ConfigDashboard; 

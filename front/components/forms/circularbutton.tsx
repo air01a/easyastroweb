@@ -24,14 +24,18 @@ const CircularButton: React.FC<CircularButtonProps> = ({ isSelected, onTap, labe
 
 interface CircularButtonSelectionProps {
   name: string;
-  callBack: (name: string, values: boolean[]) => void;
+  callBack?: (name: string, values: boolean[]) => void;
   selectedButtons: boolean[];
+  editable?: boolean ;
+  miniature? : boolean;
 }
 
 const CircularButtonSelection: React.FC<CircularButtonSelectionProps> = ({
   name,
   callBack,
-  selectedButtons: initialSelectedButtons
+  selectedButtons: initialSelectedButtons,
+  editable = true,
+  miniature = false
 }) => {
   const [selectedButtons, setSelectedButtons] = useState<boolean[]>(initialSelectedButtons);
 
@@ -43,7 +47,7 @@ const CircularButtonSelection: React.FC<CircularButtonSelectionProps> = ({
     setSelectedButtons(prev => {
       const newState = [...prev];
       newState[index] = !newState[index];
-      callBack(name, newState);
+      if (callBack) callBack(name, newState);
       return newState;
     });
   };
@@ -59,11 +63,11 @@ const CircularButtonSelection: React.FC<CircularButtonSelectionProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-center min-h-50 min-w-50">
-      <div className="relative w-[400px] h-[420px]">
+    <div className={`flex items-center justify-center ${miniature ? "min-h-20 min-w-20": "min-h-50 min-w-50"}`}>
+      <div className={`relative ${miniature?"w-[200px] h-[200px]": "w-[400px] h-[420px]"}`}>
         {Array.from({ length: 36 }, (_, index) => {
           const angle = index * 10 - 90; // Adjusting angle for compass orientation
-          const radius = 160;
+          const radius = miniature? 80 : 160;
           const radian = (angle * Math.PI) / 180;
           
           const x = radius * Math.cos(radian);
@@ -81,8 +85,12 @@ const CircularButtonSelection: React.FC<CircularButtonSelectionProps> = ({
             >
               <CircularButton
                 isSelected={selectedButtons[index]}
-                onTap={() => toggleButton(index)}
-                label={getLabel(index)}
+                onTap={() => {
+                  if (editable) toggleButton(index);
+
+                  }
+                }
+                label={miniature? '' : getLabel(index)}
               />
             </div>
           );
