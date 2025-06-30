@@ -21,8 +21,8 @@ const ObservatoryConfig = () => {
     },[])
 
     const handleEdit = async (items: ConfigItems[]) => {
-        apiService.setObservatory(items);
-        const obs = await apiService.getObservatory();
+        apiService.setTelescope(items);
+        const obs = await apiService.getTelescope();
         setItems(obs);
 
     };

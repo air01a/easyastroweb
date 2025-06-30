@@ -9,8 +9,9 @@ import { generateRandomName } from "../../lib/fsutils";
 
 export type Props = {
     items: ConfigItems[];
-    onEdit: (item: ConfigItems[]) => void;
+    onEdit?: (item: ConfigItems[]) => void;
     formLayout : Field[];
+    editable?: boolean;
     CardComponent: React.ComponentType<{ item: ConfigItems }>;
 }
 const colors = [
@@ -18,7 +19,7 @@ const colors = [
   "bg-gray-600",
 ];
 
-const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardComponent  }) => {
+const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardComponent, editable=true  }) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const [currentItems, setCurrentItems] = useState<ConfigItems[]> ([]);
@@ -26,7 +27,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
   const [currentEdit, setCurrentEdit] = useState<ConfigItems|null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
 
-
+  console.log(editable);
   useEffect(()=> {
     setCurrentItems(items);
   },[items]);
@@ -46,7 +47,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
         const newItems = items.map((item, newindex) =>
                             index === newindex ? updatedItem : item
                         );
-        await onEdit(newItems);
+        if (onEdit) onEdit(newItems);
         setEdit(null);
   }
 
@@ -54,7 +55,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
     if (confirm(`Supprimer: ${deletedItem.name} ?`)) {
         const newItems = items.filter((item) => item.name !== deletedItem.name);
 
-        await onEdit(newItems);
+        if (onEdit)  onEdit(newItems);
         setEdit(null);
     }
   }
@@ -84,6 +85,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
               ${isSelected ? "ring-4 ring-blue-500" : "hover:ring-2 hover:ring-blue-300"}
             `}
           >
+            {editable && (
             <div className="absolute top-2 right-2 flex space-x-2">
               <button
                 onClick={(e) => {
@@ -106,6 +108,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
                 <Trash className="w-5 h-5 text-red-600" />
               </button>
             </div>
+            )}
             { isEdit ? (
                 <div><DynamicForm  onChange={dynamicFormChange} formDefinition={formLayout} initialValues={item}/> <Button disabled={hasError} onClick={() => {handleSave(currentEdit, index)}}>Enregister</Button></div>
              ) : ( 
@@ -114,7 +117,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
           </div>
         );
       })}
-        <Button onClick={handleAdd}>Add</Button>
+         {editable && (<Button onClick={handleAdd}>Add</Button>) }
 
     </div>
   );

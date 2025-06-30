@@ -29,7 +29,7 @@ const ObservatoryConfig = () => {
 
 
 
-    return ( <ObservatoryList items={items}  onEdit={handleEdit} formLayout={layout} CardComponent={ObservatoryCard}/>)
+    return ( <ObservatoryList items={items}  editable={false} onEdit={handleEdit} formLayout={layout} CardComponent={ObservatoryCard}/>)
 
 }
 
