@@ -3,7 +3,7 @@ import { persist, createJSONStorage  } from 'zustand/middleware'
 import type {Field} from '../components/forms/dynamicform.type'
 import { create } from 'zustand'
 import type { CatalogStore, ObserverStore, WebSocketState, ConfigStore } from './store.type';
-import type { ConfigItem } from './config.type';
+import type { ConfigItem, ConfigItems } from './config.type';
 
 
 export const useCatalogStore = create<CatalogStore>()(
@@ -41,17 +41,17 @@ export const useCatalogStore = create<CatalogStore>()(
 export const useObserverStore = create<ObserverStore>()(
   persist(
     (set) => ({
-      latitude: 0,
-      longitude: 0,
       isLoaded: false,
       date: new Date(),
       sunSet: new Date(),
       sunRise: new Date(),
+      telescope: {},
+      observatory : {},
 
-      initializeObserver: (latitude: number, longitude: number, date: Date, sunSet: Date, sunRise: Date) =>
+      initializeObserver: (telescope: ConfigItems, observatory: ConfigItems, date: Date, sunSet: Date, sunRise: Date) =>
         set({
-          latitude,
-          longitude,
+          telescope,
+          observatory,
           date,
           sunSet,
           sunRise,
@@ -59,13 +59,13 @@ export const useObserverStore = create<ObserverStore>()(
         }),
 
       resetObserver: () =>
-        set({ latitude: 0, longitude: 0, date: new Date(), isLoaded: false }),
+        set({ telescope: {}, observatory: {}, date: new Date(), isLoaded: false }),
     }),
     {
       name: 'observer-storage',
       partialize: (state) => ({
-        latitude: state.latitude,
-        longitude: state.longitude,
+        observatory: state.observatory,
+        telescope: state.telescope,
         date: state.date,
         isLoaded: state.isLoaded,
         sunRise: state.sunRise,
@@ -158,7 +158,6 @@ export const useConfigStore = create<ConfigStore>()(
     (set, get) => ({
       config: {},
       configScheme: [],
-      azimuthSelection: new Array(36).fill(true),
      // defaultConfig: {}
   
       setConfig: (newConfig : Record<string,ConfigItem>) => {
@@ -170,14 +169,7 @@ export const useConfigStore = create<ConfigStore>()(
         set({configScheme})
       },
 
-      setAzimuth: (azimuth: boolean[]) => {
-        set ({azimuthSelection: azimuth});
-      },
-
-      getAzimuth:() => {
-        return get().azimuthSelection;
-      },
-
+      
 
     getItem: (name:string) => {
       if (name in get().config) {

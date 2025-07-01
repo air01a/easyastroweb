@@ -1,6 +1,6 @@
 import type { CatalogItem } from "../lib/astro/catalog/catalog.type"
 import type {Field} from '../components/forms/dynamicform.type'
-import type { ConfigItem } from "./config.type"
+import type { ConfigItem, ConfigItems } from "./config.type"
 export type CatalogStore = {
   catalog: CatalogItem[]
   isLoaded: boolean
@@ -11,14 +11,13 @@ export type CatalogStore = {
 
 
 export type ObserverStore = {
-  latitude: number
-  longitude: number
   date: Date
   sunSet: Date
   sunRise: Date
   isLoaded: boolean
-
-  initializeObserver: (latitude: number, longitude: number, date: Date, sunSet: Date, sunRise: Date) =>void,
+  telescope: ConfigItems;
+  observatory : ConfigItems;
+  initializeObserver: (telescope: ConfigItems, observatory: ConfigItems , date: Date, sunSet: Date, sunRise: Date) =>void,
 
 
   resetObserver: () => void
@@ -38,11 +37,9 @@ export type WebSocketState = {
 export type ConfigStore = {
   config: Record<string, ConfigItem>
   configScheme : Field[]
-  azimuthSelection: boolean[]
   setConfig: (config:Record<string,ConfigItem>) => void,
   setConfigScheme: (configScheme:Field[]) => void,
-  setAzimuth: (azimuth: boolean[]) =>void,
-  getAzimuth: () =>boolean[],
+
   getItem:(name:string) => ConfigItem | undefined
   
 }

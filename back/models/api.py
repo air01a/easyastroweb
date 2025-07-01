@@ -13,3 +13,6 @@ ConfigAllowedValue = Union[str, int, float, bool, List[bool]]
 
 ConfigPayload = Dict[str, ConfigAllowedValue]
 
+class KeyValuePayload(BaseModel):
+    key: str
+    value: ConfigAllowedValue

@@ -6,6 +6,7 @@ import DynamicForm from "../forms/dynamicform";
 import type { Field } from "../forms/dynamicform.type";
 import Button from "../../design-system/buttons/main";
 import { generateRandomName } from "../../lib/fsutils";
+import Swal from "sweetalert2";
 
 export type Props = {
     items: ConfigItems[];
@@ -13,28 +14,41 @@ export type Props = {
     formLayout : Field[];
     editable?: boolean;
     CardComponent: React.ComponentType<{ item: ConfigItems }>;
+    selectedName? : string | null;
+    onSelect?: (item: ConfigItems) => void;
 }
 const colors = [
-  "bg-gray-400",
-  "bg-gray-600",
+  "bg-gray-100",
+  "bg-blue-100",
 ];
 
-const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardComponent, editable=true  }) => {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardComponent, editable=true, selectedName=null, onSelect }) => {
+  const [selectedId, setSelectedId] = useState<string | null>(selectedName);
 
   const [currentItems, setCurrentItems] = useState<ConfigItems[]> ([]);
   const [edit, setEdit] = useState<string | null>(null);
   const [currentEdit, setCurrentEdit] = useState<ConfigItems|null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
 
-  console.log(editable);
   useEffect(()=> {
     setCurrentItems(items);
   },[items]);
 
   
   const handleSelect = (id: ConfigItems) => {
-    setSelectedId(id.name as string);
+    if (edit) return;
+
+    Swal.fire({
+      title: "Do you want to change ?",
+      showCancelButton: true,
+      confirmButtonText: "Change",
+      denyButtonText: `Don't Change`
+    }).then((result) => {
+      if (result.isConfirmed){
+        setSelectedId(id.name as string);
+        if(onSelect) onSelect(id);
+      }
+    });
   };
 
   const handleEdit = (id:ConfigItems)=> {
@@ -42,28 +56,44 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
   }
 
   const handleSave = async (updatedItem : ConfigItems|null, index:number) => {
+    console.log(hasError, updatedItem, onEdit)
         if (hasError) return; 
         if (updatedItem===null) return;
-        const newItems = items.map((item, newindex) =>
+        const newItems = currentItems.map((item, newindex) =>
                             index === newindex ? updatedItem : item
                         );
+        console.log(newItems);
         if (onEdit) onEdit(newItems);
         setEdit(null);
   }
 
   const handleDelete = async (deletedItem : ConfigItems) => {
-    if (confirm(`Supprimer: ${deletedItem.name} ?`)) {
-        const newItems = items.filter((item) => item.name !== deletedItem.name);
+    Swal.fire({
+          title: "Are you sure?",
+          text: "You won't be able to revert this!",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, delete it!"
+        }).then((result) => {        
+          if (result.isConfirmed) {
+            const newItems = items.filter((item) => item.name !== deletedItem.name);
+            if (onEdit)  onEdit(newItems);
+            setEdit(null);
+          }
+        });
 
-        if (onEdit)  onEdit(newItems);
-        setEdit(null);
-    }
   }
 
   const handleAdd = () => {
     const name = generateRandomName();
-    setCurrentItems([...currentItems,{name, altitude: 0, longitude:0, latitude:0}]);
+    const newItem : ConfigItems = {};
+    formLayout.forEach((element)=>newItem[element.fieldName]=element.defaultValue);
+    newItem["name"]= name;
+    setCurrentItems([...currentItems,newItem]);
     setEdit(name)
+    setCurrentEdit(newItem)
   }
 
   const dynamicFormChange = (change : ConfigItems, error: boolean) => {

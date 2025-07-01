@@ -12,28 +12,31 @@
     "description": "Site longitude",
     "fieldType": "INPUT",
     "varType": "FLOAT",
-    "defaultValue": 0.0
+    "defaultValue": 0.0,
+    "required": true
   },
   {
     "fieldName": "latitude",
     "description": "Site Latitude",
     "fieldType": "INPUT",
     "varType": "FLOAT",
-    "defaultValue": 0.0
+    "defaultValue": 0.0,
+    "required": true
   },
   {
     "fieldName": "altitude",
     "description": "Site Altitude",
     "fieldType": "INPUT",
     "varType": "FLOAT",
-    "defaultValue": 0.0
+    "defaultValue": 0.0,
+    "required": true
   },
   {
     "fieldName": "default",
     "description": "Is default",
     "fieldType": "CHECKBOX",
     "varType": "BOOL",
-    "defaultValue": 0
+    "defaultValue": false
   },
   {
     "fieldName": "visibility",

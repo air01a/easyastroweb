@@ -71,40 +71,72 @@ export class ApiService {
 
   
   async getObservatory() : Promise<ConfigItems[]> {
-    return this.request<ConfigItems[]>('/config/observatory', {
+    return this.request<ConfigItems[]>('/observatories', {
       method: 'GET'
     });
   }
 
   async setObservatory(observatoryConfiguration : ConfigItems[]) : Promise<void> {
-    this.request<ConfigItems[]>('/config/observatory', {
+    this.request<ConfigItems[]>('/observatories', {
       method: 'POST',
       body: JSON.stringify(observatoryConfiguration)
     });
   }
 
+
+  async setCurrentObservatory(observatory : string) : Promise<void> {
+      this.request<ConfigItems[]>('/observatories/current', {
+        method: 'PUT',
+        body: JSON.stringify({observatory})
+      });
+  }
+
   async getObservatoryScheme(): Promise<Field[]> {
-    return this.request<Field[]>('/config/observatory/schema', {
+    return this.request<Field[]>('/observatories/schema', {
+      method: 'GET'
+    });
+  }
+
+  async getCurrentObservatory(): Promise<ConfigItems> {
+    return this.request<ConfigItems>('/observatories/current', {
       method: 'GET'
     });
   }
 
   async getTelescope(): Promise<ConfigItems[]> {
-    return this.request<ConfigItems[]>('/config/telescope', {
+    return this.request<ConfigItems[]>('/telescopes', {
       method: 'GET'
     });
   }
 
   async getTelescopeSchema(): Promise<Field[]> {
-    return this.request<Field[]>('/config/telescope/schema', {
+    return this.request<Field[]>('/telescopes/schema', {
       method: 'GET'
     });
+
+
   }
   async setTelescope(telescopeConfiguration : ConfigItems[]) : Promise<void> {
-    this.request<ConfigItems[]>('/config/telescope', {
+    this.request<ConfigItems[]>('/telescopes', {
       method: 'POST',
       body: JSON.stringify(telescopeConfiguration)
     });
+  }
+
+
+  async getCurrentTelescope(): Promise<ConfigItems> {
+    return this.request<ConfigItems>('/telescopes/current', {
+      method: 'GET'
+    });
+  }
+
+
+  async setCurrentTelescope(telescope: string): Promise<void> {
+    this.request<ConfigItems>('/telescopes/current', {
+      method: 'PUT',
+      body: JSON.stringify({telescope})
+    });
+
   }
 
 

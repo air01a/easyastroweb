@@ -92,9 +92,9 @@
     {
         "name": "Montreal",
         "longitude": 1.2,
-        "latitude": 2.4,
+        "latitude": 2.1,
         "altitude": 30,
-        "default": 0,
+        "default": false,
         "visibility": [
             true,
             true,
@@ -107,7 +107,7 @@
             false,
             false,
             false,
-            true,
+            false,
             true,
             true,
             true,

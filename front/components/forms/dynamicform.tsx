@@ -78,7 +78,8 @@ const DynamicForm: React.FC<Props> = ({
     let value: FieldType = rawValue;
 
     if (field.fieldType === "CHECKBOX") {
-      value = !!parseInt(rawValue);
+      value = rawValue==="1"?true:false;
+      console.log("value", value)
     }
 
     const error = validate(field, rawValue);

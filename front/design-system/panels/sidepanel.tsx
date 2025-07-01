@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 type SidePanelProps = {
   isOpen: boolean;
@@ -8,7 +8,6 @@ type SidePanelProps = {
 
 export default function ResizableSidePanel({ isOpen, onClose, children }: SidePanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(500); // Largeur par défaut
   const isResizingRef = useRef(false);
 
   // Fermer sur clic extérieur ou Escape

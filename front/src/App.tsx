@@ -22,24 +22,27 @@ const updateCatalog = useCatalogStore((state) => state.updateCatalog);
 const isObserverLoaded = useObserverStore((state) => state.isLoaded);
 const initializeObserver = useObserverStore((state) => state.initializeObserver);
 const setConfig = useConfigStore((state) => state.setConfig);
-const getAzimuth = useConfigStore((state) => state.getAzimuth)
+
 const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
 
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
-        if (isLoaded) return;
-        updateCatalog(await loadCatalog(getAzimuth()));
-        const date = getNextSunsetDate(50.6667,3.15,true)?.date||new Date();
 
-        if (!isObserverLoaded)  {
-            initializeObserver(50.6667, 3.15, date, getNextSunsetDate(50.6667,3.15,true)?.date||new Date(), getNextSunriseDate(50.6667,3.15,false)?.date||new Date());
-        }
-        
+        // Get last telescope and observatory config
+        const telescope = await apiService.getCurrentTelescope();
+        const observatory = await apiService.getCurrentObservatory();
+        const dateSunset = getNextSunsetDate(observatory.latitude as number,observatory.longitude as number,true)?.date||new Date();
+        const dateSunrise =getNextSunriseDate(observatory.latitude as number,observatory.longitude as number,false)?.date||new Date();
+        initializeObserver(telescope, observatory, dateSunset, dateSunset, dateSunrise);
+
+        // Calculate catalog
+        updateCatalog(await loadCatalog(observatory.visibility as boolean[]));
         const initial = await apiService.getConfig();
         const initialData = initial ? initial:{};
         setConfig(initialData);
 
+        // Get config from remote server
         const configSchema = await apiService.getConfigScheme();
         const formDefinition = configSchema? configSchema:[];
         setConfigScheme(formDefinition);

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
 from typing import List
-from .models import PlanType
+from models.api import PlanType
 from services.skymap import generate_dso_image, generate_map
 
 router = APIRouter(prefix="/observation", tags=["observation"])

@@ -16,3 +16,5 @@ export const reloadConfiguration = async () : Promise<ConfigItems> => {
     configItems = null
     return getConfiguration();
 }
+
+

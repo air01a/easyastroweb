@@ -1,7 +1,13 @@
 [
-    { 
-        "name":"SK-PDS-130",
+    {
+        "name": "SK-PDS-130",
         "focale": 650,
         "pixel_size": 2.4
+    },
+    {
+        "name": "SW-EVOGUIDE-50",
+        "focale": 400,
+        "pixel_size": 2.4,
+        "altaz": true
     }
 ]

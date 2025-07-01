@@ -14,7 +14,7 @@
     "defaultValue": 650
   },
   {
-    "fieldName": "pixelsize",
+    "fieldName": "pixel_size",
     "description": "Pixel size",
     "fieldType": "INPUT",
     "varType": "FLOAT",
