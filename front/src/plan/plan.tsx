@@ -23,7 +23,7 @@ import type {
   DragEndEvent,
 } from '@dnd-kit/core';
 
-import type { PlanType } from '../../api/api.type'
+import type { PlanType } from '../../types/api.type'
 
 import {
   arrayMove,

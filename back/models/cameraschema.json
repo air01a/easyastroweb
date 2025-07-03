@@ -1,0 +1,30 @@
+[
+    {
+        "fieldName": "name",
+        "description": "Camera Name",
+        "fieldType": "INPUT",
+        "varType": "STR",
+        "defaultValue": ""
+    },
+    {
+        "fieldName": "horizontal_pixels",
+        "description": "number of horizontal pixels",
+        "fieldType": "INPUT",
+        "varType": "INT",
+        "defaultValue": 2000
+    },
+        {
+        "fieldName": "vertical_pixels",
+        "description": "number of vertical pixels",
+        "fieldType": "INPUT",
+        "varType": "INT",
+        "defaultValue": 1000
+    },
+    {
+        "fieldName": "pixel_size",
+        "description": "Pixel size (µm)",
+        "fieldType": "INPUT",
+        "varType": "FLOAT",
+        "defaultValue": 2.4
+    }
+]

@@ -3,7 +3,7 @@ import SelectInput  from '../../design-system/inputs/select'
 import Input  from '../../design-system/inputs/input'
 import Checkbox  from '../../design-system/inputs/checkbox'
 
-import type {Field, FieldType} from './dynamicform.type'
+import type {Field, FieldType} from '../../types/dynamicform.type'
 import CircularButtonSelection from "./circularbutton";
 
 type Props = {
@@ -24,8 +24,8 @@ const DynamicForm: React.FC<Props> = ({
     if (field.defaultValue !== undefined) return field.defaultValue;
       switch (field.varType) {
         case "INT":
-        case "REAL":
-          return 0;
+        case "FLOAT":
+          return 0.0;
         case "STR":
           return "";
         case "BOOL":
@@ -63,7 +63,7 @@ const DynamicForm: React.FC<Props> = ({
     switch (field.varType) {
       case "INT":
         return /^-?\d*$/.test(String(value)) ? null : "Entier attendu";
-      case "REAL":
+      case "FLOAT":
         return /^-?\d*(\.\d+)?$/.test(String(value)) ? null : "Nombre réel attendu";
       case "STR":
         return typeof value === "string" ? null : "Texte invalide";
@@ -86,7 +86,7 @@ const DynamicForm: React.FC<Props> = ({
     setErrors((prev) => ({ ...prev, [field.fieldName]: error || "" }));
     if (!error) {
       if (field.varType === "INT") value = parseInt(value as string)||0;
-      else if (field.varType === "REAL") value = parseFloat(value as string)||0.0;
+      else if (field.varType === "FLOAT") value = parseFloat(value as string)||0.0;
 
 
     }

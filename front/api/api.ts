@@ -1,7 +1,7 @@
 // services/api.ts
-import type { PlanType } from "./api.type";
+import type { PlanType } from "../types/api.type";
 import type { ConfigItems } from "../store/config.type";
-import type {Field} from '../components/forms/dynamicform.type'
+import type {Field} from '../types/dynamicform.type'
 
 export class ApiService {
   private baseUrl: string;
@@ -135,6 +135,43 @@ export class ApiService {
     this.request<ConfigItems>('/telescopes/current', {
       method: 'PUT',
       body: JSON.stringify({telescope})
+    });
+
+  }
+
+
+  async getCameras(): Promise<ConfigItems[]> {
+    return this.request<ConfigItems[]>('/cameras', {
+      method: 'GET'
+    });
+  }
+
+  async getCamerasSchema(): Promise<Field[]> {
+    return this.request<Field[]>('/cameras/schema', {
+      method: 'GET'
+    });
+
+
+  }
+  async setCameras(telescopeConfiguration : ConfigItems[]) : Promise<void> {
+    this.request<ConfigItems[]>('/cameras', {
+      method: 'POST',
+      body: JSON.stringify(telescopeConfiguration)
+    });
+  }
+
+
+  async getCurrentCamera(): Promise<ConfigItems> {
+    return this.request<ConfigItems>('/cameras/current', {
+      method: 'GET'
+    });
+  }
+
+
+  async setCurrentCamera(camera: string): Promise<void> {
+    this.request<ConfigItems>('/cameras/current', {
+      method: 'PUT',
+      body: JSON.stringify({camera})
     });
 
   }

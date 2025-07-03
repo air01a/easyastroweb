@@ -1,6 +1,6 @@
 import type { CatalogItem } from '../lib/astro/catalog/catalog.type'
 import { persist, createJSONStorage  } from 'zustand/middleware'
-import type {Field} from '../components/forms/dynamicform.type'
+import type {Field} from '../types/dynamicform.type'
 import { create } from 'zustand'
 import type { CatalogStore, ObserverStore, WebSocketState, ConfigStore } from './store.type';
 import type { ConfigItem, ConfigItems } from './config.type';
@@ -47,11 +47,13 @@ export const useObserverStore = create<ObserverStore>()(
       sunRise: new Date(),
       telescope: {},
       observatory : {},
+      camera : {},
 
-      initializeObserver: (telescope: ConfigItems, observatory: ConfigItems, date: Date, sunSet: Date, sunRise: Date) =>
+      initializeObserver: (telescope: ConfigItems, observatory: ConfigItems, camera: ConfigItems, date: Date, sunSet: Date, sunRise: Date) =>
         set({
           telescope,
           observatory,
+          camera,
           date,
           sunSet,
           sunRise,

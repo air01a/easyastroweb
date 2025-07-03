@@ -5,6 +5,9 @@ export type Props = {
 };
 
 export const TelescopeCard: React.FC<Props> = ({ item }) => {
+
+
+
   return (
     <div
       className="
@@ -13,17 +16,18 @@ export const TelescopeCard: React.FC<Props> = ({ item }) => {
         space-y-3
       "
     >
-      <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
+      <h3 className="text-lg font-semibold text-gray-100">{item.name}</h3>
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-700">
         <div>
           <dt className="font-medium text-gray-500">Focale</dt>
-          <dd className="text-gray-400">{item.focale ?? "-"}</dd>
+          <dd className="text-gray-400">{item.focale ?? "-"} mm</dd>
         </div>
         <div>
-          <dt className="font-medium text-gray-500">Taille pixel</dt>
-          <dd className="text-gray-400">{item.pixel_size ?? "-"}</dd>
+          <dt className="font-medium text-gray-500">Ouverture</dt>
+          <dd className="text-gray-400">{item.apperture ?? "-"} mm</dd>
         </div>
+
       </dl>
     </div>
   );

@@ -3,7 +3,7 @@ import { Pencil, Trash } from "lucide-react";
 //import type {ObservatoryItem } from './observatory.type';
 import type {  ConfigItems } from '../../store/config.type';
 import DynamicForm from "../forms/dynamicform";
-import type { Field } from "../forms/dynamicform.type";
+import type { Field } from "../../types/dynamicform.type";
 import Button from "../../design-system/buttons/main";
 import { generateRandomName } from "../../lib/fsutils";
 import Swal from "sweetalert2";
@@ -18,8 +18,8 @@ export type Props = {
     onSelect?: (item: ConfigItems) => void;
 }
 const colors = [
-  "bg-gray-100",
-  "bg-blue-100",
+  "bg-sky-900",
+  "bg-blue-900",
 ];
 
 const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardComponent, editable=true, selectedName=null, onSelect }) => {
@@ -100,10 +100,11 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
     setHasError(error);
     setCurrentEdit(change);
   }
+  console.log(currentItems);
 
   return (
     <div className="flex flex-col items-center space-y-4">
-      {currentItems.map((item, index) => {
+      {currentItems && currentItems.map((item, index) => {
         const isSelected = item.name === selectedId;
         const isEdit = edit === item.name;
         return (

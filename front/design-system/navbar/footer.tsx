@@ -1,13 +1,13 @@
 import { useObserverStore } from "../..//store/store"
-import { MapPin, Telescope, X } from "lucide-react";
+import {  MapPin, Telescope, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { ObservatoryCard } from "../../components/observatory/observatoryCard";
 import Button from "../buttons/main";
-import { TelescopeCard } from "../../components/observatory/telescopeCard";
+import { TelescopeSumUpCard } from "../../components/observatory/telescopeSumUpCard";
 
 export default function Footer() {
-    const {observatory, telescope}= useObserverStore();
+    const {observatory, telescope, camera}= useObserverStore();
     const [openMenu, setOpenMenu] = useState<"observatory" | "telescope" | null>(null);
     const navigate = useNavigate();
     const toggleMenu = (menu: "observatory" | "telescope") => {
@@ -20,7 +20,7 @@ export default function Footer() {
 
 
     return (
-       <footer className="relative w-full bg-gray-800 text-white py-3 px-4 flex items-center justify-between">
+<footer className="fixed bottom-0 left-0 w-full bg-gray-800 text-white py-3 px-4 flex items-center justify-between">
       {/* Observatoire */}
       <div className="relative">
         <button
@@ -36,8 +36,8 @@ export default function Footer() {
             <div
               className="
                 z-50
-                fixed inset-10
-                bg-white text-gray-800
+                fixed inset-0
+                bg-sky-900 text-gray-100
                 p-8
                 flex flex-col
                 md:absolute md:inset-auto md:bottom-full md:mb-2 md:left-0
@@ -57,12 +57,12 @@ export default function Footer() {
                 <ObservatoryCard item={observatory}/>
                 <Button
                   onClick={() => {
-                    navigate("/config/telescopes");
+                    navigate("/config/observatory");
                     setOpenMenu(null);
                   }}
                   className="text-blue-600 hover:underline text-sm"
                 >
-                  Changer de télescope
+                  Changer de site
                 </Button>
               </div>
             </div>
@@ -88,7 +88,7 @@ export default function Footer() {
               className="
                 z-50
                 fixed inset-0
-                bg-white text-gray-800
+                bg-sky-900 text-gray-100
                 p-4
                 flex flex-col
                 md:absolute md:inset-auto md:bottom-full md:mb-2 md:right-0
@@ -105,7 +105,7 @@ export default function Footer() {
 
               {/* Contenu */}
               <div className="flex flex-col flex-1 justify-center items-center space-y-4 md:justify-start">
-                <TelescopeCard item={telescope} />
+                <TelescopeSumUpCard telescope={telescope} camera={camera} />
                 <Button
                   onClick={() => {
                     navigate("/config/telescopes");

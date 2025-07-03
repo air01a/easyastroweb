@@ -1,4 +1,5 @@
 {
     "telescope": "SK-PDS-130",
-    "observatory": "Crouesty3"
+    "observatory": "Wasquehal",
+    "camera": "ASI385MC"
 }

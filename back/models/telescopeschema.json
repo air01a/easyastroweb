@@ -8,17 +8,18 @@
   },
   {
     "fieldName": "focale",
-    "description": "Telescope focale",
+    "description": "Telescope focale (mm)",
     "fieldType": "INPUT",
     "varType": "INT",
     "defaultValue": 650
   },
+  
   {
-    "fieldName": "pixel_size",
-    "description": "Pixel size",
+    "fieldName": "apperture",
+    "description": "Apperture (mm)",
     "fieldType": "INPUT",
-    "varType": "FLOAT",
-    "defaultValue": 2.4
+    "varType": "INT",
+    "defaultValue": 130
   },
   {
     "fieldName": "altaz",

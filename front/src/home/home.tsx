@@ -1,7 +1,9 @@
 
+import { ObservatoryCard } from "../../components/observatory/observatoryCard";
+import { TelescopeSumUpCard } from "../../components/observatory/telescopeSumUpCard";
 import Button from "../../design-system/buttons/main";
-import { useCatalogStore,useWebSocketStore } from "../../store/store";
-
+import { useCatalogStore,useWebSocketStore, useObserverStore } from "../../store/store";
+import {H1, H2} from "../../design-system/text/titles";
 
 export default function Home() {
 
@@ -9,7 +11,9 @@ export default function Home() {
   const messages = useWebSocketStore((state) => state.messages);
   const isConnected = useWebSocketStore((state) => state.isConnected);
   const connect = useWebSocketStore((state) => state.connect);
-  
+  const {observatory, telescope, camera} = useObserverStore();
+
+
   const location = 'Paris'
   const sun = {
     rise: catalog[0]?.sunrise?.toLocaleString().split(' ')[1] || '',
@@ -26,20 +30,20 @@ export default function Home() {
 
   return (
     <main className="text-white p-6 flex flex-col items-center">
-      <h1 className="text-3xl font-bold mb-8">🌅 Aujourd’hui à {location}</h1>
+      <H1>🌅 Aujourd’hui à {location}</H1>
 
-      <div className="flex flex-col md:flex-row gap-6 max-w-4xl w-full">
+      <div className="flex flex-wrap md:flex-wrap gap-6 max-w-4xl w-full">
         {/* Carte Soleil */}
-        <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md">
-          <h2 className="text-2xl font-semibold mb-4 text-yellow-300">☀️ Le Soleil</h2>
+        <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md w-80">
+          <H2>☀️ Le Soleil</H2>
           <p>Lever : {sun.rise}</p>
           <p>Coucher : {sun.set}</p>
           <p>Méridien: {sun.meridian}</p>
         </div>
 
         {/* Carte Lune */}
-        <div className="flex-1 bg-white/10 border border-blue-300 rounded-2xl p-6 shadow-lg backdrop-blur-md">
-          <h2 className="text-2xl font-semibold mb-4 text-blue-200">🌕 La Lune</h2>
+        <div className="flex-1 bg-white/10 border border-blue-300 rounded-2xl p-6 shadow-lg backdrop-blur-md w-80">
+          <H2>🌕 La Lune</H2>
           <p>Lever : {moon.rise}</p>
           <p>Coucher : {moon.set}</p>
           <p>Illumination : {moon.illumination.toFixed(1)}%</p>
@@ -55,7 +59,7 @@ export default function Home() {
         </div>
 
 
-        <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md">
+        <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md min-w-80">
           <h2 className="text-2xl font-semibold mb-4 text-yellow-300">🎤 Le téléscope</h2>
           {!isConnected ? (
 
@@ -63,6 +67,17 @@ export default function Home() {
           ) : (
             <pre>{JSON.stringify(messages, null, 2)}</pre>
           )}
+        </div>
+
+
+                <div className="flex-1 bg-white/10 border border-blue-300 rounded-2xl p-6 shadow-lg backdrop-blur-md w-80">
+          <H2>🎤 Le Site</H2>
+            <ObservatoryCard item={observatory}/>
+        </div>
+
+                        <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md w-80">
+          <H2>🎤 Le Telescope</H2>
+            <TelescopeSumUpCard telescope={telescope} camera={camera} />
         </div>
 
 

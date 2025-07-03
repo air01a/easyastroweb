@@ -2,7 +2,7 @@ import ObservatoryList from '../../components/observatory/observatory';
 import { apiService } from '../../api/api';
 import { useEffect, useState } from 'react';
 import type {  ConfigItems } from '../../store/config.type';
-import type { Field } from '../../components/forms/dynamicform.type';
+import type { Field } from '../../types/dynamicform.type';
 import { ObservatoryCard } from '../../components/observatory/observatoryCard';
 import { useObserverStore, useCatalogStore } from "../../store/store";
 import { getNextSunriseDate, getNextSunsetDate } from "../../lib/astro/astro-utils";

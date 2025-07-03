@@ -32,9 +32,11 @@ const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
         // Get last telescope and observatory config
         const telescope = await apiService.getCurrentTelescope();
         const observatory = await apiService.getCurrentObservatory();
+        const camera = await apiService.getCurrentCamera();
+
         const dateSunset = getNextSunsetDate(observatory.latitude as number,observatory.longitude as number,true)?.date||new Date();
         const dateSunrise =getNextSunriseDate(observatory.latitude as number,observatory.longitude as number,false)?.date||new Date();
-        initializeObserver(telescope, observatory, dateSunset, dateSunset, dateSunrise);
+        initializeObserver(telescope, observatory, camera,  dateSunset, dateSunset, dateSunrise);
 
         // Calculate catalog
         updateCatalog(await loadCatalog(observatory.visibility as boolean[]));

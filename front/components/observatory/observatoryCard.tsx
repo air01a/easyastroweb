@@ -15,7 +15,7 @@ export const ObservatoryCard: React.FC<Props> = ({ item }) => {
             flex flex-col justify-center items-center
         "
         >
-      <h3 className="text-lg font-semibold text-gray-600">{item.name}</h3>
+      <h3 className="text-lg font-semibold text-gray-100">{item.name}</h3>
       
       <dl className="flex flex-row gap-x-4 gap-y-1 text-sm text-gray-700">
         <div>

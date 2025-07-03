@@ -1,5 +1,5 @@
 import  DynamicForm  from "../../components/forms/dynamicform";
-import type { Field } from "../../components/forms/dynamicform.type";
+import type { Field } from "../../types/dynamicform.type";
 //import CircularButtonSelection from "../../components/forms/circularbutton";
 import { useEffect, useState } from "react";
 import { useConfigStore} from "../../store/store";

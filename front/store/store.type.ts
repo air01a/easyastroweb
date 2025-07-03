@@ -1,5 +1,5 @@
 import type { CatalogItem } from "../lib/astro/catalog/catalog.type"
-import type {Field} from '../components/forms/dynamicform.type'
+import type {Field} from '../types/dynamicform.type'
 import type { ConfigItem, ConfigItems } from "./config.type"
 export type CatalogStore = {
   catalog: CatalogItem[]
@@ -17,7 +17,8 @@ export type ObserverStore = {
   isLoaded: boolean
   telescope: ConfigItems;
   observatory : ConfigItems;
-  initializeObserver: (telescope: ConfigItems, observatory: ConfigItems , date: Date, sunSet: Date, sunRise: Date) =>void,
+  camera: ConfigItems;
+  initializeObserver: (telescope: ConfigItems, observatory: ConfigItems , camera: ConfigItems, date: Date, sunSet: Date, sunRise: Date) =>void,
 
 
   resetObserver: () => void
