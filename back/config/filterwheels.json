@@ -1,10 +1,11 @@
 [
     {
-        "name": "ZWO EFW Mini23",
+        "name": "ZWO EFW Mini",
         "filters": [
             "No filter",
-            "test42",
-            "test"
+            "Dual Band",
+            "UV",
+            "CLS"
         ]
     }
 ]

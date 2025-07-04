@@ -4,8 +4,9 @@ import SelectInput  from '../../design-system/inputs/select'
 import Button from '../../design-system/buttons/main';
 import {AddButton, RemoveButton} from '../../design-system/buttons/addremove';
 import type { ImageConfig } from './plan.type'
+import { useObserverStore } from "../../store/store";
 
-const filters = ['Rouge', 'Vert', 'Bleu', 'Luminance', 'Ha'];
+
 
 // Générateur d’ID unique
 let nextId = 0;
@@ -13,8 +14,9 @@ let nextId = 0;
 export default function ImageSettings( { initialSettings,  onUpdate, maxDuration} : {initialSettings: ImageConfig[], onUpdate : ( settings: ImageConfig[]) => void , maxDuration:number}) {
   const [settings, setSettings] = useState<ImageConfig[]>(initialSettings);
   //const [remaining, setRemaining] = useState<number>(0);
-
-
+  const {filterWheel} = useObserverStore();
+  
+  const filters = (filterWheel.filters as string[]).length>0?(filterWheel.filters as string[]):["No Filter"];
 
   const getDuration = (settings : ImageConfig[]) => {
         let newDuration=0;
