@@ -9,7 +9,7 @@ class PlanType(BaseModel):
     filter: str
     object: str
 
-ConfigAllowedValue = Union[str, int, float, bool, List[bool]]
+ConfigAllowedValue = Union[str, int, float, bool, List[bool], List[str]]
 
 ConfigPayload = Dict[str, ConfigAllowedValue]
 

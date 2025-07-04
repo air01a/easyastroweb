@@ -14,14 +14,13 @@ const RootLayout: React.FC = () => {
   ];
 
   return (
-    <div>
-      <div className="font-sans antialiased min-h-screen flex flex-col bg-gradient-to-br from-black to-sky-800 text-white">
-        <NavBar menu={navbarItems}/>
-        <main className="flex-1 p-4 bg-gradient-to-br from-black-950 to-sky-800 h-full"><Outlet /> </main>
-        <Footer/>
-      </div>
-      
-    </div>
+<div className="flex flex-col min-h-screen font-sans antialiased bg-gradient-to-br from-black to-sky-800 text-white">
+  <NavBar menu={navbarItems} />
+  <main className="flex-1 p-4 bg-gradient-to-br from-black-950 to-sky-800 pb-16">
+    <Outlet />
+  </main>
+  <Footer />
+</div>
   );
 };
 

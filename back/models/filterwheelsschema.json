@@ -1,0 +1,20 @@
+[
+  {
+    "fieldName": "name",
+    "description": "Filter wheel name",
+    "fieldType": "INPUT",
+    "varType": "STR",
+    "defaultValue": "",
+    "required": true
+  },
+  {
+    "fieldName": "filters",
+    "description" :"Filters",
+    "fieldType": "MULTIPLEINPUT",
+    "varType" : "STRARRAY",
+    "defaultValue": [
+        "No filter"
+    ]
+  }
+]
+

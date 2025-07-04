@@ -15,6 +15,7 @@ CONFIG_SCHEME: ConfigList = []
 TELESCOPE: Dict[str, ConfigAllowedValue] = {}
 CAMERA : Dict[str, ConfigAllowedValue] = {}
 OBSERVATORY: Dict[str, ConfigAllowedValue] = {}
+FILTERWHEEL : Dict[str, ConfigAllowedValue] = {}
 TELECOPE_SCHEMA : ConfigList = []
 OBSERVATORY_SCHEMA : ConfigList = []
 
@@ -28,6 +29,8 @@ TELESCOPE_SCHEMA_PATH = CURRENT_DIR.parent / "models" / "telescopeschema.json"
 DEFAULT_PATH = CURRENT_DIR.parent / "config" / "default.json"
 CAMERAS_PATH = CURRENT_DIR.parent / "config" / "cameras.json"
 CAMERAS_SCHEMA_PATH = CURRENT_DIR.parent / "models" / "cameraschema.json"
+FILTERWHEELS_PATH = CURRENT_DIR.parent / "config" / "filterwheels.json"
+FILTERWHEELS_SCHEMA_PATH = CURRENT_DIR.parent / "models" / "filterwheelsschema.json"
 
 def find_item_from_name(name: str, config: ConfigList):
     for item in config:
@@ -71,26 +74,30 @@ def load_config() -> None:
     CONFIG.update(new_config)
 
 
+def _get_default(key, default, path):
+    items = load_array_form_json(path)
+
+    item = None
+    if key in default.keys():
+        item = find_item_from_name(default[key], items)
+    if not item and len(items)>0:
+        item = items[0]
+    return item
+    
+
 def load_defaults() -> None:
     global TELESCOPE
     global OBSERVATORY
+    global CAMERA
+    global FILTERWHEEL
 
 
     default = load_array_form_json(DEFAULT_PATH)
-    telescopes=load_array_form_json(TELESCOPE_PATH)
-    observatories=load_array_form_json(OBSERVATORY_PATH)
 
-    telescope=None
-    if "telescope" in default.keys():
-        telescope = find_item_from_name(default["telescope"], telescopes)
-    if not telescope and len(telescopes)>0:
-        telescope = telescopes[0]
-    
-    observatory= None
-    if "observatory" in default.keys():
-        observatory = find_item_from_name(default["observatory"], observatories)
-    if not observatory and len(observatories)>0:
-        observatory = observatories[0]
+    telescope = _get_default("telescope", default, TELESCOPE_PATH)
+    observatory = _get_default("observatory", default, OBSERVATORY_PATH)
+    camera = _get_default("camera", default, CAMERAS_PATH)
+    wheel = _get_default("filterwheel", default, FILTERWHEELS_PATH)
     
     OBSERVATORY.clear()
     if observatory:
@@ -99,6 +106,14 @@ def load_defaults() -> None:
     TELESCOPE.clear()
     if telescope:
         TELESCOPE.update(telescope)
+
+    CAMERA.clear()
+    if camera:
+        CAMERA.update(camera)
+
+    FILTERWHEEL.clear()
+    if wheel:
+        FILTERWHEEL.update(wheel)
 
 
 
@@ -123,8 +138,6 @@ async def save_observatories(observatory: List[Dict[str, ConfigAllowedValue]]):
     await write_json(OBSERVATORY_PATH, observatory)
     set_default_observatory(OBSERVATORY["name"])
     
-
-
 async def get_cameras() -> ConfigList:
     return await read_json(CAMERAS_PATH)
 
@@ -133,13 +146,30 @@ async def get_cameras_schema() -> ConfigList:
 
 async def save_cameras(cameras: List[Dict[str, ConfigAllowedValue]]):
     await write_json(CAMERAS_PATH, cameras)
-    set_default_camera(CAMERA["name"])
-
+    await set_default_camera(CAMERA["name"])
 
 async def set_default_camera(camera: str):
+    global CAMERA
     await change_default("camera", camera)
-    CAMERA = find_item_from_name(CAMERA, await get_cameras())
+    CAMERA = find_item_from_name(camera, await get_cameras())
 
+async def set_default_filterwheel(wheel: str):
+    global FILTERWHEEL
+    await change_default("filterwheel", wheel)
+    FILTERWHEEL = find_item_from_name(wheel, await get_filterwheels())
+
+
+async def get_filterwheels() -> ConfigList:
+    return await read_json(FILTERWHEELS_PATH)
+
+async def get_filterwheels_schema() -> ConfigList:
+    return await read_json(FILTERWHEELS_SCHEMA_PATH)
+
+async def save_filterwheels(wheels: List[Dict[str, ConfigAllowedValue]]):
+    global FILTERWHEEL
+    global FILTERWHEELS_PATH
+    await write_json(FILTERWHEELS_PATH, wheels)
+    await set_default_filterwheel(FILTERWHEEL["name"])
 
 
 async def get_telescopes() -> ConfigList:
@@ -186,6 +216,7 @@ async def check_data_format(
         "BOOL": (bool,),
         "STR": (str,),
         "BOOLARRAY": (list,),
+        "STRARRAY": (list,),
     }
 
     for item in schema:
@@ -203,6 +234,9 @@ async def check_data_format(
                 # Si c'est un BOOLARRAY, vérifier que tous les éléments sont des bool
                 if item["varType"] == "BOOLARRAY":
                     if not all(isinstance(v, bool) for v in value):
+                        return f"Invalid array content for {field_name}"
+                if item["varType"] == "STRARRAY":
+                    if not all(isinstance(v, str) for v in value):
                         return f"Invalid array content for {field_name}"
         else:
             if item.get("required", False):

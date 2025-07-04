@@ -20,9 +20,10 @@ function App() {
 const isLoaded = useCatalogStore((state) => state.isLoaded);
 const updateCatalog = useCatalogStore((state) => state.updateCatalog);
 const isObserverLoaded = useObserverStore((state) => state.isLoaded);
+const setCamera = useObserverStore((state)=> state.setCamera)
+const setFilterWheel = useObserverStore((state)=> state.setFilterWheel)
 const initializeObserver = useObserverStore((state) => state.initializeObserver);
 const setConfig = useConfigStore((state) => state.setConfig);
-
 const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
 
   useEffect(() => {
@@ -33,10 +34,13 @@ const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
         const telescope = await apiService.getCurrentTelescope();
         const observatory = await apiService.getCurrentObservatory();
         const camera = await apiService.getCurrentCamera();
+        const filterWheel = await apiService.getCurrentFilterWheel();
 
         const dateSunset = getNextSunsetDate(observatory.latitude as number,observatory.longitude as number,true)?.date||new Date();
         const dateSunrise =getNextSunriseDate(observatory.latitude as number,observatory.longitude as number,false)?.date||new Date();
-        initializeObserver(telescope, observatory, camera,  dateSunset, dateSunset, dateSunrise);
+        initializeObserver(telescope, observatory, dateSunset, dateSunset, dateSunrise);
+        setCamera(camera);
+        setFilterWheel(filterWheel);
 
         // Calculate catalog
         updateCatalog(await loadCatalog(observatory.visibility as boolean[]));

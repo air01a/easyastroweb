@@ -5,6 +5,7 @@ import Checkbox  from '../../design-system/inputs/checkbox'
 
 import type {Field, FieldType} from '../../types/dynamicform.type'
 import CircularButtonSelection from "./circularbutton";
+import MultipleTextInput from './multitextinput';
 
 type Props = {
   formDefinition: Field[];
@@ -102,6 +103,12 @@ const DynamicForm: React.FC<Props> = ({
     onChange?.(newFormData, false)
   }
 
+  const multipleInputCallback = (name: string, values: string[])  => {
+    const newFormData = { ...formData, [name]:values};
+    setFormData(newFormData);
+    onChange?.(newFormData, false)
+  }
+
   return (
     <form >
       {formDefinition.map((field) => {
@@ -143,6 +150,9 @@ const DynamicForm: React.FC<Props> = ({
 
             {field.fieldType=="CIRCULAR" && (
               <div><CircularButtonSelection callBack={circularCallBack} name={field.fieldName} selectedButtons={value as boolean[]}></CircularButtonSelection></div>
+            )}
+             {field.fieldType=="MULTIPLEINPUT" && (
+              <div><MultipleTextInput initialValues={value as string[]} onChange={multipleInputCallback} name={field.fieldName}></MultipleTextInput></div>
             )}
             {error && <div className="text-red-400 text-sm mt-1">{error}</div>}
           </div>

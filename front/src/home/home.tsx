@@ -11,7 +11,7 @@ export default function Home() {
   const messages = useWebSocketStore((state) => state.messages);
   const isConnected = useWebSocketStore((state) => state.isConnected);
   const connect = useWebSocketStore((state) => state.connect);
-  const {observatory, telescope, camera} = useObserverStore();
+  const {observatory, telescope, camera, filterWheel} = useObserverStore();
 
 
   const location = 'Paris'
@@ -77,7 +77,7 @@ export default function Home() {
 
                         <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md w-80">
           <H2>🎤 Le Telescope</H2>
-            <TelescopeSumUpCard telescope={telescope} camera={camera} />
+            <TelescopeSumUpCard telescope={telescope} camera={camera} filterWheel={filterWheel} />
         </div>
 
 

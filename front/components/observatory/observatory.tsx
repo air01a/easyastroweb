@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Pencil, Trash } from "lucide-react";
-//import type {ObservatoryItem } from './observatory.type';
 import type {  ConfigItems } from '../../store/config.type';
 import DynamicForm from "../forms/dynamicform";
 import type { Field } from "../../types/dynamicform.type";
@@ -56,14 +55,21 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
   }
 
   const handleSave = async (updatedItem : ConfigItems|null, index:number) => {
-    console.log(hasError, updatedItem, onEdit)
         if (hasError) return; 
         if (updatedItem===null) return;
+        let selected : ConfigItems|null = null;
+        if (currentItems[index].name===selectedId) selected=updatedItem
         const newItems = currentItems.map((item, newindex) =>
                             index === newindex ? updatedItem : item
                         );
-        console.log(newItems);
-        if (onEdit) onEdit(newItems);
+        if (onEdit) {
+           onEdit(newItems);
+           if (selected && onSelect) {
+              onSelect(selected);
+            setSelectedId(selected.name as string);
+           }
+
+        }
         setEdit(null);
   }
 
@@ -141,7 +147,13 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
             </div>
             )}
             { isEdit ? (
-                <div><DynamicForm  onChange={dynamicFormChange} formDefinition={formLayout} initialValues={item}/> <Button disabled={hasError} onClick={() => {handleSave(currentEdit, index)}}>Enregister</Button></div>
+                <div className="">
+                  <DynamicForm  onChange={dynamicFormChange} formDefinition={formLayout} initialValues={item}/> 
+                  <div className="flex justify-center items-center">
+                    <Button disabled={hasError} onClick={() => {handleSave(currentEdit, index)}}>Enregister</Button>
+                    <Button  onClick={() => setEdit(null)} className="ml-8 bg-gray-800">Annuler</Button>
+                  </div>
+                </div>
              ) : ( 
                 <CardComponent item={item}/>)
             }

@@ -1,62 +1,45 @@
-import ObservatoryList from '../../components/observatory/observatory';
-import { apiService } from '../../api/api';
-import { useEffect, useState } from 'react';
-import type {  ConfigItems } from '../../store/config.type';
-import type { Field } from '../../types/dynamicform.type';
-import { TelescopeCard} from '../../components/observatory/telescopeCard';
-import { H2 } from '../../design-system/text/titles';
-import CamerasConfig from './cameras';
-import { useObserverStore } from "../../store/store";
+import React, { useState } from "react";
+import CamerasConfig from "./cameras";
+import FilterWheelsConfig from "./filterwheels";
+import OpticsConfig from "./optics";
 
-const  ObservatoryConfig =  () => {
-    const [items, setItems] = useState<ConfigItems[]>([]);
-    const [layout, setLayout] = useState<Field[]>([]);
+const tabs = [
+  { id: "optics", label: "Optiques" },
+  { id: "cameras", label: "Caméras" },
+  { id: "filters", label: "Roues à filtres" },
+];
 
-    const {observatory, telescope, initializeObserver, camera, sunRise, sunSet, date } = useObserverStore();
+const ObservatoryConfig: React.FC = () => {
+  const [activeTab, setActiveTab] = useState("optics");
 
-    useEffect(() => {
-        const loadTelescope = async () => {
-            const obs = await apiService.getTelescope();
-            const layout = await apiService.getTelescopeSchema();
-            setLayout(layout);
-            setItems(obs);
-        }
+  return (
+    <div className="max-w-4xl mx-auto mt-6">
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`whitespace-nowrap py-2 px-4 border-b-2 font-medium text-lg
+                ${
+                    activeTab === tab.id
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
 
-        loadTelescope();
-    },[])
-
-    const handleEdit = async (items: ConfigItems[]) => {
-        await apiService.setTelescope(items);
-        const obs = await apiService.getTelescope();
-        setItems(obs);
-
-    };
-
-    const changeTelescope = async (telescope : ConfigItems) =>{
-        apiService.setCurrentTelescope(telescope.name as string);
-        initializeObserver(telescope, observatory, camera, date, sunSet, sunRise);
-        
-        
-    }
-
-    return ( <div>
-                <div className="flex items-center justify-center">
-                    <H2>Téléscope</H2>
-                </div>
-                    <ObservatoryList 
-                        items={items} 
-                        onSelect={changeTelescope} 
-                        selectedName={telescope.name as string} 
-                        onEdit={handleEdit} 
-                        formLayout={layout} 
-                        CardComponent={TelescopeCard}
-                    />
- 
-                    <CamerasConfig />
-
-                </div>
-            )
-
-}
+      <div className="mt-4">
+        {activeTab === "optics" && <OpticsConfig />}
+        {activeTab === "cameras" && <CamerasConfig />}
+        {activeTab === "filters" && <FilterWheelsConfig />}
+      </div>
+    </div>
+  );
+};
 
 export default ObservatoryConfig;

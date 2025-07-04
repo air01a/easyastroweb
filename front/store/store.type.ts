@@ -18,7 +18,10 @@ export type ObserverStore = {
   telescope: ConfigItems;
   observatory : ConfigItems;
   camera: ConfigItems;
-  initializeObserver: (telescope: ConfigItems, observatory: ConfigItems , camera: ConfigItems, date: Date, sunSet: Date, sunRise: Date) =>void,
+  filterWheel : ConfigItems;
+  setFilterWheel : (filterWheel : ConfigItems)=> void;
+  setCamera : (camera : ConfigItems)=> void;
+  initializeObserver: (telescope: ConfigItems, observatory: ConfigItems, date: Date, sunSet: Date, sunRise: Date) =>void,
 
 
   resetObserver: () => void

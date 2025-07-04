@@ -3,10 +3,10 @@ import type { ConfigItems } from '../../store/config.type';
 export type Props = {
   telescope: ConfigItems;
   camera: ConfigItems;
+  filterWheel: ConfigItems;
 };
 
-export const TelescopeSumUpCard: React.FC<Props> = ({ telescope, camera }) => {
-
+export const TelescopeSumUpCard: React.FC<Props> = ({ telescope, camera, filterWheel }) => {
   const  sampling = 57.3 * 10e-4 * (camera.pixel_size as number ?? 0) / (telescope.focale as number ?? 1)
   const horizontalFov = sampling * (camera.horizontal_pixels as number);
   const verticalFov = sampling * (camera.vertical_pixels as number);
@@ -35,7 +35,6 @@ export const TelescopeSumUpCard: React.FC<Props> = ({ telescope, camera }) => {
               <h3 className="text-lg font-semibold text-gray-100 w-full mr-500">{camera.name}</h3>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-700">
         <div>
-
           <dt className="font-medium text-gray-500">Taille pixel</dt>
           <dd className="text-gray-400">{camera.pixel_size ?? "-"} µm</dd>
         </div>
@@ -48,6 +47,16 @@ export const TelescopeSumUpCard: React.FC<Props> = ({ telescope, camera }) => {
           <dd className="text-gray-400">{horizontalFov.toFixed(2)}° x {verticalFov.toFixed(2)}°</dd>
         </div>
       </dl>
+      {filterWheel && (
+        <div>
+            <h3 className="text-lg font-semibold text-gray-100">{filterWheel.name ?? '-'}</h3>
+            <div>
+              <dt className="font-medium text-gray-500">Filters</dt>
+              <dd className="text-gray-400">{(filterWheel.filters as string[]).length}</dd>
+          </div>
+        </div>
+        )
+      }
     </div>
   );
 };

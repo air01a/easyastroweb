@@ -7,7 +7,7 @@ import Button from "../buttons/main";
 import { TelescopeSumUpCard } from "../../components/observatory/telescopeSumUpCard";
 
 export default function Footer() {
-    const {observatory, telescope, camera}= useObserverStore();
+    const {observatory, telescope, camera, filterWheel}= useObserverStore();
     const [openMenu, setOpenMenu] = useState<"observatory" | "telescope" | null>(null);
     const navigate = useNavigate();
     const toggleMenu = (menu: "observatory" | "telescope") => {
@@ -16,7 +16,6 @@ export default function Footer() {
     }
     const telescopeName = telescope.name;
     const observatoryName = observatory.name; 
-
 
 
     return (
@@ -105,7 +104,7 @@ export default function Footer() {
 
               {/* Contenu */}
               <div className="flex flex-col flex-1 justify-center items-center space-y-4 md:justify-start">
-                <TelescopeSumUpCard telescope={telescope} camera={camera} />
+                <TelescopeSumUpCard telescope={telescope} camera={camera} filterWheel={filterWheel}/>
                 <Button
                   onClick={() => {
                     navigate("/config/telescopes");

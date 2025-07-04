@@ -48,12 +48,21 @@ export const useObserverStore = create<ObserverStore>()(
       telescope: {},
       observatory : {},
       camera : {},
+      filterWheel : {},
 
-      initializeObserver: (telescope: ConfigItems, observatory: ConfigItems, camera: ConfigItems, date: Date, sunSet: Date, sunRise: Date) =>
+      setCamera : (camera : ConfigItems)=> 
+        set({
+          camera
+        }),
+
+      setFilterWheel : (filterWheel : ConfigItems) => 
+        set({
+          filterWheel
+        }),
+      initializeObserver: (telescope: ConfigItems, observatory: ConfigItems, date: Date, sunSet: Date, sunRise: Date) =>
         set({
           telescope,
           observatory,
-          camera,
           date,
           sunSet,
           sunRise,

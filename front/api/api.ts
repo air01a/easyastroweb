@@ -177,6 +177,43 @@ export class ApiService {
   }
 
 
+  
+  async getFilterWheels(): Promise<ConfigItems[]> {
+    return this.request<ConfigItems[]>('/filterwheels', {
+      method: 'GET'
+    });
+  }
+
+  async getFilterWheelsSchema(): Promise<Field[]> {
+    return this.request<Field[]>('/filterwheels/schema', {
+      method: 'GET'
+    });
+
+
+  }
+  async setFilterWheels(wheelConfiguration : ConfigItems[]) : Promise<void> {
+    this.request<ConfigItems[]>('/filterwheels', {
+      method: 'POST',
+      body: JSON.stringify(wheelConfiguration)
+    });
+  }
+
+
+  async getCurrentFilterWheel(): Promise<ConfigItems> {
+    return this.request<ConfigItems>('/filterwheels/current', {
+      method: 'GET'
+    });
+  }
+
+
+  async setCurrentFilterWheel(wheel: string): Promise<void> {
+    this.request<ConfigItems>('/filterwheels/current', {
+      method: 'PUT',
+      body: JSON.stringify({wheel})
+    });
+
+  }
+
   // Exemple pour un GET générique
   async getSomething<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {
