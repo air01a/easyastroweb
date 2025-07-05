@@ -150,6 +150,7 @@ export default function PlanPage() {
         const newSettings = [...settings];
         newSettings[index] = config;
         setSettings(newSettings);
+        console.log("updateSettings", newSettings);
     }
 
     const getDuration = (settings: ImageConfig[]) => {
@@ -161,7 +162,7 @@ export default function PlanPage() {
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
-
+        console.log("settings",settings);
         if (over && active.id !== over.id) {
             const oldIndex = localCatalog.findIndex(item => item.index === active.id);
             const newIndex = localCatalog.findIndex(item => item.index === over.id);
@@ -172,6 +173,7 @@ export default function PlanPage() {
             
             setLocalCatalog(newLocalCatalog);
             setSettings(newSettings);
+            console.log("newsettings",newSettings);
         }
     }
 
@@ -185,6 +187,7 @@ export default function PlanPage() {
 
             setLocalCatalog(local);
             setSpacer(new Array(local.length).fill(0));
+            setSettings(new Array(local.length).fill([]));
         }
 
         getCatalog();

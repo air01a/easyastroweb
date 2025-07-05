@@ -56,7 +56,7 @@ export default function Footer() {
                 <ObservatoryCard item={observatory}/>
                 <Button
                   onClick={() => {
-                    navigate("/config/observatory");
+                    navigate("/config/observatories");
                     setOpenMenu(null);
                   }}
                   className="text-blue-600 hover:underline text-sm"

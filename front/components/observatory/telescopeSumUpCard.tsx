@@ -47,7 +47,7 @@ export const TelescopeSumUpCard: React.FC<Props> = ({ telescope, camera, filterW
           <dd className="text-gray-400">{horizontalFov.toFixed(2)}° x {verticalFov.toFixed(2)}°</dd>
         </div>
       </dl>
-      {filterWheel && (
+      {filterWheel && filterWheel.filters && (
         <div>
             <h3 className="text-lg font-semibold text-gray-100">{filterWheel.name ?? '-'}</h3>
             <div>

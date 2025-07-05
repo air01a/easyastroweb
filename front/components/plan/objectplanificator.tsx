@@ -22,7 +22,7 @@ export function ObjectPlanificator({index, sunrise, sunset, startDate, item, ini
      useEffect(() => {
         setMaxDuration(sunriseNum - startDate % 24)
         let newDuration=0;
-        settings.forEach((item)=>newDuration+=item.exposureTime*item.imageCount)
+        if (settings) settings.forEach((item)=>newDuration+=item.exposureTime*item.imageCount)
         newDuration/=3600;
         const newConfig = [...selectedRangesForNight, {start:startDate, end:startDate+newDuration, color:'green'}];
         setSelectedRange(newConfig)

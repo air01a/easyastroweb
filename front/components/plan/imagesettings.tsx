@@ -60,7 +60,7 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
 
   return (
     <div className="space-y-4 mt-4 items-center">
-      {settings.map((config) => (
+      {settings && settings.map((config) => (
         <div
           key={config.id}
           className="flex items-center gap-2 bg-gray-800 p-2 rounded"
@@ -119,7 +119,7 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
         </div>
       ))}
 
-      {settings.length === 0 && (
+      {(!settings || settings.length === 0) && (
         <Button
           onClick={addRow}
         >
