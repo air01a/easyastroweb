@@ -136,7 +136,7 @@ async def get_observatory_schema() -> Dict[str, ConfigAllowedValue]:
 
 async def save_observatories(observatory: List[Dict[str, ConfigAllowedValue]]):
     await write_json(OBSERVATORY_PATH, observatory)
-    set_default_observatory(OBSERVATORY["name"])
+    await set_default_observatory(OBSERVATORY["name"])
     
 async def get_cameras() -> ConfigList:
     return await read_json(CAMERAS_PATH)

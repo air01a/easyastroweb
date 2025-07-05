@@ -4,7 +4,6 @@ import { TelescopeSumUpCard } from "../../components/observatory/telescopeSumUpC
 import Button from "../../design-system/buttons/main";
 import { useCatalogStore,useWebSocketStore, useObserverStore } from "../../store/store";
 import {H1, H2} from "../../design-system/text/titles";
-
 export default function Home() {
 
   const { catalog } = useCatalogStore()
@@ -14,7 +13,7 @@ export default function Home() {
   const {observatory, telescope, camera, filterWheel} = useObserverStore();
 
 
-  const location = 'Paris'
+  const location = observatory.name || 'Observatoire Inconnu';
   const sun = {
     rise: catalog[0]?.sunrise?.toLocaleString().split(' ')[1] || '',
     set: catalog[0]?.sunset?.toLocaleString().split(' ')[1] || '',
@@ -59,11 +58,11 @@ export default function Home() {
         </div>
 
 
-        <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md min-w-80">
+        <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md min-w-80 items-center justify-center">
           <h2 className="text-2xl font-semibold mb-4 text-yellow-300">🎤 Le téléscope</h2>
           {!isConnected ? (
 
-              <Button onClick={() =>     connect() }>Connect</Button>
+              <div className="flex justify-center"><Button onClick={() =>     connect() }>Connect</Button></div>
           ) : (
             <pre>{JSON.stringify(messages, null, 2)}</pre>
           )}
@@ -71,7 +70,7 @@ export default function Home() {
 
 
                 <div className="flex-1 bg-white/10 border border-blue-300 rounded-2xl p-6 shadow-lg backdrop-blur-md w-80">
-          <H2>🎤 Le Site</H2>
+          <H2>🏞️ Le Site</H2>
             <ObservatoryCard item={observatory}/>
         </div>
 
