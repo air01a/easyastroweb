@@ -1,60 +1,41 @@
+""" EasyAstroWeb observatories API Routes
+This module defines the API routes for managing camera configurations in the EasyAstro application."""
 
-from fastapi import APIRouter, Body,HTTPException
-from services.config import get_observatories as root_observatories, get_observatory_schema as root_observatory_schema, save_observatories
+from fastapi import APIRouter, Body, HTTPException
+from services.config import save_telescope_config, get_telescope_config, get_telescope_config_schema, set_default_telescope_config, CONFIG, OBSERVATORY_PATH, OBSERVATORY_SCHEMA_PATH
+from models.api import ConfigPayload, ConfigAllowedValue
+from typing import Dict, List, Any
+
 router = APIRouter(prefix="/observatories", tags=["observatories"])
-from typing import List
-from models.api import ConfigPayload
-from services.config import OBSERVATORY, set_default_observatory, check_data_format
 
 @router.get("/")
-async def get_observatories():
-    """
-    Endpoint qui reçoit une configuration sous forme de dict[str, Any]
-    """
-    # Tu peux faire ici ce que tu veux avec payload.config
-    # Par exemple, l'afficher dans la console
-    
-    # Ici tu peux persister en base de données ou autre traitement
-    # ...
-
-    return await root_observatories()
+async def api_get_observatories() -> List[ConfigPayload]:
+    """Retrieve the list of observatories."""
+    return await get_telescope_config(OBSERVATORY_PATH)
 
 @router.post("/")
-async def set_observatories(payload: List[ConfigPayload]):
-    """
-    Endpoint qui reçoit une configuration sous forme de dict[str, Any]
-    """
-    # Tu peux faire ici ce que tu veux avec payload.config
-    # Par exemple, l'afficher dans la console
-    
-    # Ici tu peux persister en base de données ou autre traitement
-    # ...
-    schema = await get_observatory_schema()
-    for item in payload : 
-        error = await check_data_format(item, schema)
-        if error:
-            raise HTTPException(status_code=500, detail=error)
-    await save_observatories(payload)
+async def api_set_observatories(payload: List[ConfigPayload]):
+    """Set the list of observatories."""
+    (error, error_str) = await save_telescope_config(OBSERVATORY_PATH, payload, 'observatory',OBSERVATORY_SCHEMA_PATH)
+    if not error:
+        raise HTTPException(status_code=500, detail=error_str)
+
     return {"ok"}
 
-@router.get("/schema")
-async def get_observatory_schema():
-    """
-    Endpoint qui reçoit une configuration sous forme de dict[str, Any]
-    """
-    # Tu peux faire ici ce que tu veux avec payload.config
-    # Par exemple, l'afficher dans la console
-    
-    # Ici tu peux persister en base de données ou autre traitement
-    # ...
 
-    return await root_observatory_schema()
+@router.get("/schema")
+async def api_get_observatories_schema() -> List[Dict[str, ConfigAllowedValue]]:
+    """Retrieve the schema for observatories configuration."""
+    return await get_telescope_config_schema(OBSERVATORY_SCHEMA_PATH)
 
 @router.get("/current")
-async def get_current_observatory():
-    return OBSERVATORY
+async def get_current_camera() -> Dict[str, Any]:
+    """Retrieve the current observatory configuration."""
+    return CONFIG.get("observatory",{})
+
 
 @router.put("/current")
-async def set_current_observatory(observatory: str = Body(..., embed=True)):
-    await set_default_observatory(observatory)
-    return OBSERVATORY
+async def api_set_current_camera(observatory: str = Body(..., embed=True)):
+    """Set the current filterwheel configuration."""
+    await set_default_telescope_config(observatory, "observatory", OBSERVATORY_SCHEMA_PATH)
+    return observatory

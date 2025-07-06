@@ -10,14 +10,22 @@ from utils.jsonload import load_array_form_json
 ConfigEntry = Dict[str, Union[str, int, bool]]
 ConfigList = List[ConfigEntry]
 
-CONFIG: Dict[str, ConfigAllowedValue] = {}
-CONFIG_SCHEME: ConfigList = []
-TELESCOPE: Dict[str, ConfigAllowedValue] = {}
-CAMERA : Dict[str, ConfigAllowedValue] = {}
-OBSERVATORY: Dict[str, ConfigAllowedValue] = {}
-FILTERWHEEL : Dict[str, ConfigAllowedValue] = {}
-TELECOPE_SCHEMA : ConfigList = []
-OBSERVATORY_SCHEMA : ConfigList = []
+CONFIG : Dict[str,Dict[str, ConfigAllowedValue]] = {}
+
+CONFIG['global'] = {}
+CONFIG['telescope'] = {}
+CONFIG['observatory'] = {}
+CONFIG['camera'] = {}
+CONFIG['filterwheel'] = {}
+
+#CONFIG: Dict[str, ConfigAllowedValue] = {}
+#CONFIG_SCHEME: ConfigList = []
+#TELESCOPE: Dict[str, ConfigAllowedValue] = {}
+#CAMERA : Dict[str, ConfigAllowedValue] = {}
+#OBSERVATORY: Dict[str, ConfigAllowedValue] = {}
+#FILTERWHEEL : Dict[str, ConfigAllowedValue] = {}
+#TELECOPE_SCHEMA : ConfigList = []
+#OBSERVATORY_SCHEMA : ConfigList = []
 
 CURRENT_DIR = Path(__file__).parent
 CONFIG_PATH = CURRENT_DIR.parent / "config" / "config.json"
@@ -70,8 +78,8 @@ def load_config() -> None:
 
     new_config = load_layout(tmp_config, CONFIG_SCHEME)
 
-    CONFIG.clear()
-    CONFIG.update(new_config)
+    CONFIG['global'].clear()
+    CONFIG['global'].update(new_config)
 
 
 def _get_default(key, default, path):
@@ -86,10 +94,7 @@ def _get_default(key, default, path):
     
 
 def load_defaults() -> None:
-    global TELESCOPE
-    global OBSERVATORY
-    global CAMERA
-    global FILTERWHEEL
+    global CONFIG
 
 
     default = load_array_form_json(DEFAULT_PATH)
@@ -99,21 +104,21 @@ def load_defaults() -> None:
     camera = _get_default("camera", default, CAMERAS_PATH)
     wheel = _get_default("filterwheel", default, FILTERWHEELS_PATH)
     
-    OBSERVATORY.clear()
+    CONFIG["observatory"].clear()
     if observatory:
-        OBSERVATORY.update(observatory)
+        CONFIG["observatory"].update(observatory)
     
-    TELESCOPE.clear()
+    CONFIG["telescope"].clear()
     if telescope:
-        TELESCOPE.update(telescope)
+        CONFIG["telescope"].update(telescope)
 
-    CAMERA.clear()
+    CONFIG["camera"].clear()
     if camera:
-        CAMERA.update(camera)
+        CONFIG["camera"].update(camera)
 
-    FILTERWHEEL.clear()
+    CONFIG["filterwheel"].clear()
     if wheel:
-        FILTERWHEEL.update(wheel)
+        CONFIG["filterwheel"].update(wheel)
 
 
 
@@ -128,60 +133,36 @@ async def save_config(config: Dict[str, ConfigAllowedValue]) -> bool:
     await write_json(CONFIG_PATH, config_to_save)
     return True
 
-async def get_observatories() -> ConfigList:
-    return await read_json(OBSERVATORY_PATH)
 
-async def get_observatory_schema() -> Dict[str, ConfigAllowedValue]:
-    return await read_json(OBSERVATORY_SCHEMA_PATH)
+async def get_telescope_config(filepath: Path) -> ConfigList:
+    if filepath.exists():
+        return await read_json(filepath)
+    return []
 
-async def save_observatories(observatory: List[Dict[str, ConfigAllowedValue]]):
-    await write_json(OBSERVATORY_PATH, observatory)
-    await set_default_observatory(OBSERVATORY["name"])
-    
-async def get_cameras() -> ConfigList:
-    return await read_json(CAMERAS_PATH)
+async def get_telescope_config_schema(filepath: Path) -> Dict[str, ConfigAllowedValue]:
+    if filepath.exists():
+        return await read_json(filepath)
+    return []
 
-async def get_cameras_schema() -> ConfigList:
-    return await read_json(CAMERAS_SCHEMA_PATH)
-
-async def save_cameras(cameras: List[Dict[str, ConfigAllowedValue]]):
-    await write_json(CAMERAS_PATH, cameras)
-    await set_default_camera(CAMERA["name"])
-
-async def set_default_camera(camera: str):
-    global CAMERA
-    await change_default("camera", camera)
-    CAMERA = find_item_from_name(camera, await get_cameras())
-
-async def set_default_filterwheel(wheel: str):
-    global FILTERWHEEL
-    await change_default("filterwheel", wheel)
-    FILTERWHEEL = find_item_from_name(wheel, await get_filterwheels())
+async def save_telescope_config(filepath: Path, telescope_config: List[Dict[str, ConfigAllowedValue]], type:str, schema_path:Path) -> tuple[bool, str]:
+    schema = await get_telescope_config_schema(schema_path)
+    for item in telescope_config:
+        error = await check_data_format(item, schema)
+        if error:
+            return (False, error)
+    try : 
+        await write_json(filepath, telescope_config)
+    except Exception as e:
+        return (False, str(e))
+    await set_default_telescope_config(telescope_config[0]["name"],type, filepath)
+    return (True, "No Error")
 
 
-async def get_filterwheels() -> ConfigList:
-    return await read_json(FILTERWHEELS_PATH)
+async def set_default_telescope_config(item: str, type: str, filepath: Path):
+    global CONFIG
+    await change_default(type, item)
+    CONFIG[item] = find_item_from_name(item, await get_telescope_config(filepath))
 
-async def get_filterwheels_schema() -> ConfigList:
-    return await read_json(FILTERWHEELS_SCHEMA_PATH)
-
-async def save_filterwheels(wheels: List[Dict[str, ConfigAllowedValue]]):
-    global FILTERWHEEL
-    global FILTERWHEELS_PATH
-    await write_json(FILTERWHEELS_PATH, wheels)
-    await set_default_filterwheel(FILTERWHEEL["name"])
-
-
-async def get_telescopes() -> ConfigList:
-    return await read_json(TELESCOPE_PATH)
-
-
-async def get_telescope_schema() -> Dict[str, ConfigAllowedValue]:
-    return await read_json(TELESCOPE_SCHEMA_PATH)
-
-async def save_telescopes(observatory: List[Dict[str, ConfigAllowedValue]]):
-    await write_json(TELESCOPE_PATH, observatory)
-    await set_default_telescope(TELESCOPE["name"])
 
 async def get_default() -> Dict[str, ConfigAllowedValue]:
     if DEFAULT_PATH.exists():
@@ -194,16 +175,6 @@ async def change_default(key, value) -> Dict[str, ConfigAllowedValue]:
     await write_json(DEFAULT_PATH, current)
 
 
-async def set_default_telescope(telescope: str):
-    global TELESCOPE
-    await change_default("telescope", telescope)
-    TELESCOPE = find_item_from_name(telescope, await get_telescopes())
-
-
-async def set_default_observatory(observatory: str):
-    global OBSERVATORY
-    await change_default("observatory", observatory)
-    OBSERVATORY = find_item_from_name(observatory, await get_observatories())
 
 async def check_data_format(
     data: Dict[str, ConfigAllowedValue],

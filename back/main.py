@@ -34,4 +34,4 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn 
-    uvicorn.run("main:app", host=config.CONFIG["server_ip"], port=config.CONFIG["server_port"], reload=True)
+    uvicorn.run("main:app", host=config.CONFIG['global']["server_ip"], port=config.CONFIG['global']["server_port"], reload=True)
