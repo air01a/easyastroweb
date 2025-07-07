@@ -5,5 +5,6 @@ export type PlanType = {
   dec: number;
   filter: string;
   object: string;
+  focus: boolean;
 };
 

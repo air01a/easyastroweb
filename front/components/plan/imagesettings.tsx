@@ -5,6 +5,7 @@ import Button from '../../design-system/buttons/main';
 import {AddButton, RemoveButton} from '../../design-system/buttons/addremove';
 import type { ImageConfig } from './plan.type'
 import { useObserverStore } from "../../store/store";
+import Checkbox from '../../design-system/inputs/checkbox';
 
 
 
@@ -24,7 +25,7 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
         return newDuration/=3600;
     }
 
-  const handleChange = (id: number, field: keyof ImageConfig, value: string|number) => {
+  const handleChange = (id: number, field: keyof ImageConfig, value: string|number|boolean) => {
     const prev = settings.map(item =>
         item.id === id ? { ...item, [field]: value } : item
       );
@@ -45,6 +46,7 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
         imageCount: 1,
         exposureTime: 30,
         filter: filters[0],
+        focus: false,
       },
     ];
     setSettings(prev);
@@ -104,6 +106,14 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
               </option>
             ))}
           </SelectInput>
+
+          <div className="flex items-center justify-center">
+            <label className="mr-4">Refocus</label>
+            <Checkbox 
+              checked={config.focus===true}
+              onChange={() => handleChange(config.id, 'focus', !config.focus)}
+            />
+          </div>
 
           <AddButton
             onClick={addRow}

@@ -392,7 +392,7 @@ class CameraInfo(BaseDeviceInfo):
     electrons_per_adu: float
 
 class ExposureSettings(BaseModel):
-    duration: float = 1.0
+    duration: int = 1
     bin_x: int = 1
     bin_y: int = 1
     start_x: int = 0
@@ -420,23 +420,29 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         """Récupère les informations complètes de la caméra"""
         base_info = self.get_device_info()
 
-        results = [
-            self._make_request("GET", "cameraxsize"),
-            self._make_request("GET", "cameraysize"),
-            self._make_request("GET", "maxbinx"),
-            self._make_request("GET", "maxbiny"),
-            self._make_request("GET", "pixelsizex"),
-            self._make_request("GET", "pixelsizey"),
-            self._make_request("GET", "sensortype"),
-            self._make_request("GET", "canabortexposure"),
-            self._make_request("GET", "canasymmetricbin"),
-            self._make_request("GET", "canfastreadout"),
-            self._make_request("GET", "cangetcoolerpower"),
-            self._make_request("GET", "canpulseguide"),
-            self._make_request("GET", "cansetccdtemperature"),
-            self._make_request("GET", "canstopexposure"),
-            self._make_request("GET", "hasshutter"),
+        parameters= ["cameraxsize", "cameraysize",
+                "maxbinx",
+                "maxbiny",
+                "pixelsizex",
+                "pixelsizey",
+                "sensortype",
+                "canabortexposure",
+                "canasymmetricbin",
+                "canfastreadout",
+                "cangetcoolerpower",
+                "canpulseguide",
+                "cansetccdtemperature",
+                "canstopexposure",
+                "hasshutter"
         ]
+
+        results=[]
+        for parameter in parameters:
+            try:
+                results.append(self._make_request("GET", parameter))
+            except:
+                results.append({})
+        
 
         return CameraInfo(
             **base_info.dict(),
@@ -461,18 +467,18 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
 
     def start_exposure(self, settings: ExposureSettings) -> None:
         """Démarre une exposition"""
-        if settings.num_x is None or settings.num_y is None:
-            info = self.get_camera_info()
-            settings.num_x = settings.num_x or info.camera_x_size
-            settings.num_y = settings.num_y or info.camera_y_size
+        #if settings.num_x is None or settings.num_y is None:
+        #    info = self.get_camera_info()
+        #    settings.num_x = settings.num_x or info.camera_x_size
+        #    settings.num_y = settings.num_y or info.camera_y_size
 
-        self._make_request("PUT", "binx", {"BinX": settings.bin_x})
-        self._make_request("PUT", "biny", {"BinY": settings.bin_y})
-        self._make_request("PUT", "startx", {"StartX": settings.start_x})
-        self._make_request("PUT", "starty", {"StartY": settings.start_y})
-        self._make_request("PUT", "numx", {"NumX": settings.num_x})
-        self._make_request("PUT", "numy", {"NumY": settings.num_y})
-
+        #self._make_request("PUT", "binx", {"BinX": settings.bin_x})
+        #self._make_request("PUT", "biny", {"BinY": settings.bin_y})
+        #self._make_request("PUT", "startx", {"StartX": settings.start_x})
+        #self._make_request("PUT", "starty", {"StartY": settings.start_y})
+        #self._make_request("PUT", "numx", {"NumX": settings.num_x})
+        # self._make_request("PUT", "numy", {"NumY": settings.num_y})
+        #print(settings)
         self._make_request("PUT", "startexposure", {
             "Duration": settings.duration,
             "Light": settings.light
@@ -501,8 +507,13 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         result = self._make_request("GET", "imagearray")
         image_data = result.get("Value", [])
 
-        last_exposure_duration = self._make_request("GET", "lastexposureduration")
-        last_exposure_start = self._make_request("GET", "lastexposurestarttime")
+        try:
+            last_exposure_duration = self._make_request("GET", "lastexposureduration")
+            last_exposure_start = self._make_request("GET", "lastexposurestarttime")
+        except:
+            last_exposure_duration={"Value":1}
+            last_exposure_start = {"Value":""}
+
 
         return ImageData(
             width=len(image_data[0]) if image_data else 0,
@@ -699,3 +710,6 @@ if __name__ == "__main__":
 
 alpaca_telescope_client = ASCOMAlpacaTelescopeClient("localhost", 11111, 0)
 alpaca_camera_client = ASCOMAlpacaCameraClient("localhost", 11111, 0)
+alpaca_focuser_client = ASCOMAlpacaFocuserClient("localhost",11111)
+
+

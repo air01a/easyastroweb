@@ -433,6 +433,16 @@ class FitsImageManager:
         print(f"     Mode   : {pil_image.mode}")
         print(f"     Taille : {pil_image.size}")
 
+    def save_fits_from_array(array, filename:str, headers: Dict[str,str]):
+        image=np.array(array,dtype=np.uint16)
+        hdu = fits.PrimaryHDU(image)
+        if headers:
+            for key, value in headers.items():
+                hdu.header[key]= value
+        
+        hdul = fits.HDUList([hdu])
+        hdul.writeto(filename, overwrite=True)
+
 
 # Exemple d'utilisation
 if __name__ == "__main__":

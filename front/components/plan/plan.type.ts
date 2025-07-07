@@ -3,4 +3,5 @@ export type ImageConfig = {
   imageCount: number;
   exposureTime: number;
   filter: string;
+  focus: boolean;
 };

@@ -228,6 +228,7 @@ export default function PlanPage() {
           const ra = localCatalog[index].ra;
           const dec = localCatalog[index].dec;
           const filter = capture.filter;
+          const focus = capture.focus;
           plan.push({
               start,
               expo,
@@ -235,6 +236,7 @@ export default function PlanPage() {
               dec,
               filter,
               object,
+              focus
           });
           start+=expo*nExpo / 3600;
         });
