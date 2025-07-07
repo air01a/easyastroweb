@@ -243,7 +243,7 @@ class AutoFocusLib:
             FWHM moyen ou None si pas assez d'étoiles
         """
         # Détection des étoiles
-        stars = self.detect_stars(image)
+        """stars = self.detect_stars(image)
         
         if len(stars) < self.min_stars:
             self.logger.warning(f"Pas assez d'étoiles détectées: {len(stars)}")
@@ -269,7 +269,32 @@ class AutoFocusLib:
         filtered_fwhm = [f for f in fwhm_values if lower_bound <= f <= upper_bound]
         
         if len(filtered_fwhm) < 3:
-            filtered_fwhm = fwhm_values
+            filtered_fwhm = fwhm_values"""
+        from photutils.psf import fit_fwhm
+
+        mean_bg = np.median(image)
+        std_bg = np.std(image)
+        
+        # Détection des étoiles avec DAOStarFinder
+        daofind = DAOStarFinder(
+            threshold=self.star_detection_threshold * std_bg,
+            fwhm=6.0,
+            brightest=self.max_stars
+        )
+        
+        sources = daofind(image - mean_bg)
+        xypos = list(zip(sources['xcentroid'], sources['ycentroid']))
+        fwhm = fit_fwhm(image, xypos=xypos, fit_shape=(5, 5), fwhm=2)
+        
+        q1, q3 = np.percentile(fwhm, [25, 75])
+        iqr = q3 - q1
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        
+        filtered_fwhm = [f for f in fwhm if lower_bound <= f <= upper_bound]
+        
+        if len(filtered_fwhm) < 3:
+            filtered_fwhm = fwhm
         
         return np.mean(filtered_fwhm)
     
