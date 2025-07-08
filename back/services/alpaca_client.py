@@ -415,6 +415,15 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
 
     def __init__(self, host="localhost", port=11111, device_number=0):
         super().__init__(ASCOMDeviceType.CAMERA, host, port, device_number)
+    
+    def connect(self):
+        super().connect()
+        self.camera_info = self.get_camera_info()
+        logger.info("Getting information from camera")
+        self._make_request("PUT", "startx", {"StartX": 0})
+        self._make_request("PUT", "starty", {"StartY": 0})
+        self._make_request("PUT", "numx", {"NumX": self.camera_info.camera_x_size})
+        self._make_request("PUT", "numy", {"NumY": self.camera_info. camera_y_size})
 
     def get_camera_info(self) -> CameraInfo:
         """Récupère les informations complètes de la caméra"""
@@ -467,17 +476,7 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
 
     def start_exposure(self, settings: ExposureSettings) -> None:
         """Démarre une exposition"""
-        #if settings.num_x is None or settings.num_y is None:
-        #    info = self.get_camera_info()
-        #    settings.num_x = settings.num_x or info.camera_x_size
-        #    settings.num_y = settings.num_y or info.camera_y_size
 
-        #self._make_request("PUT", "binx", {"BinX": settings.bin_x})
-        #self._make_request("PUT", "biny", {"BinY": settings.bin_y})
-        #self._make_request("PUT", "startx", {"StartX": settings.start_x})
-        #self._make_request("PUT", "starty", {"StartY": settings.start_y})
-        #self._make_request("PUT", "numx", {"NumX": settings.num_x})
-        # self._make_request("PUT", "numy", {"NumY": settings.num_y})
         #print(settings)
         self._make_request("PUT", "startexposure", {
             "Duration": settings.duration,

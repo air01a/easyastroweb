@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from models.api import ConfigPayload
-from services.config import CONFIG, CONFIG_SCHEME,  save_config as root_save_config, load_config_async
+from services.configurator import CONFIG, CONFIG_SCHEME,  save_config as root_save_config, load_config_async
 
 router = APIRouter(prefix="/config", tags=["config"])
 
@@ -32,7 +32,7 @@ async def get_config():
     # Ici tu peux persister en base de données ou autre traitement
     # ...
     
-    return CONFIG
+    return CONFIG['global']
 
 
 @router.get("/scheme")

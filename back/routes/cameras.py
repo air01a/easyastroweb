@@ -2,7 +2,7 @@
 This module defines the API routes for managing camera configurations in the EasyAstro application."""
 
 from fastapi import APIRouter, Body, HTTPException
-from services.config import save_telescope_config, get_telescope_config, get_telescope_config_schema, set_default_telescope_config, CONFIG, CAMERAS_PATH, CAMERAS_SCHEMA_PATH
+from services.configurator import save_telescope_config, get_telescope_config, get_telescope_config_schema, set_default_telescope_config, CONFIG, CAMERAS_PATH, CAMERAS_SCHEMA_PATH
 from models.api import ConfigPayload, ConfigAllowedValue
 from typing import Dict, List, Any
 

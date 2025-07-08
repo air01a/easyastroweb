@@ -1,4 +1,95 @@
-[
+[{
+    "fieldName": "plate_solver_options",
+    "description": "Plate solving",
+    "fieldType": "SEPARATOR",
+    "varType": "STR",
+    "defaultValue": "",
+    "required":false
+  },
+  {
+    "fieldName": "astap_max_stars",
+    "description": "Maximum of stars to use with Astap for plate solving",
+    "fieldType": "INPUT",
+    "varType": "STR",
+    "defaultValue": 400,
+    "required":true
+  },
+  {
+    "fieldName": "astap_downsample_factor",
+    "description": "Astap downsample factor",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 1,
+    "required":false
+  },  
+  {
+    "fieldName": "astap_default_search_radius",
+    "description": "Astap default search radius (search around fit dec and ad coordinates for PS)",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 10,
+    "required":true
+  },
+  {
+    "fieldName": "focuser_separator",
+    "description": "Focuser options",
+    "fieldType": "SEPARATOR",
+    "varType": "STR",
+    "defaultValue": "",
+    "required":false
+  },
+    {
+    "fieldName": "focuser_range",
+    "description": "Search range from initial values for focusers",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 250,
+    "required":true
+
+  },
+  {
+    "fieldName": "focuser_min_stars",
+    "description": "Min stars needed for focus operation",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 5,
+    "required":true
+
+  },
+  {
+    "fieldName": "focuser_max_stars",
+    "description": "Max stars for focus",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 50,
+    "required":true
+
+  },
+  {
+    "fieldName": "focuser_window_size",
+    "description": "Number of values used to find best curve around the focus point",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 2,
+    "required":true
+  },
+  {
+    "fieldName": "focuser_image_by_position",
+    "description": "Number of pictures to take for each focuser position",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 2,
+    "required":true
+  },
+  {
+    "fieldName": "fits_separator",
+    "description": "Fits Option",
+    "fieldType": "SEPARATOR",
+    "varType": "STR",
+    "defaultValue": "",
+    "required":false
+  },
+
   {
     "fieldName": "fits_process_dir",
     "description": "Fits process directory",
@@ -24,29 +115,14 @@
     "defaultValue": 20,
     "required":true
   },
-  {
-    "fieldName": "astap_max_stars",
-    "description": "Maximum of stars to use with Astap for plate solving",
-    "fieldType": "INPUT",
+    
+   {
+    "fieldName": "ascom_options",
+    "description": "Ascom",
+    "fieldType": "SEPARATOR",
     "varType": "STR",
-    "defaultValue": 400,
-    "required":true
-  },
-  {
-    "fieldName": "astap_downsample_factor",
-    "description": "Astap downsample factor",
-    "fieldType": "INPUT",
-    "varType": "INT",
-    "defaultValue": 0,
+    "defaultValue": "",
     "required":false
-  },  
-  {
-    "fieldName": "astap_default_search_radius",
-    "description": "Astap default search radius (search around fit dec and ad coordinates for PS)",
-    "fieldType": "INPUT",
-    "varType": "INT",
-    "defaultValue": 10,
-    "required":true
   },
   {
     "fieldName": "ASCOM_server_ip",
@@ -63,6 +139,14 @@
     "varType": "INT",
     "defaultValue": 11111,
     "required":true
+  },
+      {
+    "fieldName": "server_options",
+    "description": "Server options",
+    "fieldType": "SEPARATOR",
+    "varType": "STR",
+    "defaultValue": "",
+    "required":false
   },
   {
     "fieldName": "server_ip",

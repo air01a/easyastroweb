@@ -1,425 +1,217 @@
 import numpy as np
 import cv2
-from scipy.optimize import curve_fit
-from scipy.ndimage import gaussian_filter
-from photutils.detection import DAOStarFinder
-import matplotlib.pyplot as plt
-from typing import List, Tuple, Optional, Callable
-import time
 import logging
+from typing import List, Tuple, Optional, Dict, Any
+from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
+from photutils.detection import DAOStarFinder
+from photutils.psf import fit_fwhm
 
 class AutoFocusLib:
     """
-    Bibliothèque pour l'autofocus astronomique basée sur l'analyse FWHM
+    Library for astronomical autofocus based on FWHM analysis
     """
     
-    def __init__(self, camera_capture_func: Callable, focuser_move_func: Callable):
+    def __init__(self, star_detection_threshold=3, min_stars=5, max_stars = 50,  window_size=2):
         """
-        Initialise la bibliothèque d'autofocus
-        
-        Args:
-            camera_capture_func: Fonction pour capturer une image (doit retourner un array numpy)
-            focuser_move_func: Fonction pour déplacer le focuser (prend une position en paramètre)
+        Initializes the autofocus library
         """
-        self.camera_capture = camera_capture_func
-        self.focuser_move = focuser_move_func
         self.logger = logging.getLogger(__name__)
         logging.basicConfig(level=logging.INFO)
         
         # Paramètres par défaut
-        self.star_detection_threshold = 3.0  # Seuil de détection des étoiles
-        self.min_stars = 5  # Nombre minimum d'étoiles requises
-        self.max_stars = 50  # Nombre maximum d'étoiles à analyser
-        self.aperture_radius = 10  # Rayon d'ouverture pour l'analyse
+        self.star_detection_threshold = star_detection_threshold  # Seuil de détection des étoiles
+        self.min_stars = min_stars  # Nombre minimum d'étoiles requises
+        self.max_stars = max_stars  # Nombre maximum d'étoiles à analyser
+        self.window_size=window_size
+        # Stockage des mesures
+        self.measurements: List[Dict[str, Any]] = []
         
-    def detect_stars(self, image: np.ndarray) -> List[Tuple[float, float]]:
+    def clear_measurements(self) -> None:
         """
-        Détecte les étoiles dans une image
-        
-        Args:
-            image: Image en niveaux de gris
-            
-        Returns:
-            Liste des coordonnées (x, y) des étoiles détectées
+        Clears all stored measurements
         """
-        # Normalisation de l'image
-        if image.dtype != np.float32:
-            image = image.astype(np.float32)
-        
-        # Estimation du bruit de fond
-        mean_bg = np.median(image)
-        std_bg = np.std(image)
-        
-        # Détection des étoiles avec DAOStarFinder
-        daofind = DAOStarFinder(
-            threshold=self.star_detection_threshold * std_bg,
-            fwhm=6.0,
-            brightest=self.max_stars
-        )
-        
-        sources = daofind(image - mean_bg)
-        
-        if sources is None or len(sources) < self.min_stars:
-            return []
-            
-        # Retourne les coordonnées des étoiles
-        return [(s['xcentroid'], s['ycentroid']) for s in sources]
+        self.measurements.clear()
+        self.logger.info("Mesures effacées")
     
-    def calculate_fwhm_single_star(self, image: np.ndarray, x: float, y: float) -> Optional[float]:
+    def analyze_image(self, image: np.ndarray, focus_position: int) -> Dict[str, Any]:
         """
-        Calcule le FWHM d'une étoile unique
-        
+        Analyzes an image and stores the results
+
         Args:
-            image: Image en niveaux de gris
-            x, y: Coordonnées de l'étoile
-            
+            image: Grayscale or color image
+            focus_position: Focus position corresponding to this image
+
         Returns:
-            FWHM de l'étoile ou None si le calcul échoue
+            Dictionary containing the analysis results
+        """ 
+        # Convert to grayscale if necessary
+        if len(image.shape) == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Detect stars and compute FWHM
+        fwhm, num_stars = self._calculate_image_fwhm_detailed(image)
+        
+        # Create result
+        result = {
+            'focus_position': focus_position,
+            'fwhm': fwhm,
+            'num_stars': num_stars,
+            'valid': fwhm is not None and num_stars >= self.min_stars
+        }
+        
+        # Store measurement
+        self.measurements.append(result)
+        
+        self.logger.info(f"Position {focus_position}: FWHM = {fwhm if fwhm else 'N/A'}, "
+                        f"Étoiles = {num_stars}, Valide = {result['valid']}")
+        
+        return result
+    
+
+
+    def _calculate_image_fwhm_detailed(self, image: np.ndarray) -> Tuple[Optional[float], int]:
+        """
+        Calculates the average FWHM of an image with detailed information
+
+        Args:
+            image: Grayscale image
+
+        Returns:
+            Tuple (average FWHM, number of stars detected)
         """
         try:
-            # Extraction d'une sous-image centrée sur l'étoile
-            size = self.aperture_radius * 2
-            x_int, y_int = int(x), int(y)
+            # Background estimation
+            mean_bg = np.median(image)
+            std_bg = np.std(image)
             
-            # Vérification des limites
-            if (x_int - size//2 < 0 or x_int + size//2 >= image.shape[1] or
-                y_int - size//2 < 0 or y_int + size//2 >= image.shape[0]):
-                return None
-                
-            subimage = image[y_int - size//2:y_int + size//2,
-                           x_int - size//2:x_int + size//2]
+            # Stars detection with DAOStarFinder
+            daofind = DAOStarFinder(
+                threshold=self.star_detection_threshold * std_bg,
+                fwhm=6.0,
+                brightest=self.max_stars
+            )
             
-            # Centrage précis en trouvant le maximum local
-            max_pos = np.unravel_index(np.argmax(subimage), subimage.shape)
-            center_y, center_x = float(max_pos[0]), float(max_pos[1])
+            sources = daofind(image - mean_bg)
             
-            # Calcul du profil radial
-            y_indices, x_indices = np.ogrid[:subimage.shape[0], :subimage.shape[1]]
+            if sources is None or len(sources) < self.min_stars:
+                return None, 0
             
-            # Distance au centre
-            distances = np.sqrt((x_indices - center_x)**2 + (y_indices - center_y)**2)
+            # FWHM calculation for all stars
+            xypos = list(zip(sources['xcentroid'], sources['ycentroid']))
+            fwhm_values = fit_fwhm(image, xypos=xypos, fit_shape=(5, 5), fwhm=2)
+
+            # outliers filters
+            q1, q3 = np.percentile(fwhm_values, [25, 75])
+            iqr = q3 - q1
+            lower_bound = q1 - 1.5 * iqr
+            upper_bound = q3 + 1.5 * iqr
             
-            # Profil radial moyenné
-            max_radius = min(size//2 - 1, 10)
-            radial_profile = []
-            radii = []
+            filtered_fwhm = [f for f in fwhm_values if lower_bound <= f <= upper_bound]
             
-            for r in range(max_radius):
-                mask = (distances >= r) & (distances < r + 1)
-                if np.any(mask):
-                    radial_profile.append(np.mean(subimage[mask]))
-                    radii.append(r)
+            if len(filtered_fwhm) < 3:
+                filtered_fwhm = fwhm_values
             
-            if len(radial_profile) < 3:
-                return None
-                
-            # Ajustement gaussien du profil radial
-            def gaussian_profile(r, amplitude, sigma, background):
-                return amplitude * np.exp(-0.5 * (r / sigma)**2) + background
-            
-            try:
-                # Estimation initiale des paramètres
-                amplitude_init = max(radial_profile) - min(radial_profile)
-                sigma_init = 2.0
-                background_init = min(radial_profile)
-                
-                popt, _ = curve_fit(
-                    gaussian_profile,
-                    radii,
-                    radial_profile,
-                    p0=[amplitude_init, sigma_init, background_init],
-                    maxfev=1000
-                )
-                
-                # FWHM = 2.355 * sigma
-                fwhm = 2.355 * abs(popt[1])
-                
-                # Validation du résultat
-                if 0.5 <= fwhm <= 20:  # FWHM raisonnable pour l'astronomie
-                    return fwhm
-                    
-            except:
-                # Méthode de fallback : calcul FWHM simple
-                return self._calculate_fwhm_fallback(subimage, center_x, center_y)
-                
-            return None
+            return np.mean(filtered_fwhm), len(sources)
             
         except Exception as e:
-            self.logger.warning(f"Erreur dans le calcul FWHM: {e}")
-            return None
+            self.logger.error(f"Erreur lors du calcul FWHM: {e}")
+            return None, 0
     
-    def _calculate_fwhm_fallback(self, subimage: np.ndarray, center_x: float, center_y: float) -> Optional[float]:
+    def get_measurements(self) -> List[Dict[str, Any]]:
         """
-        Méthode de fallback pour calculer le FWHM quand l'ajustement gaussien échoue
-        """
-        try:
-            # Profils horizontal et vertical passant par le centre
-            center_x_int = int(center_x)
-            center_y_int = int(center_y)
-            
-            if (0 <= center_x_int < subimage.shape[1] and 
-                0 <= center_y_int < subimage.shape[0]):
-                
-                h_profile = subimage[center_y_int, :]
-                v_profile = subimage[:, center_x_int]
-                
-                # Calcul FWHM sur les deux profils
-                fwhm_h = self._calculate_fwhm_1d(h_profile)
-                fwhm_v = self._calculate_fwhm_1d(v_profile)
-                
-                if fwhm_h is not None and fwhm_v is not None:
-                    return (fwhm_h + fwhm_v) / 2.0
-                elif fwhm_h is not None:
-                    return fwhm_h
-                elif fwhm_v is not None:
-                    return fwhm_v
-            
-            return None
-            
-        except:
-            return None
-    
-    def _calculate_fwhm_1d(self, profile: np.ndarray) -> Optional[float]:
-        """
-        Calcule le FWHM d'un profil 1D
-        """
-        try:
-            # Lissage léger
-            if len(profile) > 3:
-                profile_smooth = gaussian_filter(profile.astype(np.float32), sigma=0.5)
-            else:
-                profile_smooth = profile.astype(np.float32)
-            
-            # Recherche du maximum
-            max_idx = np.argmax(profile_smooth)
-            max_val = profile_smooth[max_idx]
-            
-            # Estimation du fond (moyenne des extrémités)
-            n_edge = min(3, len(profile_smooth) // 4)
-            if n_edge > 0:
-                background = (np.mean(profile_smooth[:n_edge]) + 
-                             np.mean(profile_smooth[-n_edge:])) / 2.0
-            else:
-                background = np.min(profile_smooth)
-            
-            # Niveau à mi-hauteur
-            half_max = background + (max_val - background) / 2.0
-            
-            # Recherche des points à mi-hauteur
-            left_idx = max_idx
-            right_idx = max_idx
-            
-            # Recherche vers la gauche
-            for i in range(max_idx, 0, -1):
-                if profile_smooth[i] <= half_max:
-                    left_idx = i
-                    break
-            
-            # Recherche vers la droite
-            for i in range(max_idx, len(profile_smooth)):
-                if profile_smooth[i] <= half_max:
-                    right_idx = i
-                    break
-            
-            # Calcul du FWHM
-            if right_idx > left_idx:
-                fwhm = right_idx - left_idx
-                if 0.5 <= fwhm <= 20:  # Validation
-                    return float(fwhm)
-            
-            return None
-            
-        except:
-            return None
-    
-    def calculate_image_fwhm(self, image: np.ndarray) -> Optional[float]:
-        """
-        Calcule le FWHM moyen d'une image
-        
-        Args:
-            image: Image en niveaux de gris
-            
-        Returns:
-            FWHM moyen ou None si pas assez d'étoiles
-        """
-        # Détection des étoiles
-        """stars = self.detect_stars(image)
-        
-        if len(stars) < self.min_stars:
-            self.logger.warning(f"Pas assez d'étoiles détectées: {len(stars)}")
-            return None
-        
-        # Calcul du FWHM pour chaque étoile
-        fwhm_values = []
-        for x, y in stars:
-            fwhm = self.calculate_fwhm_single_star(image, x, y)
-            if fwhm is not None:
-                fwhm_values.append(fwhm)
-        
-        if len(fwhm_values) < self.min_stars:
-            self.logger.warning(f"Pas assez de mesures FWHM valides: {len(fwhm_values)}")
-            return None
-        
-        # Filtrage des valeurs aberrantes (méthode IQR)
-        q1, q3 = np.percentile(fwhm_values, [25, 75])
-        iqr = q3 - q1
-        lower_bound = q1 - 1.5 * iqr
-        upper_bound = q3 + 1.5 * iqr
-        
-        filtered_fwhm = [f for f in fwhm_values if lower_bound <= f <= upper_bound]
-        
-        if len(filtered_fwhm) < 3:
-            filtered_fwhm = fwhm_values"""
-        from photutils.psf import fit_fwhm
+        Returns all stored measurements
 
-        mean_bg = np.median(image)
-        std_bg = np.std(image)
-        
-        # Détection des étoiles avec DAOStarFinder
-        daofind = DAOStarFinder(
-            threshold=self.star_detection_threshold * std_bg,
-            fwhm=6.0,
-            brightest=self.max_stars
-        )
-        
-        sources = daofind(image - mean_bg)
-        xypos = list(zip(sources['xcentroid'], sources['ycentroid']))
-        fwhm = fit_fwhm(image, xypos=xypos, fit_shape=(5, 5), fwhm=2)
-        
-        q1, q3 = np.percentile(fwhm, [25, 75])
-        iqr = q3 - q1
-        lower_bound = q1 - 1.5 * iqr
-        upper_bound = q3 + 1.5 * iqr
-        
-        filtered_fwhm = [f for f in fwhm if lower_bound <= f <= upper_bound]
-        
-        if len(filtered_fwhm) < 3:
-            filtered_fwhm = fwhm
-        
-        return np.mean(filtered_fwhm)
-    
-    def parabolic_model(self, x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
-        """
-        Modèle parabolique pour l'ajustement de courbe
-        """
-        return a * x**2 + b * x + c
-    
-    def hyperbolic_model(self, x: np.ndarray, a: float, b: float, c: float, d: float) -> np.ndarray:
-        """
-        Modèle hyperbolique pour l'ajustement de courbe (souvent plus précis)
-        """
-        return a / np.sqrt((x - b)**2 + c) + d
-    
-    def find_best_focus(self, focus_positions: List[int], 
-                       num_samples: int = 3, 
-                       exposure_time: float = 1.0) -> Tuple[Optional[int], List[Tuple[int, float]]]:
-        """
-        Trouve la meilleure position de focus
-        
-        Args:
-            focus_positions: Liste des positions de focus à tester
-            num_samples: Nombre d'échantillons par position
-            exposure_time: Temps d'exposition (si supporté par la caméra)
-            
         Returns:
-            Tuple (meilleure_position, données_mesures)
+            List of measurements
         """
-        measurements = []
+        return self.measurements.copy()
+    
+    def get_valid_measurements(self) -> List[Dict[str, Any]]:
+        """
+        Returns only valid measurements
+
+        Returns:
+            List of valid measurements
+        """
+        return [m for m in self.measurements if m['valid']]
+    
+    def calculate_best_focus(self) -> Tuple[Optional[int], Optional[str], Dict[str, Any]]:
+        """
+        Calculates the best focus position based on stored measurements
+
+        Returns:
+            Tuple (best_position, method_used, detailed_information)
+        """
+        valid_measurements = self.get_valid_measurements()
         
-        self.logger.info(f"Début de la séquence d'autofocus sur {len(focus_positions)} positions")
+        if len(valid_measurements) < 3:
+            self.logger.error("Pas assez de mesures valides pour l'ajustement de courbe")
+            return None, None, {
+                'error': 'Pas assez de mesures valides',
+                'total_measurements': len(self.measurements),
+                'valid_measurements': len(valid_measurements)
+            }
         
-        for position in focus_positions:
-            self.logger.info(f"Test de la position {position}")
-            
-            # Déplacement du focuser
-            try:
-                self.focuser_move(position)
-                time.sleep(0.1)# Attente de stabilisation
-            except Exception as e:
-                self.logger.error(f"Erreur lors du déplacement du focuser: {e}")
-                continue
-            
-            # Capture et analyse de plusieurs images
-            fwhm_samples = []
-            
-            for sample in range(num_samples):
-                try:
-                    # Capture d'image
-                    image = self.camera_capture()
-                    
-                    # Conversion en niveaux de gris si nécessaire
-                    if len(image.shape) == 3:
-                        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                    
-                    # Calcul du FWHM
-                    fwhm = self.calculate_image_fwhm(image)
-                    
-                    if fwhm is not None:
-                        fwhm_samples.append(fwhm)
-                        self.logger.debug(f"Position {position}, échantillon {sample + 1}: FWHM = {fwhm:.2f}")
-                    
-                except Exception as e:
-                    self.logger.error(f"Erreur lors de la capture/analyse: {e}")
-                    continue
-            
-            # Moyenne des échantillons valides
-            if fwhm_samples:
-                avg_fwhm = np.mean(fwhm_samples)
-                measurements.append((position, avg_fwhm))
-                self.logger.info(f"Position {position}: FWHM moyen = {avg_fwhm:.2f}")
-            else:
-                self.logger.warning(f"Aucune mesure valide pour la position {position}")
+        # Data extraction
+        positions = np.array([m['focus_position'] for m in valid_measurements])
+        fwhm_values = np.array([m['fwhm'] for m in valid_measurements])
         
-        # Vérification des données
-        if len(measurements) < 3:
-            self.logger.error("Pas assez de mesures pour l'ajustement de courbe")
-            return None, measurements
-        
-        # Extraction des données pour l'ajustement
-        positions = np.array([m[0] for m in measurements])
-        fwhm_values = np.array([m[1] for m in measurements])
-        
-        # Tentative d'ajustement avec différents modèles
+
+        sorted_indices = np.argsort(positions)
+        x_sorted = positions[sorted_indices]
+        y_sorted = fwhm_values[sorted_indices]
+
+        # Manage duplicate focuser positions (calculate mean fhwm for this position)
+        unique_x, inverse, counts = np.unique(x_sorted, return_inverse=True, return_counts=True)
+        sum_y = np.bincount(inverse, weights=y_sorted)
+        mean_y = sum_y / counts
+
+        min_idx = np.argmin(mean_y)
+        start_idx = max(min_idx - self.window_size, 0)
+        end_idx = min(min_idx + self.window_size + 1, len(fwhm_values))
+        subset_positions = unique_x[start_idx:end_idx]
+        subset_fwhm = mean_y[start_idx:end_idx]
+
+   
+        # Try different models to find the best fitting curve
         best_focus_pos = None
         best_model = None
+        fit_info = {}
         
-        min_idx = np.argmin(fwhm_values)
-        window_size = 2
-
-        print(positions)
-        print(fwhm_values)
-        start_idx = max(min_idx - window_size, 0)
-        end_idx = min(min_idx + window_size + 1, len(fwhm_values))
-        subset_positions = positions[start_idx:end_idx]
-        subset_fwhm = fwhm_values[start_idx:end_idx]
-        # Modèle parabolique
+        # Parabolic modek
         try:
-            #popt_para, _ = curve_fit(self.parabolic_model, positions, fwhm_values)
-            #a, b, c = popt_para
-            coeffs = np.polyfit(subset_positions, subset_fwhm, 2)
-            a, b, c = coeffs
-            # Minimum de la parabole
-            if a > 0:  # Parabole vers le haut
+            popt_para, pcov_para = curve_fit(self._parabolic_model, subset_positions, subset_fwhm)
+            a, b, c = popt_para
+            
+            # Parabole minima
+            if a > 0:  
                 min_pos = -b / (2 * a)
                 if min(positions) <= min_pos <= max(positions):
                     best_focus_pos = int(round(min_pos))
                     best_model = "parabolic"
+                    fit_info = {
+                        'coefficients': popt_para,
+                        'covariance': pcov_para,
+                        'r_squared': self._calculate_r_squared(positions, fwhm_values, 
+                                                              self._parabolic_model, popt_para)
+                    }
                     self.logger.info(f"Ajustement parabolique: position optimale = {best_focus_pos}")
         except Exception as e:
             self.logger.warning(f"Échec de l'ajustement parabolique: {e}")
         
-        # Modèle hyperbolique (si le parabolique échoue)
+        # Hyperbolic model (if parabolic fails)
         if best_focus_pos is None:
             try:
-                # Estimation initiale pour le modèle hyperbolique
+                # Initial guess for hyperbolic model
                 min_idx = np.argmin(fwhm_values)
                 init_b = positions[min_idx]
                 init_a = np.max(fwhm_values) - np.min(fwhm_values)
                 init_c = 1000
                 init_d = np.min(fwhm_values)
                 
-                popt_hyp, _ = curve_fit(
-                    self.hyperbolic_model, 
+                popt_hyp, pcov_hyp = curve_fit(
+                    self._hyperbolic_model, 
                     positions, 
                     fwhm_values,
                     p0=[init_a, init_b, init_c, init_d],
@@ -429,55 +221,172 @@ class AutoFocusLib:
                 a, b, c, d = popt_hyp
                 best_focus_pos = int(round(b))
                 best_model = "hyperbolic"
+                fit_info = {
+                    'coefficients': popt_hyp,
+                    'covariance': pcov_hyp,
+                    'r_squared': self._calculate_r_squared(positions, fwhm_values, 
+                                                          self._hyperbolic_model, popt_hyp)
+                }
                 self.logger.info(f"Ajustement hyperbolique: position optimale = {best_focus_pos}")
                 
             except Exception as e:
                 self.logger.warning(f"Échec de l'ajustement hyperbolique: {e}")
         
-        # Fallback: position avec le FWHM minimum
+        # Fallback: position with minimum FWHM
         if best_focus_pos is None:
             min_idx = np.argmin(fwhm_values)
             best_focus_pos = positions[min_idx]
             best_model = "minimum"
+            fit_info = {'min_fwhm': fwhm_values[min_idx]}
             self.logger.info(f"Utilisation du minimum direct: position = {best_focus_pos}")
         
-        self.logger.info(f"Meilleure position de focus: {best_focus_pos} (méthode: {best_model})")
-        return best_focus_pos, measurements
-    
-    def plot_focus_curve(self, measurements: List[Tuple[int, float]], 
-                        best_position: Optional[int] = None) -> None:
-        """
-        Trace la courbe de focus
+        detailed_info = {
+            'method': best_model,
+            'best_position': best_focus_pos,
+            'fit_info': fit_info,
+            'total_measurements': len(self.measurements),
+            'valid_measurements': len(valid_measurements),
+            'fwhm_range': (float(np.min(fwhm_values)), float(np.max(fwhm_values))),
+            'position_range': (int(np.min(positions)), int(np.max(positions)))
+        }
         
-        Args:
-            measurements: Liste des mesures (position, fwhm)
-            best_position: Position optimale à marquer sur le graphique
+        self.logger.info(f"Meilleure position de focus: {best_focus_pos} (méthode: {best_model})")
+        return best_focus_pos, best_model, detailed_info
+    
+    def _parabolic_model(self, x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
         """
-        if not measurements:
+        Parabolic model for curve fitting
+        """
+        return a * x**2 + b * x + c
+    
+    def _hyperbolic_model(self, x: np.ndarray, a: float, b: float, c: float, d: float) -> np.ndarray:
+        """
+        Hyperbolic model for curve fitting (often more accurate)
+        """
+        return a / np.sqrt((x - b)**2 + c) + d
+    
+    def _calculate_r_squared(self, x: np.ndarray, y: np.ndarray, model_func, params) -> float:
+        """
+        Calculates the coefficient of determination R²
+        """
+        y_pred = model_func(x, *params)
+        ss_res = np.sum((y - y_pred) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        return 1 - (ss_res / ss_tot)
+    
+    def plot_focus_curve(self, show_fit: bool = True) -> None:
+        """
+        Plots the focus curve based on stored measurements
+
+        Args:
+            show_fit: If True, also displays the fitted curve
+        """
+        valid_measurements = self.get_valid_measurements()
+        
+        if not valid_measurements:
+            self.logger.warning("Aucune mesure valide à afficher")
             return
             
-        positions = [m[0] for m in measurements]
-        fwhm_values = [m[1] for m in measurements]
+        positions = [m['focus_position'] for m in valid_measurements]
+        fwhm_values = [m['fwhm'] for m in valid_measurements]
         
-        plt.figure(figsize=(10, 6))
-        plt.plot(positions, fwhm_values, 'bo-', label='Mesures FWHM')
+        plt.figure(figsize=(12, 8))
         
-        if best_position is not None:
-            plt.axvline(x=best_position, color='r', linestyle='--', 
-                       label=f'Position optimale: {best_position}')
+        # Points de mesure
+        plt.subplot(2, 1, 1)
+        plt.plot(positions, fwhm_values, 'bo-', label='Mesures FWHM', markersize=8)
+        
+        # Ajout de la courbe d'ajustement si demandé
+        if show_fit and len(valid_measurements) >= 3:
+            best_pos, method, info = self.calculate_best_focus()
+            if best_pos is not None:
+                plt.axvline(x=best_pos, color='r', linestyle='--', 
+                           label=f'Position optimale: {best_pos} ({method})')
+                
+                # Courbe d'ajustement
+                if method in ['parabolic', 'hyperbolic']:
+                    x_fit = np.linspace(min(positions), max(positions), 100)
+                    model_func = self._parabolic_model if method == 'parabolic' else self._hyperbolic_model
+                    y_fit = model_func(x_fit, *info['fit_info']['coefficients'])
+                    plt.plot(x_fit, y_fit, 'r-', alpha=0.7, label=f'Ajustement {method}')
         
         plt.xlabel('Position du focuser')
         plt.ylabel('FWHM (pixels)')
         plt.title('Courbe d\'autofocus')
         plt.legend()
         plt.grid(True, alpha=0.3)
+        
+        # Graphique du nombre d'étoiles
+        plt.subplot(2, 1, 2)
+        star_counts = [m['num_stars'] for m in valid_measurements]
+        plt.plot(positions, star_counts, 'go-', label='Nombre d\'étoiles', markersize=6)
+        plt.xlabel('Position du focuser')
+        plt.ylabel('Nombre d\'étoiles détectées')
+        plt.title('Nombre d\'étoiles par position')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
         plt.show()
+    
+    def export_measurements(self, filename: str) -> None:
+        """
+        Exports measurements to a CSV file
+
+        Args:
+            filename: Output file name
+        """
+        import csv
+        
+        with open(filename, 'w', newline='') as csvfile:
+            fieldnames = ['focus_position', 'fwhm', 'num_stars', 'valid']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            
+            writer.writeheader()
+            for measurement in self.measurements:
+                writer.writerow(measurement)
+        
+        self.logger.info(f"Mesures exportées vers {filename}")
+    
+    def get_focus_statistics(self) -> Dict[str, Any]:
+        """
+        Returns statistics about the measurements
+
+        Returns:
+            Dictionary containing statistics
+        """
+        valid_measurements = self.get_valid_measurements()
+        
+        if not valid_measurements:
+            return {'error': 'Aucune mesure valide'}
+        
+        fwhm_values = [m['fwhm'] for m in valid_measurements]
+        star_counts = [m['num_stars'] for m in valid_measurements]
+        
+        return {
+            'total_measurements': len(self.measurements),
+            'valid_measurements': len(valid_measurements),
+            'fwhm_stats': {
+                'min': float(np.min(fwhm_values)),
+                'max': float(np.max(fwhm_values)),
+                'mean': float(np.mean(fwhm_values)),
+                'std': float(np.std(fwhm_values)),
+                'median': float(np.median(fwhm_values))
+            },
+            'star_count_stats': {
+                'min': int(np.min(star_counts)),
+                'max': int(np.max(star_counts)),
+                'mean': float(np.mean(star_counts)),
+                'median': float(np.median(star_counts))
+            }
+        }
 
 # Exemple d'utilisation
 def example_usage():
     from alpaca_client import alpaca_camera_client, ExposureSettings, CameraState, alpaca_focuser_client
+    import time
     """
-    Exemple d'utilisation de la version minimale
+    Example usage of the minimal version
     """
     def mock_camera_capture():
         # Simulation d'une image avec étoiles
@@ -502,33 +411,25 @@ def example_usage():
     alpaca_camera_client.connect()
     alpaca_focuser_client.connect()
     # Initialisation
-
     print("+++ FocusLib")
-
-    autofocus = AutoFocusLib(mock_camera_capture, mock_focuser_move, )
+    autofocus = AutoFocusLib( )
     print("+++ FocusLib Config")
 
-    # Configuration
-    autofocus.star_detection_threshold = 3.0
-    autofocus.min_stars = 3
     
-    # Test de base
-    print("+++ BaseTest")
-    print("+++ Capture")
-
-    test_image = mock_camera_capture()
     print("+++ fwhm")
-
-    fwhm = autofocus.calculate_image_fwhm(test_image)
-    print(f"FWHM test: {fwhm}")
     
     # Recherche de focus
     positions = list(range(24750, 25250, 50))
-    best_pos, measurements = autofocus.find_best_focus(positions,num_samples=1)
-    
-    if best_pos is not None:
-        print(f"Meilleure position: {best_pos}")
-        autofocus.plot_focus_curve(measurements, best_pos)
+
+    for position in positions:
+        mock_focuser_move(position)
+        for i in range(3):
+            result = autofocus.analyze_image(mock_camera_capture(),position)
+
+    final_result = autofocus.calculate_best_focus()
+
+    print(final_result)
+    autofocus.plot_focus_curve()
 
 if __name__ == "__main__":
     example_usage()

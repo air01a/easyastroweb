@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes import api_router
-from services import config
+from services import configurator as config
 
 from contextlib import asynccontextmanager
 

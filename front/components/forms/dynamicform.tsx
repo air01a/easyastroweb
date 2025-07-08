@@ -6,6 +6,7 @@ import Checkbox  from '../../design-system/inputs/checkbox'
 import type {Field, FieldType} from '../../types/dynamicform.type'
 import CircularButtonSelection from "./circularbutton";
 import MultipleTextInput from './multitextinput';
+import { H2 } from "../../design-system/text/titles";
 
 type Props = {
   formDefinition: Field[];
@@ -80,7 +81,6 @@ const DynamicForm: React.FC<Props> = ({
 
     if (field.fieldType === "CHECKBOX") {
       value = rawValue==="1"?true:false;
-      console.log("value", value)
     }
 
     const error = validate(field, rawValue);
@@ -109,15 +109,24 @@ const DynamicForm: React.FC<Props> = ({
     onChange?.(newFormData, false)
   }
 
+
   return (
     <form >
       {formDefinition.map((field) => {
         const value = formData[field.fieldName];
         const error = errors[field.fieldName];
-        console.log(value);
+        console.log(field);
         return (
           <div key={field.fieldName} style={{ marginBottom: "1rem" }}>
-            <label className="text-white mb-1">{field.description} : </label>
+
+
+          {field.fieldType === "SEPARATOR" ? (
+
+              <H2>{field.description}</H2>
+          ):(
+            <label className="text-white mb-1">{field.description} :  </label>
+          )}
+
 
             {field.fieldType === "INPUT" && (
               <Input

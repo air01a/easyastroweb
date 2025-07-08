@@ -1,9 +1,7 @@
 import  DynamicForm  from "../../components/forms/dynamicform";
 import type { Field } from "../../types/dynamicform.type";
-//import CircularButtonSelection from "../../components/forms/circularbutton";
 import { useEffect, useState } from "react";
 import { useConfigStore} from "../../store/store";
-//import {loadCatalog} from "../../lib/astro/catalog/catalog";
 import { FlashMessage } from "../../design-system/messages/flashmessages";
 import { apiService } from '../../api/api';
 
@@ -19,9 +17,11 @@ export default function GeneralConfig() {
     useEffect(() => {
         const  fetchData =async () => {
             const data = await apiService.getConfigScheme()
+            const config = await apiService.getConfig();
             const formDefinition = data ? await data :[];
             setFormDefinition(formDefinition);
             setInitialValues(config);
+            setConfig(config);
             console.log(formDefinition)
         }
         fetchData();
