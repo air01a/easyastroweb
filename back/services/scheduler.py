@@ -3,19 +3,22 @@ from datetime import datetime, timezone
 import threading
 import time
 from models.observation import StopScheduler, Observation
-
+from models.state import telescope_state
 
 class Scheduler(threading.Thread):
-    def __init__(self, ascom_client):
+    def __init__(self, telescope_interface):
         super().__init__(daemon=True)
-        self.ascom_client = ascom_client
+        self.telescope_interface = telescope_interface
         self._stop_requested = False
+
 
     def run(self):
         print("[Scheduler] Started in background thread.")
         self._execute_plan(self.plan)
 
+
     def _execute_plan(self, plan: list[Observation]):
+
         plan = sorted(self.plan, key=lambda obs: obs.start)
         for i, obs in enumerate(plan):
             if self._stop_requested:
@@ -43,6 +46,7 @@ class Scheduler(threading.Thread):
 
             captures_done = 0
             next_time = None
+
             if i + 1 < len(plan):
                 inc = 0
 
@@ -59,6 +63,12 @@ class Scheduler(threading.Thread):
                     hour=next_hour, minute=next_minute, second=next_second,
                     tzinfo=timezone.utc
                 )
+
+            if not telescope_state.is_focused or obs.focus:
+                print("focusing")
+                self.telescope_interface.get_focus()
+                telescope_state.is_focused = True
+                
             
             while captures_done < obs.number:
                 if self._stop_requested:
@@ -70,7 +80,7 @@ class Scheduler(threading.Thread):
                     break
 
                 print(f"[Scheduler] Capture {captures_done+1}/{obs.number} of {obs.object}")
-                self.ascom_client.capture(
+                self.telescope_interface.capture_to_fit(
                     exposure=obs.expo,
                     ra=obs.ra,
                     dec=obs.dec,
@@ -84,13 +94,10 @@ class Scheduler(threading.Thread):
 
 
 def main():
-    
-    class DummyASCOMClient:
-        def capture(self, exposure, ra, dec, filter_name, target_name):
-            print(f"[ASCOM] Capturing {exposure}s on {target_name}...")
-            time.sleep(exposure)  # Simuler le temps d'expo
+    from services.telescope_interface import telescope_interface
+
     # Exemple d'utilisation
-    scheduler = Scheduler(DummyASCOMClient())
+    scheduler = Scheduler(telescope_interface)
 
     # Envoi d'un plan d'observation
     plan = [

@@ -22,6 +22,7 @@ class Observation:
     dec: float
     filter: str
     object: str
+    focus: bool
     
 
 class StopScheduler:
