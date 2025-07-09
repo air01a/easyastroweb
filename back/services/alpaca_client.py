@@ -2,11 +2,9 @@ import httpx
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel
 from enum import Enum
-import logging
 import threading
 import time
-
-logger = logging.getLogger(__name__)
+from utils.logger import logger
 
 # Générateur thread-safe pour les IDs de transaction
 class TransactionIDGenerator:
@@ -64,7 +62,6 @@ class ASCOMAlpacaBaseClient:
             "ClientID": self.client_id,
             "ClientTransactionID": transaction_id
         })
-
         try:
             if method.upper() == "GET":
                 response = self.client.get(url, params=data)
@@ -73,7 +70,7 @@ class ASCOMAlpacaBaseClient:
 
             response.raise_for_status()
             result = response.json()
-
+            print(response.text)
             if result.get("ErrorNumber", 0) != 0:
                 raise Exception(f"Erreur ASCOM {result['ErrorNumber']}: {result.get('ErrorMessage', 'Erreur inconnue')}")
 
@@ -286,17 +283,12 @@ class ASCOMAlpacaTelescopeClient(ASCOMAlpacaBaseClient):
 
     def slew_to_coordinates(self, ra: float, dec: float) -> None:
         """Pointe le télescope vers les coordonnées RA/Dec (synchrone)"""
-        self._make_request("PUT", "slewtocoordinates", {
-            "RightAscension": ra,
-            "Declination": dec
-        })
-
-    def slew_to_coordinates_async(self, ra: float, dec: float) -> None:
-        """Pointe le télescope vers les coordonnées RA/Dec (asynchrone)"""
         self._make_request("PUT", "slewtocoordinatesasync", {
             "RightAscension": ra,
             "Declination": dec
         })
+
+
 
     def set_utc_date(self, date: str) -> None:
         self._make_request("PUT", "utcdate", {

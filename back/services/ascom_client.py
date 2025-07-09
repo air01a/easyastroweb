@@ -2,6 +2,7 @@ import win32com.client
 from pydantic import BaseModel
 from typing import List
 from enum import Enum
+from utils.logger import logger
 
 
 

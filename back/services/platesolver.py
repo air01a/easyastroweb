@@ -63,10 +63,11 @@ class PlateSolveAstap(object):
             astap_cmd.append('-spd')
             astap_cmd.append(str(dec+90))
         result = subprocess.run(astap_cmd,capture_output=True, text=True)
+        print(result)
         if result.returncode == 1:
             return {'error':1,'ra': ra,'dec': dec, 'orientation':0}
         (ra,dec, orientation) = self._get_solution(fits)
         return self._return( 2*int(ra==None),ra,dec, orientation)
         
-test = PlateSolveAstap(1.62,"c:/Program Files/astap/",search_radius=10 )
-print(test.resolve("../test/r_m31_00003.fit", radius=90))
+#test = PlateSolveAstap(1.62,"c:/Program Files/astap/",search_radius=10 )
+#print(test.resolve("../test.fits", radius=90))

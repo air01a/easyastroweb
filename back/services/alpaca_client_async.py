@@ -3,14 +3,11 @@ import httpx
 from typing import Optional, Dict, Any, List, Union
 from pydantic import BaseModel
 from enum import Enum
-import logging
 import threading
-import base64
 import numpy as np
 from PIL import Image
 import io
-
-logger = logging.getLogger(__name__)
+from utils.logger import logger
 
 # Générateur thread-safe pour les IDs de transaction
 class TransactionIDGenerator:

@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-import logging
+from utils.logger import logger
 from typing import List, Tuple, Optional, Dict, Any
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
@@ -16,8 +16,7 @@ class AutoFocusLib:
         """
         Initializes the autofocus library
         """
-        self.logger = logging.getLogger(__name__)
-        logging.basicConfig(level=logging.INFO)
+        self.logger = logger
         
         # Paramètres par défaut
         self.star_detection_threshold = star_detection_threshold  # Seuil de détection des étoiles
@@ -63,7 +62,7 @@ class AutoFocusLib:
         # Store measurement
         self.measurements.append(result)
         
-        self.logger.info(f"Position {focus_position}: FWHM = {fwhm if fwhm else 'N/A'}, "
+        self.logger.info(f"[AutoFocus] - Position {focus_position}: FWHM = {fwhm if fwhm else 'N/A'}, "
                         f"Étoiles = {num_stars}, Valide = {result['valid']}")
         
         return result

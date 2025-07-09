@@ -1,28 +1,45 @@
-from queue import Queue, Empty
 from datetime import datetime, timezone
 import threading
 import time
 from models.observation import StopScheduler, Observation
 from models.state import telescope_state
+from utils.logger import logger
+from services.configurator import CONFIG
+from utils.calcul import get_solver
 
 class Scheduler(threading.Thread):
     def __init__(self, telescope_interface):
         super().__init__(daemon=True)
         self.telescope_interface = telescope_interface
         self._stop_requested = False
-
+        self.solver = get_solver(CONFIG)
+        print("connected",self.telescope_interface.telescope_connect())
+        self.telescope_interface.telescope_unpark()
+        #self.telescope_interface.camera_connect()
 
     def run(self):
-        print("[Scheduler] Started in background thread.")
+        logger.info("[Scheduler] Started in background thread.")
         self._execute_plan(self.plan)
 
+    def slew_to_target(self, ra: float, dec:float):
+        print(ra, dec)
+
+        final=False
+        while not final:
+            self.telescope_interface.slew_to_target(ra, dec)
+            print("-----")
+            image = self.telescope_interface.capture_to_fit(3, ra, dec, "test", "ps")
+            solution = self.solver.resolve(image, ra, dec, 90)
+            print(solution, ra, dec)
+            if solution['ra']==ra:
+                final=True
 
     def _execute_plan(self, plan: list[Observation]):
 
         plan = sorted(self.plan, key=lambda obs: obs.start)
         for i, obs in enumerate(plan):
             if self._stop_requested:
-                print("[Scheduler] Stop during execution.")
+                logger.info("[Scheduler] Stop during execution.")
                 return
             now = datetime.now()
             start_hour = int(obs.start)
@@ -36,7 +53,7 @@ class Scheduler(threading.Thread):
 
             wait_seconds = (start_time - datetime.now()).total_seconds()
             if wait_seconds > 0:
-                print(f"[Scheduler] Waiting {wait_seconds:.1f}s for {obs.object}")
+                logger.info(f"[Scheduler] Waiting {wait_seconds:.1f}s for {obs.object}")
                 waited = 0
                 while waited < wait_seconds:
                     if self._stop_requested:
@@ -64,11 +81,11 @@ class Scheduler(threading.Thread):
                     tzinfo=timezone.utc
                 )
 
-            if not telescope_state.is_focused or obs.focus:
-                print("focusing")
-                self.telescope_interface.get_focus()
-                telescope_state.is_focused = True
+            #if not telescope_state.is_focused or obs.focus:
+            #    self.telescope_interface.get_focus()
+            #    telescope_state.is_focused = True
                 
+            self.slew_to_target(obs.ra, obs.dec)
             
             while captures_done < obs.number:
                 if self._stop_requested:
@@ -76,10 +93,10 @@ class Scheduler(threading.Thread):
 
 
                 if next_time and datetime.now(timezone.utc) >= next_time:
-                    print(f"[Scheduler] Next observation time reached. Skipping remaining captures.")
+                    logger.info(f"[Scheduler] Next observation time reached. Skipping remaining captures.")
                     break
 
-                print(f"[Scheduler] Capture {captures_done+1}/{obs.number} of {obs.object}")
+                logger.info(f"[Scheduler] Capture {captures_done+1}/{obs.number} of {obs.object}")
                 self.telescope_interface.capture_to_fit(
                     exposure=obs.expo,
                     ra=obs.ra,
@@ -101,8 +118,8 @@ def main():
 
     # Envoi d'un plan d'observation
     plan = [
-        Observation(start=0.5, expo=10, number=2, ra=10.684, dec=41.269, filter='R', object='Andromeda'),
-        Observation(start=1.0, expo=5, number=3, ra=10.684, dec=41.269, filter='G', object='Andromeda')
+        Observation(start=0.5, expo=10, number=2, ra=10.684, dec=41.269, filter='R', object='Andromeda', focus=False),
+        Observation(start=1.0, expo=5, number=3, ra=10.684, dec=41.269, filter='G', object='Andromeda',focus=False)
     ]
     scheduler.plan = plan
     scheduler.start()

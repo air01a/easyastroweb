@@ -1,4 +1,5 @@
-[{
+[
+  {
     "fieldName": "plate_solver_options",
     "description": "Plate solving",
     "fieldType": "SEPARATOR",
@@ -6,11 +7,19 @@
     "defaultValue": "",
     "required":false
   },
+    {
+    "fieldName": "astap_catalog",
+    "description": "Path to Astap Catalog",
+    "fieldType": "INPUT",
+    "varType": "STR",
+    "defaultValue": "c:/Program Files/astap/",
+    "required":true
+  },
   {
     "fieldName": "astap_max_stars",
     "description": "Maximum of stars to use with Astap for plate solving",
     "fieldType": "INPUT",
-    "varType": "STR",
+    "varType": "INT",
     "defaultValue": 400,
     "required":true
   },
@@ -45,7 +54,14 @@
     "varType": "INT",
     "defaultValue": 250,
     "required":true
-
+  },
+  {
+    "fieldName": "focuser_step",
+    "description": "Increment step for focuser",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 50,
+    "required":true
   },
   {
     "fieldName": "focuser_min_stars",

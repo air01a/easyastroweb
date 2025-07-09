@@ -2,10 +2,10 @@ from dataclasses import dataclass
 
 @dataclass
 class TelescopeState:
-    is_slewing: bool
-    is_capturing: bool
-    is_focusing: bool
-    is_focused: bool
+    is_slewing: bool = False
+    is_capturing: bool = False
+    is_focusing: bool = False
+    is_focused: bool = False
 
 telescope_state = TelescopeState()
 
