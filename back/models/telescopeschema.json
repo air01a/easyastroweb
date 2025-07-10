@@ -26,7 +26,14 @@
     "description": "AltAz",
     "fieldType": "CHECKBOX",
     "varType": "BOOL",
-    "defaultValue": 0
+    "defaultValue": false
+  },
+  {
+    "fieldName": "has_focuser",
+    "description": "Telescope has focuser",
+    "fieldType": "CHECKBOX",
+    "varType": "BOOL",
+    "defaultValue": false
   }
 ]
 

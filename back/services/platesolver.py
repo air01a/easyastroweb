@@ -70,4 +70,4 @@ class PlateSolveAstap(object):
         return self._return( 2*int(ra==None),ra,dec, orientation)
         
 #test = PlateSolveAstap(1.62,"c:/Program Files/astap/",search_radius=10 )
-#print(test.resolve("../test.fits", radius=90))
+#print(test.resolve("capture-ps-test-2025-07-10T08.41.37.fits", radius=180))

@@ -6,7 +6,7 @@ from typing import Optional, Tuple,  Dict, Any
 import warnings
 from PIL import Image
 import tifffile as tiff
-
+from pathlib import Path
 
 try:
     from colour_demosaicing import demosaicing_CFA_Bayer_bilinear, demosaicing_CFA_Bayer_Malvar2004
@@ -433,7 +433,7 @@ class FitsImageManager:
         print(f"     Mode   : {pil_image.mode}")
         print(f"     Taille : {pil_image.size}")
 
-    def save_fits_from_array(array, filename:str, headers: Dict[str,str]):
+    def save_fits_from_array(array, filename:Path, headers: Dict[str,str]):
         image=np.array(array,dtype=np.uint16)
         hdu = fits.PrimaryHDU(image)
         if headers:

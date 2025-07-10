@@ -13,6 +13,7 @@ from typing import Optional, List, Dict, Callable
 import json
 from datetime import datetime
 import shutil
+from utils.logger import logger
 
 try:
     import pysiril
@@ -47,7 +48,7 @@ class Config:
     
     def create_directories(self):
         """Create necessary directories"""
-        for dir_path in [self.raw_dir, self.processed_dir, self.final_dir]:
+        for dir_path in [self.raw_dir, self.processed_dir, self.final_dir, self.stack_result]:
             dir_path.mkdir(parents=True, exist_ok=True)
 
 class LiveStacker:
@@ -67,7 +68,6 @@ class LiveStacker:
         self.is_processing = False
         self.dark = dark
 
-
         # Statistics
         self.stats = {
             'total_images': 0,
@@ -76,17 +76,9 @@ class LiveStacker:
             'session_start': datetime.now(),
             'last_batch_time': None
         }
+        self.logger = logger
         
-        # Setup logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(self.config.log_dir / 'stacking.log'),
-                logging.StreamHandler()
-            ]
-        )
-        self.logger = logging.getLogger(__name__)
+
         
     def initialize_siril(self) -> bool:
         """Initialize Siril connection"""

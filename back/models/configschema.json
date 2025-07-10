@@ -16,6 +16,22 @@
     "required":true
   },
   {
+    "fieldName": "astap_acceptable_error",
+    "description": "Max error between solver and target coordinates",
+    "fieldType": "INPUT",
+    "varType": "FLOAT",
+    "defaultValue": 0.1,
+    "required":true
+  },
+  {
+    "fieldName": "astap_slew_max_retry",
+    "description": "Number of retry for slewing",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 5,
+    "required":true
+  },
+  {
     "fieldName": "astap_max_stars",
     "description": "Maximum of stars to use with Astap for plate solving",
     "fieldType": "INPUT",
@@ -46,6 +62,14 @@
     "varType": "STR",
     "defaultValue": "",
     "required":false
+  },
+  {
+    "fieldName": "focuser_exposition",
+    "description": "Exposition time for focus",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 4,
+    "required":true
   },
     {
     "fieldName": "focuser_range",
@@ -112,6 +136,14 @@
     "fieldType": "INPUT",
     "varType": "STR",
     "defaultValue": "",
+    "required":false
+  },
+    {
+    "fieldName": "fits_storage_dir",
+    "description": "Fits storage directory",
+    "fieldType": "INPUT",
+    "varType": "STR",
+    "defaultValue": "fits/",
     "required":false
   },
   {

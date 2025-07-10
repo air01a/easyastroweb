@@ -70,7 +70,6 @@ class ASCOMAlpacaBaseClient:
 
             response.raise_for_status()
             result = response.json()
-            print(response.text)
             if result.get("ErrorNumber", 0) != 0:
                 raise Exception(f"Erreur ASCOM {result['ErrorNumber']}: {result.get('ErrorMessage', 'Erreur inconnue')}")
 
@@ -417,6 +416,10 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         self._make_request("PUT", "numx", {"NumX": self.camera_info.camera_x_size})
         self._make_request("PUT", "numy", {"NumY": self.camera_info. camera_y_size})
 
+
+    def get_camera_info_min(self):
+        return self.camera_info
+    
     def get_camera_info(self) -> CameraInfo:
         """Récupère les informations complètes de la caméra"""
         base_info = self.get_device_info()

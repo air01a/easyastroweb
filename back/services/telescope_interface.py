@@ -7,6 +7,7 @@ from imageprocessing.fitsprocessor import FitsImageManager
 from utils.logger import logger
 from services.configurator import CONFIG
 import numpy as np
+from pathlib import Path
 
 class TelescopeInterface(ABC):
 
@@ -60,8 +61,10 @@ class TelescopeInterface(ABC):
             self.move_focuser(position)
             for i in range(CONFIG['global'].get('focuser_image_by_position',1)):
                 logger.info(f"[Focuser] - MTaking picture {i}")
-                image = (self.camera_capture(2).data/255).astype(np.uint8)
-                
+                try:
+                    image = (self.camera_capture(CONFIG['global']['focuser_exposition']).data/255).astype(np.uint8)
+                except:
+                    logger.error("[FOCUS] - Error capturing image")
                 result = self.autofocus.analyze_image(image,position)
                 if not result['valid']:
                     logger.error("[Focuser] - Invalid capture for autofocus")
@@ -70,21 +73,21 @@ class TelescopeInterface(ABC):
         logger.info(f"[Focuser] - Results {best_position}, method={best_method}")
         self.move_focuser(best_position)
 
-    def capture_to_fit(self, exposure, ra, dec, filter_name, target_name) :
-        image = self.camera_capture(exposure)
+    def capture_to_fit(self, exposure, ra, dec, filter_name, target_name, path: Path) :
 
+        image = self.camera_capture(exposure)
         header={}
-        if self.camera_info:
-            header['INSTRUME'] = self.camera_info.name
-            header['XPIXSZ'] = self.camera_info.camera_x_size
-            header['YPIXSZ'] = self.camera_info.camera_y_size
+
         header["EXPTIME"] = 1
-        header['DATE-OBS'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+        header['DATE-OBS'] = time.strftime('%Y-%m-%dT%H.%M.%S')
         header['RA'] = ra
         header['DEC'] = dec
-        FitsImageManager.save_fits_from_array(image.data, f"capture-{target_name}-{filter_name}-{header['DATE-OBS']}.fits", header)
-        return f"capture-{target_name}-{filter_name}-{header['DATE-OBS']}.fits"
+        file_name = path / f"capture-{target_name}-{filter_name}-{header['DATE-OBS']}.fits"
+        FitsImageManager.save_fits_from_array(image.data, file_name, header)
+        return file_name
+    
 
+    
 class AlpacaTelescope(TelescopeInterface):
     def camera_capture(self, expo: float):
         try:
@@ -128,6 +131,8 @@ class AlpacaTelescope(TelescopeInterface):
 
     def telescope_unpark(self):
         alpaca_telescope_client.unpark()
+
+
 telescope_interface = AlpacaTelescope()
 
 

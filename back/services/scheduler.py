@@ -5,7 +5,10 @@ from models.observation import StopScheduler, Observation
 from models.state import telescope_state
 from utils.logger import logger
 from services.configurator import CONFIG
-from utils.calcul import get_solver
+from utils.calcul import get_solver, get_slew_error
+from pathlib import Path
+from imageprocessing.fitsstacker import Config, LiveStacker
+
 
 class Scheduler(threading.Thread):
     def __init__(self, telescope_interface):
@@ -13,29 +16,59 @@ class Scheduler(threading.Thread):
         self.telescope_interface = telescope_interface
         self._stop_requested = False
         self.solver = get_solver(CONFIG)
-        print("connected",self.telescope_interface.telescope_connect())
+        self.telescope_interface.telescope_connect()
         self.telescope_interface.telescope_unpark()
-        #self.telescope_interface.camera_connect()
+        self.telescope_interface.camera_connect()
+        self.stacker_config = Config()
+        self.stacker = LiveStacker(self.stacker_config, self._on_image_stack)
+        self.fit_path = Path(CONFIG['global'].get("fits_storage_dir")).resolve()
+        self.fit_path.mkdir(parents=True, exist_ok=True)
 
     def run(self):
         logger.info("[Scheduler] Started in background thread.")
         self._execute_plan(self.plan)
 
-    def slew_to_target(self, ra: float, dec:float):
-        print(ra, dec)
-
+    def slew_to_target(self, ra: float, dec: float):
+        logger.info(f"[SCHEDULER] - Slewing to {ra}/{dec}")
         final=False
-        while not final:
+        retry=0
+        while not final or retry>CONFIG['global']['astap_slew_max_retry']:
+
             self.telescope_interface.slew_to_target(ra, dec)
-            print("-----")
-            image = self.telescope_interface.capture_to_fit(3, ra, dec, "test", "ps")
-            solution = self.solver.resolve(image, ra, dec, 90)
-            print(solution, ra, dec)
-            if solution['ra']==ra:
-                final=True
+            image:Path = self.telescope_interface.capture_to_fit(3, ra, dec, "test", "ps",self.fit_path)
+            logger.info("[SCHEDULER] - Plate Solving")
+
+            solution = self.solver.resolve(image, ra, dec, CONFIG['global'].get("astap_default_search_radius",10))
+            if solution['error']==0:
+
+                self.telescope_interface.sync_to_coordinates(ra, dec)
+                error = get_slew_error(ra, dec, solution['ra'], solution['dec'])
+                logger.info(f"[SCHEDULER] - Position error {error}")
+
+                if error<CONFIG['global']['astap_acceptable_error']:
+                    logger.info("[SCHEDULER] - slewing done")
+                    final=True
+            else:
+                logger.error(f"[SCHEDULER] - Error Solving {image}")
+             
+            retry+=1
+            try:
+                for ext in ['.wcs', '.ini']:
+                    wcs = image.with_suffix(ext)
+
+                    if wcs.exists():
+                        wcs.unlink()
+                if image.exists():
+                    image.unlink()
+            except:
+                pass
+        return final
+    
+
+    def _on_image_stack(self, image):
+        print("new stacked image")
 
     def _execute_plan(self, plan: list[Observation]):
-
         plan = sorted(self.plan, key=lambda obs: obs.start)
         for i, obs in enumerate(plan):
             if self._stop_requested:
@@ -81,29 +114,31 @@ class Scheduler(threading.Thread):
                     tzinfo=timezone.utc
                 )
 
-            #if not telescope_state.is_focused or obs.focus:
-            #    self.telescope_interface.get_focus()
-            #    telescope_state.is_focused = True
+            if CONFIG["telescope"].get("has_focuser", False) and (not telescope_state.is_focused or obs.focus):
+                logger.info("[SCHEDULER] - FOCUS process")
+                self.telescope_interface.get_focus()
+                telescope_state.is_focused = True
                 
             self.slew_to_target(obs.ra, obs.dec)
-            
+            self.stacker.start_live_stacking()
             while captures_done < obs.number:
                 if self._stop_requested:
                     return
-
-
+                
                 if next_time and datetime.now(timezone.utc) >= next_time:
                     logger.info(f"[Scheduler] Next observation time reached. Skipping remaining captures.")
                     break
 
                 logger.info(f"[Scheduler] Capture {captures_done+1}/{obs.number} of {obs.object}")
-                self.telescope_interface.capture_to_fit(
+                image= self.telescope_interface.capture_to_fit(
                     exposure=obs.expo,
                     ra=obs.ra,
                     dec=obs.dec,
                     filter_name=obs.filter,
-                    target_name=obs.object
+                    target_name=obs.object,
+                    path=self.fit_path
                 )
+                self.stacker.process_new_image(image)
                 captures_done += 1
 
     def request_stop(self):
@@ -129,7 +164,7 @@ def main():
     # Arrêt du scheduler après 5 secondes
     time.sleep(5)
     print("[Scheduler] stopping scheduler.")
-    scheduler.request_stop()
+    #scheduler.request_stop()
     scheduler.join()
 
 
