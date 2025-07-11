@@ -5,6 +5,7 @@ __pycache__/
 *$py.class
 Lib/
 share/
+Include/
 # Virtual environment
 venv/
 .env/

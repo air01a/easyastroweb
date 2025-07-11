@@ -11,7 +11,7 @@
     "initial_batch_size": 40,
     "plate_solver_options": "",
     "astap_max_stars": 400,
-    "astap_downsample_factor": 1,
+    "astap_downsample_factor": 0,
     "astap_default_search_radius": 10,
     "ascom_options": "",
     "ASCOM_server_ip": "127.0.0.1",

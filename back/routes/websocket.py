@@ -2,9 +2,9 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from ws.websocket_manager import ws_manager
 import asyncio
 
-router = APIRouter(tags=["websocket"])
+router = APIRouter(prefix="/ws",tags=["websocket"])
 
-@router.websocket("/ws/observation")
+@router.websocket("/observation")
 async def websocket_observation(websocket: WebSocket):
     await ws_manager.connect(websocket)
     ping_task = asyncio.create_task(ws_manager.keep_alive(websocket))

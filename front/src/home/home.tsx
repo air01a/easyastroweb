@@ -4,6 +4,7 @@ import { TelescopeSumUpCard } from "../../components/observatory/telescopeSumUpC
 import Button from "../../design-system/buttons/main";
 import { useCatalogStore,useWebSocketStore, useObserverStore } from "../../store/store";
 import {H1, H2} from "../../design-system/text/titles";
+
 export default function Home() {
 
   const { catalog } = useCatalogStore()

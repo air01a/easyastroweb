@@ -3,8 +3,8 @@ from typing import List, Dict
 from fastapi import WebSocket, WebSocketDisconnect
 import asyncio
 import logging
+from utils.logger import logger
 
-logger = logging.getLogger("websocket")
 
 class WebSocketManager:
     def __init__(self):

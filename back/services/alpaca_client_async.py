@@ -718,6 +718,8 @@ class ASCOMAlpacaFilterWheelClient(ASCOMAlpacaBaseClient):
 
 alpaca_telescope_client = ASCOMAlpacaTelescopeClient("localhost", 11111, 0)
 alpaca_camera_client = ASCOMAlpacaCameraClient("localhost", 11111, 0)
+
+
 async def main():
     async with ASCOMAlpacaFilterWheelClient("localhost", 11111, 0) as filter_client:
         # Connexion

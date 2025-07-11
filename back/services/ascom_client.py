@@ -306,8 +306,3 @@ class ASCOMComFilterWheelClient:
         }
 
 
-focuser = ASCOMComFocuserClient("ASCOM.Simulator.Focuser")
-focuser.connect()
-print("Position:", focuser.get_position())
-focuser.move_absolute(1000)
-focuser.disconnect()

@@ -1,4 +1,4 @@
-from services.alpaca_client import alpaca_camera_client, alpaca_focuser_client, alpaca_telescope_client, ExposureSettings, CameraState
+from services.alpaca_client import alpaca_camera_client, alpaca_focuser_client, alpaca_telescope_client, alpaca_fw_client, ExposureSettings, CameraState
 from time import sleep
 from abc import ABC, abstractmethod
 from services.focuser import AutoFocusLib
@@ -8,9 +8,9 @@ from utils.logger import logger
 from services.configurator import CONFIG
 import numpy as np
 from pathlib import Path
+from models.state import telescope_state
 
 class TelescopeInterface(ABC):
-
     def __init__(self):
         self.autofocus = AutoFocusLib()
  
@@ -41,6 +41,10 @@ class TelescopeInterface(ABC):
     @abstractmethod
     def telescope_connect(self):
         pass
+
+    @abstractmethod
+    def telescope_disconnect(self):
+        pass
     
     @abstractmethod
     def telescope_unpark(self):
@@ -49,6 +53,15 @@ class TelescopeInterface(ABC):
     @abstractmethod
     def sync_to_coordinates(ra: float, dec: float):
         pass
+
+    @abstractmethod
+    def filter_wheel_connect(self)-> bool:
+        pass
+
+    @abstractmethod
+    def change_filter(self, filter)-> bool:
+        pass
+
 
     def get_focus(self):
         current_position = self.focuser_get_current_position()
@@ -73,7 +86,7 @@ class TelescopeInterface(ABC):
         logger.info(f"[Focuser] - Results {best_position}, method={best_method}")
         self.move_focuser(best_position)
 
-    def capture_to_fit(self, exposure, ra, dec, filter_name, target_name, path: Path) :
+    def capture_to_fit(self, exposure : int, ra : float, dec : float, filter_name : str, target_name, path: Path) :
 
         image = self.camera_capture(exposure)
         header={}
@@ -82,9 +95,13 @@ class TelescopeInterface(ABC):
         header['DATE-OBS'] = time.strftime('%Y-%m-%dT%H.%M.%S')
         header['RA'] = ra
         header['DEC'] = dec
-        file_name = path / f"capture-{target_name}-{filter_name}-{header['DATE-OBS']}.fits"
+        file_name = path / f"capture-{target_name.replace(" ", "_")}-{filter_name.replace(" ", "_")}-{header['DATE-OBS']}.fits"
         FitsImageManager.save_fits_from_array(image.data, file_name, header)
         return file_name
+    
+    @abstractmethod
+    def connect(self):
+        pass
     
 
     
@@ -119,21 +136,71 @@ class AlpacaTelescope(TelescopeInterface):
 
     def telescope_connect(self):
         return alpaca_telescope_client.connect()
+    
+    def telescope_disconnect(self):
+        return alpaca_telescope_client.disconnect()
 
     def slew_to_target(self,ra: float, dec: float):
-        print(ra, dec)
         alpaca_telescope_client.slew_to_coordinates(ra, dec)
         while alpaca_telescope_client.is_slewing():
             time.sleep(1)
 
-    def sync_to_coordinates(self, ra:float, dec: float):
-        alpaca_telescope_client.sync_to_coordinates(ra, dec)
+    def sync_to_coordinates(self, ra:float, dec: float) -> bool:
+        try:
+            alpaca_telescope_client.sync_to_coordinates(ra, dec)
+            return True
+        except:
+            return False
 
     def telescope_unpark(self):
         alpaca_telescope_client.unpark()
 
+    def filter_wheel_connect(self)-> bool:
+        try:
+            return alpaca_fw_client.connect()
+        except:
+            return False
+
+    def change_filter(self, filter)-> bool:
+        #self.has_fw = self.telescope_interface.fw_connect() if len(CONFIG['filterwheel'].get("filters", []))>1 else False
+        try:
+            filters = CONFIG['filterwheel'].get("filters", [])
+            index = filters.index(filter)
+            logger.info(f"[FILTERWHEEL] - Moving to position {index}")
+
+            alpaca_fw_client.set_position(index)
+            return True
+        except:
+            logger.info(f"[FILTERWHEEL] - Error during filter change")
+            return False
+        
+    def connect(self):
+        try:
+            telescope_interface.focuser_connect()
+            telescope_state.is_focuser_connected = True
+        except:
+            telescope_state.is_focuser_connected = False
+            
+        try:
+            telescope_interface.camera_connect()
+            telescope_state.is_camera_connected = True
+        except:
+            telescope_state.is_camera_connected = False
+
+        try:
+            telescope_interface.telescope_connect()
+            telescope_state.is_telescope_connected = True
+        except:
+            telescope_state.is_telescope_connected = False  
+        
+
 
 telescope_interface = AlpacaTelescope()
+telescope_interface.connect()
+
+
+
+
 
 
 

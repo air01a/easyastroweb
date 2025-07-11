@@ -4,6 +4,7 @@ import type {Field} from '../types/dynamicform.type'
 import { create } from 'zustand'
 import type { CatalogStore, ObserverStore, WebSocketState, ConfigStore } from './store.type';
 import type { ConfigItem, ConfigItems } from './config.type';
+import { apiService } from "../api/api";
 
 
 export const useCatalogStore = create<CatalogStore>()(
@@ -125,7 +126,9 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   isConnected: false,
 
   connect: () => {
-    const socket = new WebSocket('ws://127.0.0.1:8000/ws/observation');
+    const baseUrl = apiService.getBaseUrl();
+    baseUrl.replace('http','ws')
+    const socket = new WebSocket(`${baseUrl}/ws/observation`);
 
     socket.onopen = () => {
       set({isConnected: true})

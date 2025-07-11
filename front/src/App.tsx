@@ -8,7 +8,7 @@ import {loadCatalog} from "../lib/astro/catalog/catalog";
 import {  useEffect } from "react";
 import CatalogPage from "./catalog/catalog";
 import { getNextSunriseDate, getNextSunsetDate } from "../lib/astro/astro-utils";
-import PlanPage from "./plan/plan";
+import Plan from "./plan/plan";
 import ConfigDashboard from './config/config';
 import ObservatoryConfig from "./config/observatories";
 import TelescopeConfig from "./config/telescopes";
@@ -68,7 +68,7 @@ const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="catalog" element={<CatalogPage />} />
-          <Route path="plan" element={<PlanPage />} />
+          <Route path="plan" element={<Plan />} />
           <Route path="config" element={<ConfigDashboard />} />
           <Route path="config/observatories" element={ <ObservatoryConfig/> }/>
           <Route path="config/telescopes" element={ <TelescopeConfig/> }/>

@@ -18,14 +18,6 @@ CONFIG['observatory'] = {}
 CONFIG['camera'] = {}
 CONFIG['filterwheel'] = {}
 
-#CONFIG: Dict[str, ConfigAllowedValue] = {}
-#CONFIG_SCHEME: ConfigList = []
-#TELESCOPE: Dict[str, ConfigAllowedValue] = {}
-#CAMERA : Dict[str, ConfigAllowedValue] = {}
-#OBSERVATORY: Dict[str, ConfigAllowedValue] = {}
-#FILTERWHEEL : Dict[str, ConfigAllowedValue] = {}
-#TELECOPE_SCHEMA : ConfigList = []
-#OBSERVATORY_SCHEMA : ConfigList = []
 
 CURRENT_DIR = Path(__file__).parent
 CONFIG_PATH = CURRENT_DIR.parent / "config" / "config.json"

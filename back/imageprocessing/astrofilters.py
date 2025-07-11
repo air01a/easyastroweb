@@ -926,7 +926,7 @@ class AstroFilters:
         #n=1
         if (algo==0): # algo stretch with clipping (strength 0:1, default = 0.1)
             # Best for stars imaging
-            if (image.shape[2]>1):
+            if (len(image.shape)>2 and image.shape[2]>1):
                 for i in range(0,image.data.shape[2]):
                     min_val = np.percentile(image[:,:,i], strength)
                     max_val = np.percentile(image[:,:,i], 100 - strength)
@@ -941,7 +941,7 @@ class AstroFilters:
             #image = np.interp(image,
             #                            (image.min(), image.max()),
             #                            (0, 1))
-            if image.shape[2]>1:
+            if len(image.shape)>2 and image.shape[2]>1:
                 for channel in range(3):
                     image[:,:,channel] = Stretch(target_bkg=strength, shadows_clip=shadow_clip).stretch(image[:,:,channel])
                 else:

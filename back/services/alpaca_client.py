@@ -370,7 +370,7 @@ class CameraInfo(BaseDeviceInfo):
     max_bin_y: int
     pixel_size_x: float
     pixel_size_y: float
-    sensor_type: SensorType
+    """sensor_type: SensorType
     can_abort_exposure: bool
     can_asymmetric_bin: bool
     can_fast_readout: bool
@@ -380,7 +380,7 @@ class CameraInfo(BaseDeviceInfo):
     can_stop_exposure: bool
     has_shutter: bool
     max_adu: int
-    electrons_per_adu: float
+    electrons_per_adu: float"""
 
 class ExposureSettings(BaseModel):
     duration: int = 1
@@ -409,8 +409,9 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
     
     def connect(self):
         super().connect()
-        self.camera_info = self.get_camera_info()
         logger.info("Getting information from camera")
+
+        self.camera_info = self.get_camera_info()
         self._make_request("PUT", "startx", {"StartX": 0})
         self._make_request("PUT", "starty", {"StartY": 0})
         self._make_request("PUT", "numx", {"NumX": self.camera_info.camera_x_size})
@@ -422,8 +423,7 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
     
     def get_camera_info(self) -> CameraInfo:
         """Récupère les informations complètes de la caméra"""
-        base_info = self.get_device_info()
-
+        """base_info = self.get_device_info()
         parameters= ["cameraxsize", "cameraysize",
                 "maxbinx",
                 "maxbiny",
@@ -448,7 +448,7 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
                 results.append({})
         
 
-        return CameraInfo(
+        ret = CameraInfo(
             **base_info.dict(),
             camera_x_size=results[0].get("Value", 0),
             camera_y_size=results[1].get("Value", 0),
@@ -467,7 +467,32 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
             has_shutter=results[14].get("Value", True),
             max_adu=65535,
             electrons_per_adu=1.0
+        )"""
+
+
+        base_info = {'name':'Camera Sky Simulator for ALPACA', "description":'Camera Sky Simulator.', 'driver_version':'v1'}
+        ret = CameraInfo(
+            **base_info.dict(),
+            camera_x_size=1936,
+            camera_y_size=1096,
+            max_bin_x=2,
+            max_bin_y=2,
+            pixel_size_x=3.75,
+            pixel_size_y=3.75, 
+            sensor_type=0,
+            can_abort_exposure=False,
+            can_asymmetric_bin=False,
+            can_fast_readout=False,
+            can_get_cooler_power=False,
+            can_pulse_guide=False,
+            can_set_ccd_temperature=False,
+            can_stop_exposure=True,
+            has_shutter=True,
+            max_adu=65535,
+            electrons_per_adu=1.0
         )
+        return ret
+        
 
     def start_exposure(self, settings: ExposureSettings) -> None:
         """Démarre une exposition"""
@@ -705,5 +730,5 @@ if __name__ == "__main__":
 alpaca_telescope_client = ASCOMAlpacaTelescopeClient("localhost", 11111, 0)
 alpaca_camera_client = ASCOMAlpacaCameraClient("localhost", 11111, 0)
 alpaca_focuser_client = ASCOMAlpacaFocuserClient("localhost",11111)
-
+alpaca_fw_client = ASCOMAlpacaFilterWheelClient("localhost", 11111)
 

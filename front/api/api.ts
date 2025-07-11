@@ -42,9 +42,13 @@ export class ApiService {
     }
   }
 
+  getBaseUrl():string {
+    return this.baseUrl
+  }
+
   // Exemple de méthode métier
   async sendPlans(plans: PlanType[]): Promise<boolean> {
-    return this.request<boolean>('/observation/plans', {
+    return this.request<boolean>('/observation/start', {
       method: 'POST',
       body: JSON.stringify(plans),
     });
@@ -212,6 +216,19 @@ export class ApiService {
       body: JSON.stringify({wheel})
     });
 
+  }
+
+  async getIsPlanRunning(): Promise<boolean> {
+    return this.request<boolean>('/observation/is_running', {
+      method: 'GET',
+    });
+  }
+
+
+  async stopPlan(): Promise<boolean> {
+    return this.request<boolean>('/observation/stop', {
+      method: 'POST',
+    });
   }
 
   // Exemple pour un GET générique
