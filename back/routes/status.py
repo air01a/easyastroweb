@@ -17,7 +17,7 @@ def is_running() -> bool:
     return False
 
 
-@router.get("/isçconnected")
+@router.get("/is_connected")
 async def is_connected() -> Dict[str, bool]:
     """
     Check if the telescope interface is connected.
@@ -34,3 +34,16 @@ def connect_telescope() -> Dict[str, bool]:
         return {"telescope_connected": telescope_state.is_telescope_connected, "camera_connected": telescope_state.is_camera_connected, "filter_wheel_connected": telescope_state.is_fw_connected, "focuser_connected": telescope_state.is_focuser_connected}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.get("/connected_hardware")
+def get_connected_hardware() -> Dict[str, str]:
+    """
+    Get the names of connected hardware components.
+    """
+    return {
+        "mount_name": telescope_interface.mount_name,
+        "fw_name": telescope_interface.fw_name,
+        "focuser_name": telescope_interface.focuser_name,
+        "camera_name": telescope_interface.camera_name
+    }

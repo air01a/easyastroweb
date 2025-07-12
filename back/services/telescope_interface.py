@@ -13,6 +13,10 @@ from models.state import telescope_state
 class TelescopeInterface(ABC):
     def __init__(self):
         self.autofocus = AutoFocusLib()
+        self.mount_name : str = "Not connected"
+        self.fw_name : str = "Not connected"
+        self.focuser_name : str = "Not connected"
+        self.camera_name : str = "Not connected"
  
     @abstractmethod
     def camera_capture(self, expo: float):
@@ -62,6 +66,7 @@ class TelescopeInterface(ABC):
     def change_filter(self, filter)-> bool:
         pass
 
+    
 
     def get_focus(self):
         current_position = self.focuser_get_current_position()
@@ -114,13 +119,15 @@ class AlpacaTelescope(TelescopeInterface):
                 sleep(1)
             image =  alpaca_camera_client.get_image_array()
             image.data = np.array(image.data)
+            telescope_state.last_picture = image.data
             return image
         except Exception as e:
             print(e)
             return None
 
     def camera_connect(self):
-        return alpaca_camera_client.connect()
+        self.camera_name = alpaca_camera_client.connect()
+        return True
 
     def move_focuser(self, position: int):
         alpaca_focuser_client.move_absolute(position)
@@ -130,12 +137,15 @@ class AlpacaTelescope(TelescopeInterface):
 
     def focuser_connect(self):
         alpaca_focuser_client.connect()
+        self.focuser_name = alpaca_focuser_client.get_name()
 
     def focuser_get_current_position(self):
         return alpaca_focuser_client.get_position()
 
     def telescope_connect(self):
-        return alpaca_telescope_client.connect()
+        alpaca_telescope_client.connect()
+        self.mount_name = alpaca_telescope_client.get_name()
+        return True
     
     def telescope_disconnect(self):
         return alpaca_telescope_client.disconnect()
@@ -157,7 +167,9 @@ class AlpacaTelescope(TelescopeInterface):
 
     def filter_wheel_connect(self)-> bool:
         try:
-            return alpaca_fw_client.connect()
+            alpaca_fw_client.connect()
+            self.fw_name = alpaca_fw_client.get_name()
+            return True
         except:
             return False
 
@@ -184,8 +196,9 @@ class AlpacaTelescope(TelescopeInterface):
         try:
             telescope_interface.camera_connect()
             telescope_state.is_camera_connected = True
-        except:
+        except Exception as e:
             telescope_state.is_camera_connected = False
+            print(f"[CAMERA] - Error connecting camera: {e}")
 
         try:
             telescope_interface.telescope_connect()

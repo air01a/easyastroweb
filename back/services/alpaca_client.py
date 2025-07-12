@@ -93,6 +93,10 @@ class ASCOMAlpacaBaseClient:
     def is_connected(self) -> bool:
         result = self._make_request("GET", "connected")
         return result.get("Value", False)
+    
+    def get_name(self) -> str:
+        result = self._make_request("GET", "name")
+        return result.get("Value", "")
 
     def get_device_info(self) -> BaseDeviceInfo:
         results = [
@@ -370,7 +374,7 @@ class CameraInfo(BaseDeviceInfo):
     max_bin_y: int
     pixel_size_x: float
     pixel_size_y: float
-    """sensor_type: SensorType
+    sensor_type: SensorType
     can_abort_exposure: bool
     can_asymmetric_bin: bool
     can_fast_readout: bool
@@ -380,7 +384,7 @@ class CameraInfo(BaseDeviceInfo):
     can_stop_exposure: bool
     has_shutter: bool
     max_adu: int
-    electrons_per_adu: float"""
+    electrons_per_adu: float
 
 class ExposureSettings(BaseModel):
     duration: int = 1
@@ -415,7 +419,8 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         self._make_request("PUT", "startx", {"StartX": 0})
         self._make_request("PUT", "starty", {"StartY": 0})
         self._make_request("PUT", "numx", {"NumX": self.camera_info.camera_x_size})
-        self._make_request("PUT", "numy", {"NumY": self.camera_info. camera_y_size})
+        self._make_request("PUT", "numy", {"NumY": self.camera_info.camera_y_size})
+        return (self.camera_info.name)
 
 
     def get_camera_info_min(self):
@@ -472,7 +477,12 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
 
         base_info = {'name':'Camera Sky Simulator for ALPACA', "description":'Camera Sky Simulator.', 'driver_version':'v1'}
         ret = CameraInfo(
-            **base_info.dict(),
+            name= base_info['name'],
+            description= base_info['description'],
+            driver_info= base_info['driver_version'],
+            driver_version= base_info['driver_version'],
+            interface_version=1,
+            supported_actions=[],
             camera_x_size=1936,
             camera_y_size=1096,
             max_bin_x=2,
@@ -489,7 +499,8 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
             can_stop_exposure=True,
             has_shutter=True,
             max_adu=65535,
-            electrons_per_adu=1.0
+            electrons_per_adu=1.0,
+            connected=True
         )
         return ret
         

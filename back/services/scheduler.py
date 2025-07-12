@@ -74,7 +74,7 @@ class Scheduler(threading.Thread):
         image = self.fits_manager.open_fits(f"{path}")
         image.data  = self.astro_filters.denoise_gaussian(self.astro_filters.replace_lowest_percent_by_zero(self.astro_filters.auto_stretch(image.data, 0.25, algo=1, shadow_clip=-2),80))
         self.fits_manager.save_as_image(image, output_filename=f"{path}".replace(".fit",".jpg"))
-        telescope_state.last_stacked_picture = f"{path}".replace(".fit",".jpg")
+        telescope_state.last_stacked_picture = path.with_suffix(".jpg")
         
 
     def _execute_plan(self, plan: list[Observation]):
@@ -87,7 +87,7 @@ class Scheduler(threading.Thread):
             
             if self.has_fw:
                 logger.info("[SCHEDULER] - Changing filter")
-                self.telescope_interface.set_position(obs.filter)
+                self.telescope_interface.change_filter(obs.filter)
 
             now = datetime.now()
             start_hour = int(obs.start)
@@ -99,6 +99,8 @@ class Scheduler(threading.Thread):
             )
 
             wait_seconds = (start_time - datetime.now()).total_seconds()
+
+            wait_seconds=0
             if wait_seconds > 0:
                 logger.info(f"[SCHEDULER] Waiting {wait_seconds:.1f}s for {obs.object}")
                 waited = 0

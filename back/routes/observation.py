@@ -7,9 +7,14 @@ from models.state import telescope_state
 from services.scheduler import Scheduler
 from services.telescope_interface import telescope_interface
 from models.observation import Observation
+from imageprocessing.astrofilters import AstroFilters
+import numpy as np
+import io
+from PIL import Image
 
 
 router = APIRouter(prefix="/observation", tags=["observation"])
+astro_filters = AstroFilters()
 
 @router.get("/plot")
 def get_dso_image(object: str = Query(..., description="Nom ou identifiant de l'objet (ex: M31, NGC 7000)")):
@@ -43,6 +48,57 @@ async def get_last_stacked_image():
     )
 
 
+
+@router.get("/last_image")
+def get_last_image():
+    """
+    Retourne une image depuis le dossier images/ au format JPG
+    """
+    # Récupérer l'image depuis telescope_state
+    image = telescope_state.last_picture
+    if image is None:
+        raise HTTPException(status_code=404, detail="Aucune image capturée")
+    
+    # Appliquer les filtres 
+    processed_image = astro_filters.denoise_gaussian(
+        astro_filters.replace_lowest_percent_by_zero(
+            astro_filters.auto_stretch(image, 0.25, algo=1, shadow_clip=-2), 
+            80
+        )
+    )
+    
+    # Convertir en format PIL Image
+    # Supposons que processed_image est un array numpy
+    if isinstance(processed_image, np.ndarray):
+        # Normaliser les valeurs entre 0 et 255 si nécessaire
+        if processed_image.dtype != np.uint8:
+            # Normaliser entre 0 et 1 puis convertir en uint8
+            processed_image = ((processed_image - processed_image.min()) / 
+                             (processed_image.max() - processed_image.min()) * 255).astype(np.uint8)
+        
+        # Créer une image PIL
+        if len(processed_image.shape) == 3:  # Image couleur
+            pil_image = Image.fromarray(processed_image, mode='RGB')
+        else:  # Image en niveaux de gris
+            pil_image = Image.fromarray(processed_image, mode='L')
+    else:
+        # Si l'image est déjà au format PIL
+        pil_image = processed_image
+    
+    # Convertir en JPG et sauvegarder dans un buffer
+    img_buffer = io.BytesIO()
+    pil_image.save(img_buffer, format='JPEG', quality=95)
+    img_buffer.seek(0)
+    
+    # Retourner la réponse streaming
+    return StreamingResponse(
+        io.BytesIO(img_buffer.read()),
+        media_type="image/jpeg",
+        headers={"Content-Disposition": "inline; filename=last_image.jpg"}
+    )
+
+
+
 @router.post("/start")
 def receive_plans(plans: List[PlanType]):
     """
@@ -50,7 +106,6 @@ def receive_plans(plans: List[PlanType]):
     """
     if telescope_state.scheduler and telescope_state.scheduler.is_alive():
         raise HTTPException(status_code=500, detail="Plan already runnning")
-    print(plans)
 
     telescope_state.scheduler = Scheduler(telescope_interface)
     plans_for_scheduler = []
@@ -74,7 +129,6 @@ def receive_plans(plans: List[PlanType]):
 
 @router.get("/is_running")
 def is_running() -> bool:
-    print(telescope_state)
     if telescope_state.plan_active and telescope_state.scheduler and telescope_state.scheduler.is_alive():
         return True
     return False
@@ -93,3 +147,5 @@ def stop_observation():
     telescope_state.plan_active=False
 
     return {"status": "stopped", "message": "Observation stopped"}
+
+
