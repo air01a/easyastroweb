@@ -28,7 +28,7 @@ class Scheduler(threading.Thread):
 
 
     def run(self):
-        logger.info("[Scheduler] Started in background thread.")
+        logger.info("[SCHEDULER] Started in background thread.")
         self._execute_plan(self.plan)
 
     def slew_to_target(self, ra: float, dec: float):
@@ -82,7 +82,7 @@ class Scheduler(threading.Thread):
         self.is_running=True
         for i, obs in enumerate(plan):
             if self._stop_requested:
-                logger.info("[Scheduler] Stop during execution.")
+                logger.info("[SCHEDULER] Stop during execution.")
                 break
             
             if self.has_fw:
@@ -100,11 +100,11 @@ class Scheduler(threading.Thread):
 
             wait_seconds = (start_time - datetime.now()).total_seconds()
             if wait_seconds > 0:
-                logger.info(f"[Scheduler] Waiting {wait_seconds:.1f}s for {obs.object}")
+                logger.info(f"[SCHEDULER] Waiting {wait_seconds:.1f}s for {obs.object}")
                 waited = 0
                 while waited < wait_seconds:
                     if self._stop_requested:
-                        logger.info("[Scheduler] Stop requested during wait.")
+                        logger.info("[SCHEDULER] Stop requested during wait.")
                         return
                     time.sleep(min(1, wait_seconds - waited))
                     waited += 1
@@ -140,15 +140,15 @@ class Scheduler(threading.Thread):
             self.stacker.start_live_stacking()
             while captures_done < obs.number:
                 if self._stop_requested:
-                    logger.info("[Scheduler] Stop requested during capture.")
+                    logger.info("[SCHEDULER] Stop requested during capture.")
                     break
                 
                 if next_time and datetime.now() >= next_time:
                     
-                    logger.info(f"[Scheduler] Next observation time reached. Skipping remaining captures.")
+                    logger.info(f"[SCHEDULER] Next observation time reached. Skipping remaining captures.")
                     break
 
-                logger.info(f"[Scheduler] Capture {captures_done+1}/{obs.number} of {obs.object}")
+                logger.info(f"[SCHEDULER] Capture {captures_done+1}/{obs.number} of {obs.object}")
                 image= self.telescope_interface.capture_to_fit(
                     exposure=obs.expo,
                     ra=obs.ra,
@@ -161,7 +161,7 @@ class Scheduler(threading.Thread):
                 captures_done += 1
             self.stacker.stop_live_stacking()
 
-        logger.info("[Scheduler] Execution completed.")
+        logger.info("[SCHEDULER] Execution completed.")
         self.is_running=False
         telescope_state.plan_active=False
 
@@ -187,7 +187,7 @@ def main():
         ]
         scheduler.plan = plan
         scheduler.start()
-        print("[Scheduler] Plan sent to scheduler.")
+        print("[SCHEDULER] Plan sent to scheduler.")
         
         # Attendre que le thread se termine ou qu'une interruption se produise
         while scheduler.is_alive():
