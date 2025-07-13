@@ -1,4 +1,4 @@
-import {ButtonHTMLAttributes, JSX} from "react";
+import type {ButtonHTMLAttributes, JSX} from "react";
 
 export  interface NavbarButtonInterface extends ButtonHTMLAttributes<HTMLButtonElement> {
     name: string,

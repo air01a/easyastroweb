@@ -224,7 +224,7 @@ class AlpacaTelescope(TelescopeInterface):
 
 
 telescope_interface = AlpacaTelescope()
-telescope_interface.connect()
+#telescope_interface.connect()
 
 
 

@@ -19,7 +19,7 @@ dist/
 .eggs/
 *.egg
 *.whl
-
+frontend/*
 # PyInstaller
 *.spec
 

@@ -2,9 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes import api_router
 from services import configurator as config
-
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
-
+from pathlib import Path
 
 
 app = FastAPI(title="EasyAstro API", version="1.0.0")
@@ -26,11 +27,24 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api/v1")
 
 
-
-
+# Serve frontend static files
+frontend_path = Path(__file__).parent / "frontend" 
+app.mount("/assets", StaticFiles(directory=frontend_path / "assets"), name="assets")
+app.mount("/catalog", StaticFiles(directory=frontend_path / "catalog"), name="catalog")
+# Route racine `/` => sert index.html
 @app.get("/")
-async def root():
-    return {"message": "Telescope Control API is running"}
+def serve_index():
+    return FileResponse(frontend_path / "index.html")
+
+# Pour toutes les autres routes inconnues, on sert aussi index.html (React Router)
+@app.get("/frontend/{path:path}")
+def serve_react_app(path: str):
+    file_path = frontend_path / path
+    if file_path.exists() and file_path.is_file():
+        print(f"Serving file: {file_path}")
+        return FileResponse(file_path)  # ex: favicon.ico
+    return FileResponse(frontend_path / "index.html")  # fallback pour React Router
+
 
 if __name__ == "__main__":
     import uvicorn 
