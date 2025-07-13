@@ -231,6 +231,25 @@ export class ApiService {
     });
   }
 
+
+  async getIsConnected(): Promise<Record<string, boolean>> {
+    return this.request<Record<string, boolean>>('/status/is_connected', {
+      method: 'GET',
+    });
+  }
+
+  async getHardwareName(): Promise<Record<string, string>> {
+    return this.request<Record<string, string>>('/status/connected_hardware', {
+      method: 'GET',
+    });
+  }
+
+  async connectHardWare(): Promise<Record<string, boolean>> {
+    return this.request<Record<string, boolean>>('/status/connect_hardware', {
+      method: 'POST',
+    });
+  }
+
   // Exemple pour un GET générique
   async getSomething<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {

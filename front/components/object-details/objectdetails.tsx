@@ -6,7 +6,7 @@ import { dateToNumber } from "../../lib/astro/astro-utils";
 
 
 export default function ObjectDetails({item}:{item : CatalogItem}) {
-    const { latitude, longitude, date, sunRise, sunSet } = useObserverStore();
+    const { date, sunRise, sunSet } = useObserverStore();
 
     const selectedRanges = [
         { start: 15, end: dateToNumber(sunSet), color: 'blue' },

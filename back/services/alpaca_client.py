@@ -5,7 +5,9 @@ from enum import Enum
 import threading
 import time
 from utils.logger import logger
+from concurrent.futures import ThreadPoolExecutor
 
+SIMULATOR = True
 # Générateur thread-safe pour les IDs de transaction
 class TransactionIDGenerator:
     def __init__(self):
@@ -81,7 +83,14 @@ class ASCOMAlpacaBaseClient:
         except httpx.HTTPStatusError as e:
             logger.error(f"Erreur HTTP {e.response.status_code} {self.device_type.value}: {e.response.text}")
             raise Exception(f"Erreur HTTP {self.device_type.value}: {e.response.status_code}")
-
+    
+    
+    def safe_request(self, param: str):
+        try:
+            return self._make_request("GET", param)
+        except:
+            return {}
+        
     def connect(self) -> bool:
         result = self._make_request("PUT", "connected", {"Connected": True})
         return result.get("Value", False)
@@ -99,24 +108,35 @@ class ASCOMAlpacaBaseClient:
         return result.get("Value", "")
 
     def get_device_info(self) -> BaseDeviceInfo:
-        results = [
-            self._make_request("GET", "name"),
-            self._make_request("GET", "description"),
-            self._make_request("GET", "driverinfo"),
-            self._make_request("GET", "driverversion"),
-            self._make_request("GET", "interfaceversion"),
-            self._make_request("GET", "supportedactions"),
-            self.is_connected()
+        """Récupère les informations de base du device en parallèle"""
+
+        # Liste des paramètres simples à requêter
+        keys = [
+            "name",
+            "description",
+            "driverinfo",
+            "driverversion",
+            "interfaceversion",
+            "supportedactions",
         ]
 
+
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            responses = list(executor.map(self.safe_request, keys))
+
+        try:
+            connected = self.is_connected()
+        except:
+            connected = False
+
         return BaseDeviceInfo(
-            name=results[0].get("Value", ""),
-            description=results[1].get("Value", ""),
-            driver_info=results[2].get("Value", ""),
-            driver_version=results[3].get("Value", ""),
-            interface_version=results[4].get("Value", 0),
-            supported_actions=results[5].get("Value", []),
-            connected=results[6]
+            name=responses[0].get("Value", ""),
+            description=responses[1].get("Value", ""),
+            driver_info=responses[2].get("Value", ""),
+            driver_version=responses[3].get("Value", ""),
+            interface_version=responses[4].get("Value", 0),
+            supported_actions=responses[5].get("Value", []),
+            connected=connected
         )
 
     def execute_action(self, action: str, parameters: str = "") -> str:
@@ -314,6 +334,11 @@ class ASCOMAlpacaTelescopeClient(ASCOMAlpacaBaseClient):
     def set_tracking(self, enabled: bool) -> None:
         self._make_request("PUT", "tracking", {"Tracking": enabled})
 
+    def set_tracking_rate(self, rate: int) -> None:
+        """Active/désactive le suivi"""
+        self._make_request("PUT", "trackingrate", {"TrackingRate": rate})
+
+
     def is_tracking(self) -> bool:
         result = self._make_request("GET", "tracking")
         return result.get("Value", False)
@@ -416,11 +441,25 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         logger.info("Getting information from camera")
 
         self.camera_info = self.get_camera_info()
-        self._make_request("PUT", "startx", {"StartX": 0})
-        self._make_request("PUT", "starty", {"StartY": 0})
-        self._make_request("PUT", "numx", {"NumX": self.camera_info.camera_x_size})
-        self._make_request("PUT", "numy", {"NumY": self.camera_info.camera_y_size})
-        return (self.camera_info.name)
+
+        put_requests = [
+            ("startx", {"StartX": 0}),
+            ("starty", {"StartY": 0}),
+            ("numx", {"NumX": self.camera_info.camera_x_size}),
+            ("numy", {"NumY": self.camera_info.camera_y_size}),
+        ]
+
+        def safe_put(args):
+            param, payload = args
+            try:
+                self._make_request("PUT", param, payload)
+            except Exception as e:
+                logger.warning(f"PUT {param} failed: {e}")
+
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            executor.map(safe_put, put_requests)
+
+        return self.camera_info.name
 
 
     def get_camera_info_min(self):
@@ -428,30 +467,28 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
     
     def get_camera_info(self) -> CameraInfo:
         """Récupère les informations complètes de la caméra"""
-        """base_info = self.get_device_info()
-        parameters= ["cameraxsize", "cameraysize",
-                "maxbinx",
-                "maxbiny",
-                "pixelsizex",
-                "pixelsizey",
-                "sensortype",
-                "canabortexposure",
-                "canasymmetricbin",
-                "canfastreadout",
-                "cangetcoolerpower",
-                "canpulseguide",
-                "cansetccdtemperature",
-                "canstopexposure",
-                "hasshutter"
+
+    def get_camera_info(self) -> CameraInfo:
+        """Récupère les informations complètes de la caméra"""
+
+        base_info = self.get_device_info()
+        
+        parameters = [
+            "cameraxsize", "cameraysize",
+            "maxbinx", "maxbiny",
+            "pixelsizex", "pixelsizey",
+            "sensortype",
+            "canabortexposure", "canasymmetricbin",
+            "canfastreadout", "cangetcoolerpower",
+            "canpulseguide", "cansetccdtemperature",
+            "canstopexposure", "hasshutter"
         ]
 
-        results=[]
-        for parameter in parameters:
-            try:
-                results.append(self._make_request("GET", parameter))
-            except:
-                results.append({})
-        
+
+
+        # Utilisation de ThreadPoolExecutor pour les requêtes en parallèle
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            results = list(executor.map(self.safe_request, parameters))
 
         ret = CameraInfo(
             **base_info.dict(),
@@ -472,38 +509,9 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
             has_shutter=results[14].get("Value", True),
             max_adu=65535,
             electrons_per_adu=1.0
-        )"""
-
-
-        base_info = {'name':'Camera Sky Simulator for ALPACA', "description":'Camera Sky Simulator.', 'driver_version':'v1'}
-        ret = CameraInfo(
-            name= base_info['name'],
-            description= base_info['description'],
-            driver_info= base_info['driver_version'],
-            driver_version= base_info['driver_version'],
-            interface_version=1,
-            supported_actions=[],
-            camera_x_size=1936,
-            camera_y_size=1096,
-            max_bin_x=2,
-            max_bin_y=2,
-            pixel_size_x=3.75,
-            pixel_size_y=3.75, 
-            sensor_type=0,
-            can_abort_exposure=False,
-            can_asymmetric_bin=False,
-            can_fast_readout=False,
-            can_get_cooler_power=False,
-            can_pulse_guide=False,
-            can_set_ccd_temperature=False,
-            can_stop_exposure=True,
-            has_shutter=True,
-            max_adu=65535,
-            electrons_per_adu=1.0,
-            connected=True
         )
+
         return ret
-        
 
     def start_exposure(self, settings: ExposureSettings) -> None:
         """Démarre une exposition"""

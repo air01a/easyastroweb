@@ -1,10 +1,10 @@
 'use client';
 
 import type { CatalogItem } from '../../lib/astro/catalog/catalog.type';
-import { Star, StarOff } from 'lucide-react'; // ou une autre lib d’icônes
+import { CirclePlus, CircleMinus } from 'lucide-react'; // ou une autre lib d’icônes
 
 const statusColors: Record<CatalogItem['status'], string> = {
-  visible: 'border-green-500 ',
+  'visible': 'border-green-500 ',
   'non-visible': 'border-red-500 ',
   'partially-visible': 'border-yellow-500 ',
   'masked': 'border-yellow-500 ',
@@ -17,12 +17,13 @@ export default function AstronomyObjectList({
   onToggle: (index: number) => void;
   onClick: (index: number) => void;
 }) {
+
   return (
     <div className="flex flex-wrap gap-4 items-center justify-center">
       {objects.map((obj, index) => (
         <div
           key={index}
-          className={`relative flex-grow min-w-[500px] max-w-sm border-4 rounded-lg p-2  ${statusColors[obj.status]}`}
+          className={`relative flex-grow min-w-[500px] max-w-sm border-4 rounded-lg p-2  ${obj.isSelected?"bg-gray-700 border-red-100":statusColors[obj.status]}`}
           onClick={() => onClick(index)}
         >
           {/* Status centered on top */}
@@ -36,7 +37,7 @@ export default function AstronomyObjectList({
               className="absolute top-2 z-150 right-2 text-yellow-400"
               aria-label="Sélectionner"
             >
-            {obj.isSelected ? <Star fill="currentColor" /> : <StarOff />}
+            {obj.isSelected ? <CircleMinus className="text-red-500" /> : <CirclePlus />}
           </button>
             <img
               src={`/catalog/${obj.image}`}

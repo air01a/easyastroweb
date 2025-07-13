@@ -24,7 +24,7 @@ async def is_connected() -> Dict[str, bool]:
     """
     return {"telescope_connected": telescope_state.is_telescope_connected, "camera_connected": telescope_state.is_camera_connected, "filter_wheel_connected": telescope_state.is_fw_connected, "focuser_connected": telescope_state.is_focuser_connected}
 
-@router.post("/connect")
+@router.post("/connect_hardware")
 def connect_telescope() -> Dict[str, bool]:
     """
     Connect the telescope interface.

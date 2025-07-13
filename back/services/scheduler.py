@@ -40,7 +40,7 @@ class Scheduler(threading.Thread):
                 self.telescope_interface.slew_to_target(ra, dec)
             except Exception as e:
                 logger.error(f"[SCHEDULER] - Error while slewing {e}")
-            image:Path = self.telescope_interface.capture_to_fit(3, ra, dec, "test", "ps",self.fit_path)
+            image:Path = self.telescope_interface.capture_to_fit(3, ra, dec, "ps", "ps",self.fit_path)
             logger.info("[SCHEDULER] - Plate Solving")
 
             solution = self.solver.resolve(image, ra, dec, CONFIG['global'].get("astap_default_search_radius",10))
@@ -67,6 +67,7 @@ class Scheduler(threading.Thread):
                     image.unlink()
             except:
                 pass
+        self.telescope_interface.telescope_set_tracking(0)
         return final
     
 

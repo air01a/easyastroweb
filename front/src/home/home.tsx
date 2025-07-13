@@ -2,17 +2,17 @@
 import { ObservatoryCard } from "../../components/observatory/observatoryCard";
 import { TelescopeSumUpCard } from "../../components/observatory/telescopeSumUpCard";
 import Button from "../../design-system/buttons/main";
-import { useCatalogStore,useWebSocketStore, useObserverStore } from "../../store/store";
+import { useCatalogStore, useObserverStore } from "../../store/store";
 import {H1, H2} from "../../design-system/text/titles";
-
+import DeviceStatus from "../../components/observatory/hardware";
+import { useEffect, useState } from "react";
+import { apiService } from "../../api/api";
 export default function Home() {
 
   const { catalog } = useCatalogStore()
-  const messages = useWebSocketStore((state) => state.messages);
-  const isConnected = useWebSocketStore((state) => state.isConnected);
-  const connect = useWebSocketStore((state) => state.connect);
+  //const messages = useWebSocketStore((state) => state.messages);
   const {observatory, telescope, camera, filterWheel} = useObserverStore();
-
+  const [hardware, setHardware] = useState<Record<string, string>|null>(null);
 
   const location = observatory.name || 'Observatoire Inconnu';
   const sun = {
@@ -27,6 +27,24 @@ export default function Home() {
     illumination: catalog[1]?.illumination || 0, // Assure-toi que l'index est correct
     image: catalog[1]?.image||'', // Remplace par le bon chemin
   }
+
+  const fetchHardware = async (rescan=false) => {
+      try {
+        if (rescan) {
+          await apiService.connectHardWare();
+        } 
+        const hardwareData = await apiService.getHardwareName();
+        setHardware(hardwareData);
+      } catch (error) {
+        console.error("Error fetching hardware data:", error);
+      }
+    };
+
+
+  useEffect(() => {
+    
+    fetchHardware();
+  },[]);
 
   return (
     <main className="text-white p-6 flex flex-col items-center">
@@ -60,13 +78,15 @@ export default function Home() {
 
 
         <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md min-w-80 items-center justify-center">
-          <h2 className="text-2xl font-semibold mb-4 text-yellow-300">🎤 Le téléscope</h2>
-          {!isConnected ? (
-
-              <div className="flex justify-center"><Button onClick={() =>     connect() }>Connect</Button></div>
-          ) : (
-            <pre>{JSON.stringify(messages, null, 2)}</pre>
-          )}
+          <h2 className="text-2xl font-semibold mb-4 text-yellow-300">⚙️ Le matériel</h2>
+          {hardware && <DeviceStatus
+            mount_name={hardware.mount_name}
+            fw_name={hardware.fw_name}
+            focuser_name={hardware.focuser_name}
+            camera_name={hardware.camera_name} 
+          />}
+          {!hardware && <p>Chargement des informations du matériel...</p>}
+          <div className="mt-4 flex items-center justify-center"><Button onClick={()=>{  setHardware(null);fetchHardware(true)}}>Rescan</Button></div>
         </div>
 
 

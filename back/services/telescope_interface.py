@@ -49,6 +49,14 @@ class TelescopeInterface(ABC):
     @abstractmethod
     def telescope_disconnect(self):
         pass
+
+    @abstractmethod
+    def telescope_set_tracking(self, rate : int):
+        pass
+
+    @abstractmethod
+    def telescope_disconnect(self):
+        pass
     
     @abstractmethod
     def telescope_unpark(self):
@@ -101,6 +109,9 @@ class TelescopeInterface(ABC):
         header['RA'] = ra
         header['DEC'] = dec
         file_name = path / f"capture-{target_name.replace(" ", "_")}-{filter_name.replace(" ", "_")}-{header['DATE-OBS']}.fits"
+        if image is None:
+            logger.error("[CAPTURE] - Error capturing image")
+            return None
         FitsImageManager.save_fits_from_array(image.data, file_name, header)
         return file_name
     
@@ -185,6 +196,10 @@ class AlpacaTelescope(TelescopeInterface):
         except:
             logger.info(f"[FILTERWHEEL] - Error during filter change")
             return False
+
+    def telescope_set_tracking(self, rate : int):
+        alpaca_telescope_client.set_tracking_rate(rate)
+        alpaca_telescope_client.set_tracking(True)
         
     def connect(self):
         try:

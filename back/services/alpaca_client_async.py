@@ -344,6 +344,10 @@ class ASCOMAlpacaTelescopeClient(ASCOMAlpacaBaseClient):
     async def set_tracking(self, enabled: bool) -> None:
         """Active/désactive le suivi"""
         await self._make_request("PUT", "tracking", {"Tracking": enabled})
+
+    async def set_tracking_rate(self, rate: int) -> None:
+        """Active/désactive le suivi"""
+        await self._make_request("PUT", "trackingrate", {"TrackingRate": rate})
     
     async def is_tracking(self) -> bool:
         """Vérifie si le suivi est activé"""
