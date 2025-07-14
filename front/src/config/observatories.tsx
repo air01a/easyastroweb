@@ -51,7 +51,7 @@ const ObservatoryConfig = () => {
             onSelect={changeObservatory} 
             onEdit={handleEdit} 
             formLayout={layout} 
-            selectedName={observatory.name as string} 
+            selectedItem={observatory.id as string} 
             CardComponent={ObservatoryCard}
         />
     </div>

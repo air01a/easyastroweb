@@ -1,5 +1,12 @@
 [
   {
+      "fieldName": "id",
+      "description": "Observatory id",
+      "fieldType": "AUTO",
+      "varType": "STR",
+      "defaultValue": ""
+  },
+  {
     "fieldName": "name",
     "description": "Observatory Name",
     "fieldType": "INPUT",

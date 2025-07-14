@@ -1,4 +1,11 @@
-[
+[   
+  {
+      "fieldName": "id",
+      "description": "Wheel id",
+      "fieldType": "AUTO",
+      "varType": "STR",
+      "defaultValue": ""
+  },
   {
     "fieldName": "name",
     "description": "Filter wheel name",

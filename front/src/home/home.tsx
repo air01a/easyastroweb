@@ -7,6 +7,8 @@ import {H1, H2} from "../../design-system/text/titles";
 import DeviceStatus from "../../components/observatory/hardware";
 import { useEffect, useState } from "react";
 import { apiService } from "../../api/api";
+import LoadingIndicator from "../../design-system/messages/loadingmessage";
+
 export default function Home() {
 
   const { catalog } = useCatalogStore()
@@ -85,7 +87,7 @@ export default function Home() {
             focuser_name={hardware.focuser_name}
             camera_name={hardware.camera_name} 
           />}
-          {!hardware && <p>Chargement des informations du matériel...</p>}
+          {!hardware && <LoadingIndicator/>}
           <div className="mt-4 flex items-center justify-center"><Button onClick={()=>{  setHardware(null);fetchHardware(true)}}>Rescan</Button></div>
         </div>
 

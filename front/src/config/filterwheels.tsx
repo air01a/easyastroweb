@@ -17,7 +17,6 @@ const  FilterWheelsConfig =  () => {
         const loadFilterWheel = async () => {
             const wheelLayout = await apiService.getFilterWheelsSchema();
             const wheels = await apiService.getFilterWheels();
-            console.log(wheels)
             setWheelsLayout(wheelLayout);
             setWheels(wheels);
         }
@@ -35,7 +34,7 @@ const  FilterWheelsConfig =  () => {
     };  
 
     const onChangeFilterWheel = async (filterwheel : ConfigItems) =>{
-        apiService.setCurrentFilterWheel(filterwheel.name as string);
+        apiService.setCurrentFilterWheel(filterwheel.id as string);
         setFilterWheel(filterwheel);
         
         
@@ -48,7 +47,7 @@ const  FilterWheelsConfig =  () => {
                     <ObservatoryList 
                         items={wheels} 
                         onSelect={onChangeFilterWheel} 
-                        selectedName={filterWheel.name as string} 
+                        selectedItem={filterWheel.id as string} 
                         onEdit={handleEditFilterWheel} 
                         formLayout={wheelsLayout} 
                         CardComponent={FilterWheelsCard}

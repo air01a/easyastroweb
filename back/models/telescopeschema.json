@@ -1,4 +1,11 @@
-[
+[    
+  {
+      "fieldName": "id",
+      "description": "Telescope id",
+      "fieldType": "AUTO",
+      "varType": "STR",
+      "defaultValue": ""
+  },
   {
     "fieldName": "name",
     "description": "Telescope Name",

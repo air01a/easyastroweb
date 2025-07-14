@@ -13,7 +13,7 @@ export type Props = {
     formLayout : Field[];
     editable?: boolean;
     CardComponent: React.ComponentType<{ item: ConfigItems }>;
-    selectedName? : string | null;
+    selectedItem? : string | null;
     onSelect?: (item: ConfigItems) => void;
 }
 const colors = [
@@ -21,8 +21,8 @@ const colors = [
   "bg-blue-900",
 ];
 
-const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardComponent, editable=true, selectedName=null, onSelect }) => {
-  const [selectedId, setSelectedId] = useState<string | null>(selectedName);
+const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardComponent, editable=true, selectedItem=null, onSelect }) => {
+  const [selectedId, setSelectedId] = useState<string | null>(selectedItem);
 
   const [currentItems, setCurrentItems] = useState<ConfigItems[]> ([]);
   const [edit, setEdit] = useState<string | null>(null);
@@ -44,21 +44,21 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
       denyButtonText: `Don't Change`
     }).then((result) => {
       if (result.isConfirmed){
-        setSelectedId(id.name as string);
+        setSelectedId(id.id as string);
         if(onSelect) onSelect(id);
       }
     });
   };
 
   const handleEdit = (id:ConfigItems)=> {
-    setEdit(id.name as string || null);
+    setEdit(id.id as string || null);
   }
 
   const handleSave = async (updatedItem : ConfigItems|null, index:number) => {
         if (hasError) return; 
         if (updatedItem===null) return;
         let selected : ConfigItems|null = null;
-        if (currentItems[index].name===selectedId) selected=updatedItem
+        if (currentItems[index].id===selectedId) selected=updatedItem
         const newItems = currentItems.map((item, newindex) =>
                             index === newindex ? updatedItem : item
                         );
@@ -66,7 +66,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
            onEdit(newItems);
            if (selected && onSelect) {
               onSelect(selected);
-            setSelectedId(selected.name as string);
+            setSelectedId(selected.id as string);
            }
 
         }
@@ -84,7 +84,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
           confirmButtonText: "Yes, delete it!"
         }).then((result) => {        
           if (result.isConfirmed) {
-            const newItems = items.filter((item) => item.name !== deletedItem.name);
+            const newItems = items.filter((item) => item.id !== deletedItem.id);
             if (onEdit)  onEdit(newItems);
             setEdit(null);
           }
@@ -93,12 +93,12 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
   }
 
   const handleAdd = () => {
-    const name = generateRandomName();
+    const id = generateRandomName();
     const newItem : ConfigItems = {};
     formLayout.forEach((element)=>newItem[element.fieldName]=element.defaultValue);
-    newItem["name"]= name;
+    newItem["id"]= id;
     setCurrentItems([...currentItems,newItem]);
-    setEdit(name)
+    setEdit(id)
     setCurrentEdit(newItem)
   }
 
@@ -106,13 +106,11 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
     setHasError(error);
     setCurrentEdit(change);
   }
-  console.log(currentItems);
-
   return (
     <div className="flex flex-col items-center space-y-4">
       {currentItems && currentItems.map((item, index) => {
-        const isSelected = item.name === selectedId;
-        const isEdit = edit === item.name;
+        const isSelected = item.id === selectedId;
+        const isEdit = edit === item.id;
         return (
           <div
             key={index}

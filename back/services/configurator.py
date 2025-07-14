@@ -32,10 +32,10 @@ CAMERAS_SCHEMA_PATH = CURRENT_DIR.parent / "models" / "cameraschema.json"
 FILTERWHEELS_PATH = CURRENT_DIR.parent / "config" / "filterwheels.json"
 FILTERWHEELS_SCHEMA_PATH = CURRENT_DIR.parent / "models" / "filterwheelsschema.json"
 
-def find_item_from_name(name: str, config: ConfigList):
+def find_item_from_id(id: str, config: ConfigList):
     for item in config:
-        if "name" in item.keys():
-            if item["name"]==name:
+        if "id" in item.keys():
+            if item["id"]==id:
                 return item
     return None
 
@@ -79,7 +79,7 @@ def _get_default(key, default, path):
 
     item = None
     if key in default.keys():
-        item = find_item_from_name(default[key], items)
+        item = find_item_from_id(default[key], items)
     if not item and len(items)>0:
         item = items[0]
     return item
@@ -146,14 +146,14 @@ async def save_telescope_config(filepath: Path, telescope_config: List[Dict[str,
         await write_json(filepath, telescope_config)
     except Exception as e:
         return (False, str(e))
-    await set_default_telescope_config(telescope_config[0]["name"],type, filepath)
+    await set_default_telescope_config(telescope_config[0]["id"],type, filepath)
     return (True, "No Error")
 
 
 async def set_default_telescope_config(item: str, type: str, filepath: Path):
     global CONFIG
     await change_default(type, item)
-    CONFIG[item] = find_item_from_name(item, await get_telescope_config(filepath))
+    CONFIG[item] = find_item_from_id(item, await get_telescope_config(filepath))
 
 
 async def get_default() -> Dict[str, ConfigAllowedValue]:

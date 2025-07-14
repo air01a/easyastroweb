@@ -17,7 +17,6 @@ const  CamerasConfig =  () => {
         const loadCamera = async () => {
             const cameraLayout = await apiService.getCamerasSchema();
             const cameras = await apiService.getCameras();
-            console.log(cameras)
             setCameraLayout(cameraLayout);
             setCameras(cameras);
         }
@@ -38,7 +37,7 @@ const  CamerasConfig =  () => {
     };
 
     const changeCamera = async (camera : ConfigItems) =>{
-        apiService.setCurrentCamera(camera.name as string);
+        apiService.setCurrentCamera(camera.id as string);
         setCamera(camera);
         
         
@@ -51,7 +50,7 @@ const  CamerasConfig =  () => {
                     <ObservatoryList 
                         items={cameras} 
                         onSelect={changeCamera} 
-                        selectedName={camera.name as string} 
+                        selectedItem={camera.id as string} 
                         onEdit={handleEditCameras} 
                         formLayout={cameraLayout} 
                         CardComponent={CameraCard}

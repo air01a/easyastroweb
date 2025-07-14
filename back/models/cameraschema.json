@@ -1,4 +1,12 @@
 [
+
+    {
+        "fieldName": "id",
+        "description": "Camera id",
+        "fieldType": "AUTO",
+        "varType": "STR",
+        "defaultValue": ""
+    },
     {
         "fieldName": "name",
         "description": "Camera Name",

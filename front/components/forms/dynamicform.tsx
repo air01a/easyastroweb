@@ -60,7 +60,6 @@ const DynamicForm: React.FC<Props> = ({
 
   
   const validate = (field: Field, value: string): string | null => {
-    console.log(typeof value)
     if (field.required===true && value.length===0) return "Parameter required"
     switch (field.varType) {
       case "INT":
@@ -115,7 +114,6 @@ const DynamicForm: React.FC<Props> = ({
       {formDefinition.map((field) => {
         const value = formData[field.fieldName];
         const error = errors[field.fieldName];
-        console.log(field);
         return (
           <div key={field.fieldName} style={{ marginBottom: "1rem" }}>
 

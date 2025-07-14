@@ -1,6 +1,6 @@
 {
-    "telescope": "SK-PDS-130",
+    "telescope": "vClymQ",
     "observatory": "Wasquehal",
-    "camera": "ASI385MC",
-    "filterwheel": "ZWO EFW Mini"
+    "camera": "vClymB",
+    "filterwheel": "vClyaQ"
 }

@@ -150,7 +150,6 @@ export default function PlanPage() {
         const newSettings = [...settings];
         newSettings[index] = config;
         setSettings(newSettings);
-        console.log("updateSettings", newSettings);
     }
 
     const getDuration = (settings: ImageConfig[]) => {
@@ -162,7 +161,6 @@ export default function PlanPage() {
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
-        console.log("settings",settings);
         if (over && active.id !== over.id) {
             const oldIndex = localCatalog.findIndex(item => item.index === active.id);
             const newIndex = localCatalog.findIndex(item => item.index === over.id);
@@ -173,7 +171,6 @@ export default function PlanPage() {
             
             setLocalCatalog(newLocalCatalog);
             setSettings(newSettings);
-            console.log("newsettings",newSettings);
         }
     }
 
@@ -214,13 +211,10 @@ export default function PlanPage() {
     }
 
     const run = () => {
-      console.log(spacer, settings, sunSet,localCatalog);
       const plan : PlanType[] = [];
       let start=dateToNumber(sunSet);
-      console.log(start);
       settings.forEach((element, index) => {
         start+=spacer[index]/3600;
-        console.log(start);
         element.forEach((capture) =>{
           const expo = capture.exposureTime;
           const nExpo = capture.imageCount;
@@ -242,14 +236,12 @@ export default function PlanPage() {
           start+=expo*nExpo / 3600;
         });
       });
-      console.log(start);
-      console.log(plan);
+
       apiService.sendPlans(plan);
     }
 
     return (
         <div>
-            <h1>Plan</h1>
             <DndContext 
                 sensors={sensors}
                 collisionDetection={closestCenter}

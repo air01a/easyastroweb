@@ -32,7 +32,7 @@ const  OpticsConfig =  () => {
     };
 
     const changeTelescope = async (telescope : ConfigItems) =>{
-        apiService.setCurrentTelescope(telescope.name as string);
+        apiService.setCurrentTelescope(telescope.id as string);
         initializeObserver(telescope, observatory, date, sunSet, sunRise);
         
         
@@ -44,7 +44,7 @@ const  OpticsConfig =  () => {
                     <ObservatoryList 
                         items={items} 
                         onSelect={changeTelescope} 
-                        selectedName={telescope.name as string} 
+                        selectedItem={telescope.id as string} 
                         onEdit={handleEdit} 
                         formLayout={layout} 
                         CardComponent={TelescopeCard}

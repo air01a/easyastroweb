@@ -1,14 +1,25 @@
 [
     {
+        "id": "vClymQ",
         "name": "SK-PDS-130",
         "focale": 650,
         "apperture": 130,
-        "altaz": false
+        "altaz": false,
+        "has_focuser": false
     },
     {
+        "id": "vClymA",
         "name": "SW-EVOGUIDE-50",
         "focale": 400,
         "apperture": 50,
         "altaz": false
+    },
+    {
+        "id": "m0Z8iU",
+        "name": "test",
+        "focale": 650,
+        "apperture": 130,
+        "altaz": false,
+        "has_focuser": false
     }
 ]

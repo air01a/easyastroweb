@@ -17,7 +17,6 @@ export default function RunningPlanPage() {
   useEffect(() => {
     // Remplace les URL par tes vrais endpoints
     const baseUrl = apiService.getBaseUrl();
-    console.log(`${baseUrl}/observation/last_stacked_image`)
     fetch(`${baseUrl}/observation/last_stacked_image`)
       .then(res => res.blob())
       .then(blob => setImage1(URL.createObjectURL(blob)));
