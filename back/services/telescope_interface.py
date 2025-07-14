@@ -108,7 +108,7 @@ class TelescopeInterface(ABC):
         header['DATE-OBS'] = time.strftime('%Y-%m-%dT%H.%M.%S')
         header['RA'] = ra
         header['DEC'] = dec
-        file_name = path / f"capture-{target_name.replace(" ", "_")}-{filter_name.replace(" ", "_")}-{header['DATE-OBS']}.fits"
+        file_name = path / f"capture-{target_name.replace(' ', '_')}-{filter_name.replace(' ', '_')}-{header['DATE-OBS']}.fits"
         if image is None:
             logger.error("[CAPTURE] - Error capturing image")
             return None

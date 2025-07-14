@@ -13,13 +13,5 @@
         "focale": 400,
         "apperture": 50,
         "altaz": false
-    },
-    {
-        "id": "m0Z8iU",
-        "name": "test",
-        "focale": 650,
-        "apperture": 130,
-        "altaz": false,
-        "has_focuser": false
     }
 ]
