@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from 'react-i18next';
 
 type DeviceStatusProps = {
   mount_name: string;
@@ -24,11 +25,13 @@ const DeviceStatus: React.FC<DeviceStatusProps> = ({
   focuser_name,
   camera_name,
 }) => {
+  const { t } = useTranslation();
+
   const devices = [
-    { label: "Mount", name: mount_name },
-    { label: "Camera", name: camera_name },
-    { label: "Focuser", name: focuser_name },
-    { label: "Wheel", name: fw_name },
+    { label: "mount", name: mount_name },
+    { label: "camera", name: camera_name },
+    { label: "focuser", name: focuser_name },
+    { label: "filterwheel", name: fw_name },
 
   ];
 
@@ -39,7 +42,7 @@ const DeviceStatus: React.FC<DeviceStatusProps> = ({
           key={index}
           className="bg-gray-400 p-2 rounded flex justify-between items-center"
         >
-          <span className="flex-1 text-gray-800">{devices[index].label} : {truncateWithTooltip(device.name)}</span>
+          <span className="flex-1 text-gray-800">{t(devices[index].label)} : {truncateWithTooltip(device.name)}</span>
           <span className="ml-2">
             {isConnected(device.name) ? "✅" : "❌"}
           </span>

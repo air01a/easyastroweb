@@ -1,11 +1,15 @@
 import type { ConfigItems } from '../../store/config.type';
 import CircularButtonSelection from '../forms/circularbutton';
+import { useTranslation } from 'react-i18next';
 
 export type Props = {
   item: ConfigItems;
 };
 
 export const ObservatoryCard: React.FC<Props> = ({ item }) => {
+  const { t } = useTranslation();
+
+
   return (
     <div
         className="
@@ -19,15 +23,15 @@ export const ObservatoryCard: React.FC<Props> = ({ item }) => {
       
       <dl className="flex flex-row gap-x-4 gap-y-1 text-sm text-gray-700">
         <div>
-          <dt className="font-medium text-gray-400 mr-4">Longitude</dt>
+          <dt className="font-medium text-gray-400 mr-4">{t('global.longitude')}</dt>
           <dd className="text-gray-400">{item.longitude ?? "-"}</dd>
         </div>
         <div>
-          <dt className="font-medium text-gray-400 mr-4">Latitude</dt>
+          <dt className="font-medium text-gray-400 mr-4">{t('global.latitude')}</dt>
           <dd className="text-gray-400">{item.latitude ?? "-"}</dd>
         </div>
         <div>
-          <dt className="font-medium text-gray-400">Altitude</dt>
+          <dt className="font-medium text-gray-400">{t('global.altitude')}</dt>
           <dd className="text-gray-400">{item.altitude ?? "-"} m</dd>
         </div>
       </dl>

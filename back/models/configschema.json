@@ -211,6 +211,14 @@
     "varType": "INT",
     "defaultValue": 8000,
     "required":true
+  },
+  {
+    "fieldName": "mode_debug",
+    "description": "Activate mode debug",
+    "fieldType": "CHECKBOX",
+    "varType": "BOOL",
+    "defaultValue": false,
+    "required":true
   }
 
 

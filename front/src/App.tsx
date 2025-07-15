@@ -5,26 +5,33 @@ import Home from "./home/home";
 import  Layout  from "./Layout";
 import { useCatalogStore, useObserverStore, useConfigStore } from "../store/store"
 import {loadCatalog} from "../lib/astro/catalog/catalog";
-import {  useEffect } from "react";
+import {  Suspense, useEffect } from "react";
 import CatalogPage from "./catalog/catalog";
 import { getNextSunriseDate, getNextSunsetDate } from "../lib/astro/astro-utils";
 import Plan from "./plan/plan";
 import ConfigDashboard from './config/config';
 import ObservatoryConfig from "./config/observatories";
 import TelescopeConfig from "./config/telescopes";
-
+import { useLanguage } from '../i18n/hook';
+import '../i18n/i18n'; // 
 import { apiService } from '../api/api';
 import GeneralConfig from "./config/general";
 function App() {  
   
-const isLoaded = useCatalogStore((state) => state.isLoaded);
-const updateCatalog = useCatalogStore((state) => state.updateCatalog);
-const isObserverLoaded = useObserverStore((state) => state.isLoaded);
-const setCamera = useObserverStore((state)=> state.setCamera)
-const setFilterWheel = useObserverStore((state)=> state.setFilterWheel)
-const initializeObserver = useObserverStore((state) => state.initializeObserver);
-const setConfig = useConfigStore((state) => state.setConfig);
-const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
+  const isLoaded = useCatalogStore((state) => state.isLoaded);
+  const updateCatalog = useCatalogStore((state) => state.updateCatalog);
+  const isObserverLoaded = useObserverStore((state) => state.isLoaded);
+  const setCamera = useObserverStore((state)=> state.setCamera)
+  const setFilterWheel = useObserverStore((state)=> state.setFilterWheel)
+  const initializeObserver = useObserverStore((state) => state.initializeObserver);
+  const setConfig = useConfigStore((state) => state.setConfig);
+  const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
+  const { currentLanguage } = useLanguage();
+
+  useEffect(() => {
+    document.documentElement.lang = currentLanguage;
+  }, [currentLanguage]);
+
 
   useEffect(() => {
     const fetchCatalog = async () => {
@@ -81,4 +88,10 @@ const setConfigScheme = useConfigStore((state) => state.setConfigScheme);
   )
 }
 
-export default App
+
+const AppWithSuspense: React.FC = () => (
+  <Suspense fallback={<div>Loading translations...</div>}>
+    <App />
+  </Suspense>
+);
+export default AppWithSuspense

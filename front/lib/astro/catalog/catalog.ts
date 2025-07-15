@@ -1,7 +1,7 @@
 import type { CatalogItem } from './catalog.type';
 import { Observer, MakeTime, Equator, Horizon, Body, MoonPhase  } from 'astronomy-engine';
 import { equCoordStringToDecimal, getMoonCoordinates, angularSeparation,  getHoursForObject, toRadians, getAltitudeData, getNextSunsetDate, getNextSunriseDate, isObjectVisible } from '../astro-utils';
-
+import i18n from '../../../i18n/i18n';
 
 
 
@@ -16,9 +16,10 @@ export async function computeCatalog(
   const astroTime = MakeTime(date);
   const moonVector = getMoonCoordinates(observer, astroTime);
   const sunrise=getNextSunriseDate(latitude, longitude, true)?.date || new Date();
-  console.log(azimuthRestriction)
-  let descriptions=[]
-  const descriptionFile = (await fetch('/catalog/objects.fr.json'));
+  let descriptions=[];
+  const currentLanguage = i18n.language
+
+  const descriptionFile = (await fetch(`/catalog/objects.${currentLanguage}.json`));
   if (descriptionFile.ok) {
     descriptions = await descriptionFile.json();
   }

@@ -2,16 +2,18 @@ import React, { useState } from "react";
 import CamerasConfig from "./cameras";
 import FilterWheelsConfig from "./filterwheels";
 import OpticsConfig from "./optics";
+import { useTranslation } from 'react-i18next';
 
-const tabs = [
-  { id: "optics", label: "Optiques" },
-  { id: "cameras", label: "Caméras" },
-  { id: "filters", label: "Roues à filtres" },
-];
+
 
 const ObservatoryConfig: React.FC = () => {
   const [activeTab, setActiveTab] = useState("optics");
-
+  const { t } = useTranslation();
+  const tabs = [
+    { id: "optics", label: t('config.optics') },
+    { id: "cameras", label: t('config.cameras') },
+    { id: "filters", label: t('config.filtersWheels')},
+  ];
   return (
     <div className="max-w-4xl mx-auto mt-6">
       <div className="border-b border-gray-200">

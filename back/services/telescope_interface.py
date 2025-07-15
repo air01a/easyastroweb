@@ -224,7 +224,8 @@ class AlpacaTelescope(TelescopeInterface):
 
 
 telescope_interface = AlpacaTelescope()
-#telescope_interface.connect()
+if not CONFIG["global"].get("mode_debug", False):
+    telescope_interface.connect()
 
 
 

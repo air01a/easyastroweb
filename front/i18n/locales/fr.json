@@ -1,0 +1,87 @@
+{
+    "home": {
+        "observatoryWelcome": "Aujourd'hui à {{observatory}}",
+        "theSite":"Le site",
+        "theSun":"Le soleil",
+        "theMoon":"La lune",
+        "theHardware":"Le matériel",
+        "theScope":"Le téléscope"
+    },
+    "nav": {
+        "home":"Accueil",
+        "catalog":"Catalogue",
+        "plan":"Plan",
+        "config":"Config"
+    },
+    "form" : {
+        "confirm":"Êtes vous sur ?",
+        "noReverse": "Cette action ne pourra pas être annulée",
+        "change":"Changer",
+        "dontChange":"Ne pas changer",
+        "delete":"Supprimer",
+        "save":"Enregistrer",
+        "cancel":"Annuler",
+        "add":"Ajouter",
+        "mount":"Monture",
+        "filterwheel":"Roue à Filtres",
+        "focuser":"Mise au point",
+        "camera":"Camera",
+        "exposition":"Exposition",
+        "refocus":"reFocus",
+        "imagesNumber":"Nombre d'images",
+        "filter":"filter",
+        "configurationAdd":"Ajouter une configuration"
+    },
+    "catalog": {
+        "type":"type",
+        "magnitude":"Magnitude",
+        "status":"Statut",
+        "visibility":"Visibilité",
+        "hours": "heures"
+    },
+    "timer": {
+        "detailed":"Détaillé",
+        "simple":"Simple",
+        "sliderDelay":"Délai (utiliser le slider)",
+        "presets":"Présets courants",
+        "errorRange":"Le délai doit être entre {{minDelay}}s et {{maxDelay}}s",
+        "delay":"Délai",
+        "total":"Total",
+        "addDelay":"Ajouter un délai",
+        "validDelay":"OK"
+    },
+    "config": {
+        "generalConfig":"Configuration Générale",
+        "generalConfigDesc":"Modifier les paramètres globaux de l'application.",
+        "telescopeConfig":"Télescopes",
+        "telescopeConfigDesc":"Configurer les différents télescopes.",
+        "observatoryConfig":"Lieux d'observation",
+        "observatoryConfigDesc":"Gérer les sites d'observation.",
+        "configuration":"Configuration",
+        "filtersWheels":"Roues à filtres",
+        "cameras":"Caméras",
+        "optics":"Optiques"
+    },
+    "global": {
+
+        "rise":"Lever",
+        "set":"Coucher",
+        "illumination":"Illumination",
+        "focale":"Focale",
+        "apperture":"Ouverture",
+        "pixelSize":"Taille des pixels",
+        "captorSize":"Taille du capteur",
+        "fov":"Fov",
+        "filters":"Filtres",
+        "longitude":"Longitude",
+        "latitude":"Latitude",
+        "altitude":"Altitude",
+        "meridian":"Meridian",
+        "update":"Mise à jour",
+        "unknownObservatory":"Observatoire inconnu",
+        "run":"Exécuter",
+        "minutes":"minutes",
+        "hours":"heures",
+        "seconds":"secondes"
+    }
+}

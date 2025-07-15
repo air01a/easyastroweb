@@ -8,6 +8,7 @@ import DeviceStatus from "../../components/observatory/hardware";
 import { useEffect, useState } from "react";
 import { apiService } from "../../api/api";
 import LoadingIndicator from "../../design-system/messages/loadingmessage";
+import { useTranslation } from 'react-i18next';
 
 export default function Home() {
 
@@ -15,8 +16,9 @@ export default function Home() {
   //const messages = useWebSocketStore((state) => state.messages);
   const {observatory, telescope, camera, filterWheel} = useObserverStore();
   const [hardware, setHardware] = useState<Record<string, string>|null>(null);
+  const { t } = useTranslation();
 
-  const location = observatory.name || 'Observatoire Inconnu';
+  const location = observatory.name || t('global.unknownObservatory');
   const sun = {
     rise: catalog[0]?.sunrise?.toLocaleString().split(' ')[1] || '',
     set: catalog[0]?.sunset?.toLocaleString().split(' ')[1] || '',
@@ -50,23 +52,23 @@ export default function Home() {
 
   return (
     <main className="text-white p-6 flex flex-col items-center">
-      <H1>🌅 Aujourd’hui à {location}</H1>
+      <H1>🌅 {t('home.observatoryWelcome', {observatory:location})}</H1>
 
       <div className="flex flex-wrap md:flex-wrap gap-6 max-w-4xl w-full">
         {/* Carte Soleil */}
         <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md w-80">
-          <H2>☀️ Le Soleil</H2>
-          <p>Lever : {sun.rise}</p>
-          <p>Coucher : {sun.set}</p>
-          <p>Méridien: {sun.meridian}</p>
+          <H2>☀️ {t('home.theSun')}</H2>
+          <p>{t('global.rise')} : {sun.rise}</p>
+          <p>{t('global.set')} : {sun.set}</p>
+          <p>{t('global.meridian')}: {sun.meridian}</p>
         </div>
 
         {/* Carte Lune */}
         <div className="flex-1 bg-white/10 border border-blue-300 rounded-2xl p-6 shadow-lg backdrop-blur-md w-80">
-          <H2>🌕 La Lune</H2>
-          <p>Lever : {moon.rise}</p>
-          <p>Coucher : {moon.set}</p>
-          <p>Illumination : {moon.illumination.toFixed(1)}%</p>
+          <H2>🌕 {t('home.theMoon')}</H2>
+          <p>{t('global.rise')} : {moon.rise}</p>
+          <p>{t('global.set')} : {moon.set}</p>
+          <p>{t('global.illumination')} : {moon.illumination.toFixed(1)}%</p>
           <div className="mt-4">
             <img
               src={`/catalog/${moon.image}`}
@@ -80,7 +82,7 @@ export default function Home() {
 
 
         <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md min-w-80 items-center justify-center">
-          <h2 className="text-2xl font-semibold mb-4 text-yellow-300">⚙️ Le matériel</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-yellow-300">⚙️ {t('home.theHardware')}</h2>
           {hardware && <DeviceStatus
             mount_name={hardware.mount_name}
             fw_name={hardware.fw_name}
@@ -88,17 +90,17 @@ export default function Home() {
             camera_name={hardware.camera_name} 
           />}
           {!hardware && <LoadingIndicator/>}
-          <div className="mt-4 flex items-center justify-center"><Button onClick={()=>{  setHardware(null);fetchHardware(true)}}>Rescan</Button></div>
+          <div className="mt-4 flex items-center justify-center"><Button onClick={()=>{  setHardware(null);fetchHardware(true)}}>{t('global.update')} </Button></div>
         </div>
 
 
                 <div className="flex-1 bg-white/10 border border-blue-300 rounded-2xl p-6 shadow-lg backdrop-blur-md w-80">
-          <H2>🏞️ Le Site</H2>
+          <H2>🏞️ {t('home.theSite')}</H2>
             <ObservatoryCard item={observatory}/>
         </div>
 
                         <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md w-80">
-          <H2>🎤 Le Telescope</H2>
+          <H2>🎤 {t('home.theScope')}</H2>
             <TelescopeSumUpCard telescope={telescope} camera={camera} filterWheel={filterWheel} />
         </div>
 

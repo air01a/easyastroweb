@@ -8,6 +8,7 @@ import type { ImageConfig } from "../../components/plan/plan.type";
 import { dateToNumber } from "../../lib/astro/astro-utils";
 import  Button  from "../../design-system/buttons/main";
 import { apiService } from "../../api/api";
+import { useTranslation } from 'react-i18next';
 
 
 import {
@@ -56,6 +57,8 @@ function SortableObjectPlanificator({
   initialConfig: ImageConfig[];
   onUpdate: (index: number, config: ImageConfig[]) => void;
 }) {
+
+
   const {
     attributes,
     listeners,
@@ -138,6 +141,7 @@ export default function PlanPage() {
     const [settings, setSettings] = useState<ImageConfig[][]>([]);
     const [ spacer, setSpacer] = useState<number[]>([])
     const [startDates, setStartDates] = useState<{startDate:number, endDate:number}[]>([]);
+    const { t } = useTranslation();
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -270,7 +274,7 @@ export default function PlanPage() {
                     ))}
                 </SortableContext>
             </DndContext>
-            <div className="flex items-center justify-center"><Button onClick={() => run()}>Run</Button></div>
+            <div className="flex items-center justify-center"><Button onClick={() => run()}>{t('global.run')}</Button></div>
         </div>
     )
 }

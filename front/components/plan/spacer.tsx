@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { DelayInput} from '../../components/forms/timer'
 import { Clock } from 'lucide-react';
 import Button from '../../design-system/buttons/main';
+import { useTranslation } from 'react-i18next';
 
 export default function Spacer( { id,initialValue,  onUpdate} : {id:number, initialValue: number, onUpdate : ( id:number, value: number) => void}) {
   const [delay, setDelay] = useState<number>(initialValue);
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const { t } = useTranslation();
+
   const getHourStr = (delay:number):string => {
     if (delay<60) return `${delay} s`;
     const min = Math.floor(delay/60);
@@ -22,10 +25,10 @@ export default function Spacer( { id,initialValue,  onUpdate} : {id:number, init
 
   return (<div className="flex flex-col bg-gray-800 rounded-lg border border-gray-200 p-6 shadow-sm mb-4">
             { delay===0 ? (
-                    <div className="flex flex-col justify-center  items-center" onClick={() =>setIsOpen(true)}>➕ Add delay</div>
+                    <div className="flex flex-col justify-center  items-center" onClick={() =>setIsOpen(true)}>➕ {t('timer.addDelay')}</div>
             ) :
                     <div className="flex flex-col justify-center  items-center" onClick={() =>setIsOpen(true)}>
-                    <h3 className="flex text-lg font-semibold text-gray-10"><Clock className="w-5 h-5 text-blue-500 mt-1 mr-2" /> Délai : {getHourStr(delay)}</h3></div>
+                    <h3 className="flex text-lg font-semibold text-gray-10"><Clock className="w-5 h-5 text-blue-500 mt-1 mr-2" /> {t('timer.delay')} : {getHourStr(delay)}</h3></div>
             }
             {isOpen && (
 
@@ -36,7 +39,7 @@ export default function Spacer( { id,initialValue,  onUpdate} : {id:number, init
                         minDelay={0}
                         maxDelay={3 * 3600} // 24 heures
                     />
-                    <Button onClick={() => setIsOpen(false)}> Ok</Button>
+                    <Button onClick={() => setIsOpen(false)}> {t('timer.validDelay')}</Button>
                  </div>
             )}
     </div>)

@@ -1,0 +1,5 @@
+{
+    "home": {
+        "observatoryWelcome": "Today at {{observatory}}"
+    }
+}

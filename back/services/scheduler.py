@@ -99,9 +99,9 @@ class Scheduler(threading.Thread):
                 hour=start_hour, minute=start_minute, second=start_second,
             )
 
-            wait_seconds = (start_time - datetime.now()).total_seconds()
+            wait_seconds = (start_time - datetime.now()).total_seconds() if not CONFIG["global"].get("mode_debug", False) else 0
 
-            wait_seconds=0
+
             if wait_seconds > 0:
                 logger.info(f"[SCHEDULER] Waiting {wait_seconds:.1f}s for {obs.object}")
                 waited = 0

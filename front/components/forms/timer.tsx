@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, RotateCcw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface DelayInputProps {
   onDelayChange?: (totalSeconds: number) => void;
@@ -20,6 +21,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [mode, setMode] = useState<'simple' | 'detailed'>('simple');
+  const { t } = useTranslation();
 
   // Convertir les secondes en heures, minutes, secondes
   const convertSecondsToTime = (totalSecs: number) => {
@@ -91,7 +93,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
     <div className={`bg-white rounded-lg border border-gray-200 p-6 shadow-sm ${className}`}>
       <div className="flex items-center gap-2 mb-4">
         <Clock className="w-5 h-5 text-blue-500" />
-        <h3 className="text-lg font-semibold text-gray-800">Délai</h3>
+        <h3 className="text-lg font-semibold text-gray-800">{t('timer.delay')}</h3>
         <button
           onClick={handleReset}
           className="ml-auto p-1 hover:bg-gray-100 rounded-full transition-colors"
@@ -107,7 +109,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
           {formatTime(hours, minutes, seconds)}
         </div>
         <div className="text-sm text-gray-500">
-          Total: {totalSeconds.toLocaleString()} secondes
+          {t('timer.total')}: {totalSeconds.toLocaleString()} {t('global.seconds')}
         </div>
       </div>
 
@@ -121,7 +123,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Simple
+          {t('timer.simple')}
         </button>
         <button
           onClick={() => setMode('detailed')}
@@ -131,7 +133,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Détaillé
+          {t('timer.detailed')}
         </button>
       </div>
 
@@ -140,7 +142,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
           {/* Slider principal */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Délai (utiliser le slider)
+              {t('timer.sliderDelay')}
             </label>
             <input
               type="range"
@@ -159,7 +161,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
           {/* Présets */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Présets courants
+              {t('timer.presets')}
             </label>
             <div className="grid grid-cols-4 gap-2">
               {presets.map((preset) => (
@@ -184,7 +186,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Heures
+                {t('global.hours')}
               </label>
               <input
                 type="number"
@@ -197,7 +199,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Minutes
+                {t('global.minutes')}
               </label>
               <input
                 type="number"
@@ -210,7 +212,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Secondes
+                {t('global.seconds')}
               </label>
               <input
                 type="number"
@@ -227,7 +229,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Heures: {hours}
+                {t('global.hours')}: {hours}
               </label>
               <input
                 type="range"
@@ -240,7 +242,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Minutes: {minutes}
+                {t('global.minutes')}: {minutes}
               </label>
               <input
                 type="range"
@@ -253,7 +255,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Secondes: {seconds}
+                {t('global.seconds')}: {seconds}
               </label>
               <input
                 type="range"
@@ -272,7 +274,7 @@ export const DelayInput: React.FC<DelayInputProps> = ({
       {(totalSeconds < minDelay || totalSeconds > maxDelay) && (
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
           <p className="text-sm text-red-700">
-            Le délai doit être entre {minDelay}s et {maxDelay}s
+            {t('timer.errorRange')}
           </p>
         </div>
       )}

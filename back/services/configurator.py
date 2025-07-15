@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Dict, Union, List, Any
 import asyncio
 from models.api import ConfigAllowedValue
-from utils.configlayoutparser import load_layout, get_item_to_save_from_layout
-from utils.jsonload import load_array_form_json
+from utils.config_layout_parser import load_layout, get_item_to_save_from_layout
+from utils.json_load import load_array_form_json
 
 
 ConfigEntry = Dict[str, Union[str, int, bool]]

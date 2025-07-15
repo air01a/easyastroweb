@@ -6,6 +6,7 @@ import type { Field } from "../../types/dynamicform.type";
 import Button from "../../design-system/buttons/main";
 import { generateRandomName } from "../../lib/fsutils";
 import Swal from "sweetalert2";
+import { useTranslation } from 'react-i18next';
 
 export type Props = {
     items: ConfigItems[];
@@ -28,7 +29,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
   const [edit, setEdit] = useState<string | null>(null);
   const [currentEdit, setCurrentEdit] = useState<ConfigItems|null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
-
+  const { t } = useTranslation();
   useEffect(()=> {
     setCurrentItems(items);
   },[items]);
@@ -38,10 +39,10 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
     if (edit) return;
 
     Swal.fire({
-      title: "Do you want to change ?",
+      title: t('form.confirm'),
       showCancelButton: true,
-      confirmButtonText: "Change",
-      denyButtonText: `Don't Change`
+      confirmButtonText: t('form.change'),
+      denyButtonText: t('form.dontChange')
     }).then((result) => {
       if (result.isConfirmed){
         setSelectedId(id.id as string);
@@ -75,13 +76,13 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
 
   const handleDelete = async (deletedItem : ConfigItems) => {
     Swal.fire({
-          title: "Are you sure?",
-          text: "You won't be able to revert this!",
+          title: t('form.confirm'),
+          text: t('form.noReverse'),
           icon: "warning",
           showCancelButton: true,
           confirmButtonColor: "#3085d6",
           cancelButtonColor: "#d33",
-          confirmButtonText: "Yes, delete it!"
+          confirmButtonText: t('delete')
         }).then((result) => {        
           if (result.isConfirmed) {
             const newItems = items.filter((item) => item.id !== deletedItem.id);
@@ -148,8 +149,8 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
                 <div className="">
                   <DynamicForm  onChange={dynamicFormChange} formDefinition={formLayout} initialValues={item}/> 
                   <div className="flex justify-center items-center">
-                    <Button disabled={hasError} onClick={() => {handleSave(currentEdit, index)}}>Enregister</Button>
-                    <Button  onClick={() => setEdit(null)} className="ml-8 bg-gray-800">Annuler</Button>
+                    <Button disabled={hasError} onClick={() => {handleSave(currentEdit, index)}}>{t('form.save')}</Button>
+                    <Button  onClick={() => setEdit(null)} className="ml-8 bg-gray-800">{t('form.delete')}</Button>
                   </div>
                 </div>
              ) : ( 
@@ -158,7 +159,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
           </div>
         );
       })}
-         {editable && (<Button onClick={handleAdd}>Add</Button>) }
+         {editable && (<Button onClick={handleAdd}>{t('form.add')}</Button>) }
 
     </div>
   );

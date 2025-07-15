@@ -7,6 +7,7 @@ import type { ImageConfig } from './plan.type'
 import { useObserverStore } from "../../store/store";
 import Checkbox from '../../design-system/inputs/checkbox';
 
+import { useTranslation } from 'react-i18next';
 
 
 // Générateur d’ID unique
@@ -16,6 +17,7 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
   const [settings, setSettings] = useState<ImageConfig[]>(initialSettings);
   //const [remaining, setRemaining] = useState<number>(0);
   const {filterWheel} = useObserverStore();
+  const { t } = useTranslation();
   
   const filters = (filterWheel.filters as string[]).length>0?(filterWheel.filters as string[]):["No Filter"];
 
@@ -67,7 +69,7 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
           key={config.id}
           className="flex items-center gap-2 bg-gray-800 p-2 rounded"
         >
-          <span>Number of images</span>
+          <span>{t('form.imagesNumber')}</span>
           <TextInput
             type="number"
             min={1}
@@ -79,7 +81,7 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
             placeholder="Nb images"
           />
           <span> | </span>
-          <span>Exposition</span>
+          <span>{t('form.exposition')}</span>
 
           <TextInput
             type="number"
@@ -91,7 +93,7 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
             className="w-20 p-1 border rounded"
             placeholder="Exposition (s)"
           />
-          <span>s | Filter </span>
+          <span>s | {t('form.filter')} </span>
 
           <SelectInput
             value={config.filter}
@@ -108,7 +110,7 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
           </SelectInput>
 
           <div className="flex items-center justify-center">
-            <label className="mr-4">Refocus</label>
+            <label className="mr-4">{t('form.refocus')}</label>
             <Checkbox 
               checked={config.focus===true}
               onChange={() => handleChange(config.id, 'focus', !config.focus)}
@@ -117,13 +119,13 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
 
           <AddButton
             onClick={addRow}
-            title="Ajouter une ligne"
+            title={t('form.add')}
           />
 
 
           <RemoveButton
             onClick={() => removeRow(config.id)}
-            title="Supprimer cette ligne"
+            title={t('form.delete')}
           />
            
         </div>
@@ -133,7 +135,7 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
         <Button
           onClick={addRow}
         >
-          Ajouter une configuration
+          {t('form.configurationAdd')}
         </Button>
       )}
     </div>

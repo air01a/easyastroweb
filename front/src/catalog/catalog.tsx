@@ -8,6 +8,7 @@ import type { CatalogItem } from '../../lib/astro/catalog/catalog.type';
 import ResizableSidePanel from "../../design-system/panels/sidepanel";
 import ObjectDetails from "../../components/object-details/objectdetails";
 
+
 interface FilterInteface {
     invisible: boolean;
     hidden: boolean;
