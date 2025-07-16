@@ -1,6 +1,8 @@
 import SelectInput  from '../../design-system/inputs/select'
 import Input  from '../../design-system/inputs/input'
-import ToggleButton from '../../design-system/buttons/toggle'
+import ToggleButton from '../../design-system/buttons/toggle';
+import { useTranslation } from 'react-i18next';
+
 type ObjectType =
   | 'all'
   | 'planet'
@@ -31,32 +33,32 @@ export default function CatalogFilters({ filters, setFilters }: {
   function toggle(key: keyof typeof filters) {
     setFilters({ ...filters, [key]: !filters[key] });
   }
-
+  const { t } = useTranslation();
   return (
     <div className="flex flex-wrap gap-2 p-2 items-center justify-center mb-2">
       <Input value={filters.keywords || ''}
-        onChange={(e) => setFilters({ ...filters, keywords: e.target.value })} placeholder='Filter'/>
+        onChange={(e) => setFilters({ ...filters, keywords: e.target.value })} placeholder={t('catalog.filter')}/>
       <ToggleButton
         onClick={() => toggle('invisible')}
         active={filters.invisible}
       >
-        Objets invisibles
+        {t('catalog.invisbleObjects')}
       </ToggleButton>
       <ToggleButton
         onClick={() => toggle('hidden')}
        active={filters.hidden}
       >
-        Objets masqués
+        {t('catalog.masked')}
       </ToggleButton>
       <ToggleButton
         onClick={() => toggle('partial')}
         active = { filters.partial }
       >
-        Partiellement visibles
+        {t('catalog.partially')}
       </ToggleButton>
-          <div className="mb-4">
-      <label htmlFor="object-type" className="block text-sm font-medium text-gray-700">
-        Type d'objet :
+          <div className="mb-4 flex flex-col items-center">
+      <label htmlFor="object-type" className="block text-sm font-medium text-gray-200">
+        {t('catalog.objectType')} :
       </label>
       <SelectInput
         id="object-type"
@@ -65,7 +67,7 @@ export default function CatalogFilters({ filters, setFilters }: {
       >
         {objectTypes.map((type) => (
           <option key={type} value={type}>
-            {type.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+            {t(`catalog.${type}`)}
           </option>
         ))}
       </SelectInput>

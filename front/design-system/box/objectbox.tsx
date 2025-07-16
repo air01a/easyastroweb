@@ -2,6 +2,7 @@
 
 import type { CatalogItem } from '../../lib/astro/catalog/catalog.type';
 import { CirclePlus, CircleMinus } from 'lucide-react'; // ou une autre lib d’icônes
+import { useTranslation } from 'react-i18next';
 
 const statusColors: Record<CatalogItem['status'], string> = {
   'visible': 'border-green-500 ',
@@ -17,6 +18,7 @@ export default function AstronomyObjectList({
   onToggle: (index: number) => void;
   onClick: (index: number) => void;
 }) {
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-wrap gap-4 items-center justify-center">
@@ -28,7 +30,7 @@ export default function AstronomyObjectList({
         >
           {/* Status centered on top */}
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-black px-3 py-1 rounded-full shadow text-sm font-semibold border">
-            {obj.status.replace('-', ' ')}
+            {t(`catalog.${obj.status.replace('-', ' ')}`)}
           </div>
 
           <div className="flex flex-row md:flex-row items-center gap-2">
@@ -50,18 +52,18 @@ export default function AstronomyObjectList({
 
               <h2 className="text-xl font-bold">{obj.name}</h2>
               <p className="text-sm text-gray-600">{obj.objectType}</p>
-              <p className="text-sm">Magnitude : {obj.magnitude}</p>
-              { obj.illumination && <p className="text-sm">Illumination : {obj.illumination}%</p> }
+              <p className="text-sm">{t('catalog.magnitude')} : {obj.magnitude}</p>
+              { obj.illumination && <p className="text-sm">{t('catalog.illumination')} : {obj.illumination}%</p> }
               <p className="text-sm">
                 {obj.sunrise
-                  ? `Lever/Coucher : ${obj.sunrise.toLocaleString().split(' ')[1]} / ${obj.sunset?.toLocaleString().split(' ')[1]}`
+                  ? `${t('catalog.riseSet')} : ${obj.sunrise.toLocaleString().split(' ')[1]} / ${obj.sunset?.toLocaleString().split(' ')[1]}`
                   : 'Circumpolaire'}
               </p>
-              <p className="text-sm">Méridien : {obj.meridian?.toLocaleString().split(' ')[1]}  </p>
+              <p className="text-sm">{t('global.meridian')}  : {obj.meridian?.toLocaleString().split(' ')[1]}  </p>
               
-              <p className="text-sm">Azimuth : {obj.azimuth?.toFixed(0)}°</p>
-              <p className="text-sm">Altitude :{obj.altitude?.toFixed(0)}°</p>
-              <p className="text-sm">Nombre heure visible : {obj.nbHoursVisible} h</p>
+              <p className="text-sm">{t('global.azimuth')}  : {obj.azimuth?.toFixed(0)}°</p>
+              <p className="text-sm">{t('global.altitude')}  :{obj.altitude?.toFixed(0)}°</p>
+              <p className="text-sm">{t('catalog.visibleHour')}  : {obj.nbHoursVisible} h</p>
             </div>
           </div>
         </div>

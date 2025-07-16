@@ -16,6 +16,9 @@ export async function computeCatalog(
   const astroTime = MakeTime(date);
   const moonVector = getMoonCoordinates(observer, astroTime);
   const sunrise=getNextSunriseDate(latitude, longitude, true)?.date || new Date();
+  const sunriseHours = sunrise.getHours()+sunrise.getMinutes()/60
+  const sunset = getNextSunsetDate(latitude, longitude, true)?.date || new Date();
+  const sunsetHours = sunset.getHours()+sunset.getMinutes()/60
   let descriptions=[];
   const currentLanguage = i18n.language
 
@@ -68,12 +71,13 @@ export async function computeCatalog(
         'partially': 0,
         'non-visible':0
       };
-
+      console.log('//////////////////');
+      console.log(newItem.altitudeData)
       newItem.altitudeData.forEach((data,index) => {
         data.visibility = isObjectVisible(data.altitude||-20, data.azimuth||-20, azimuthRestriction);
         if (newItem.altitudeData) newItem.altitudeData[index].visibility=data.visibility;
-        if (index>8 && index<(newItem.altitudeData?.length|| 4)-8) {
-              visibility[data.visibility] = (visibility[data.visibility] || 0) + 1;
+        if ((data.time>sunsetHours-0.5 || data.time<12) && (data.time<sunriseHours+0.5||data.time>12)) {
+              visibility[data.visibility] = (visibility[data.visibility] || 0) + 0.5;
         }
       });
       console.log(visibility['masked'])

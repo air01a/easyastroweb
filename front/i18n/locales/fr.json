@@ -37,7 +37,25 @@
         "magnitude":"Magnitude",
         "status":"Statut",
         "visibility":"Visibilité",
-        "hours": "heures"
+        "hours": "heures",
+        "all": "Tout",
+        "planet":"Planete",
+        "star" : "Etoile",
+        "galaxy": "Galaxie",
+        "globular_cluster":"Amas globulaire",
+        "open_cluster": "Amas ouvert",
+        "planetary_nebula": "Nébuleuse planétaire",
+        "dark_nebula":"Nébuleuse sombre",
+        "invisbleObjects":"Objets invisibles",
+        "partially":"Partiellements visibles",
+        "masked":"Objets masqués",
+        "objectType":"Type d'objet",
+        "filter":"filtre",
+        "visible":"Visible",
+        "azimuth":"Azimuth",
+        "altitude":"Altitude",
+        "visibleHour":"Nombre d'heures de visibilité",
+        "riseSet":"Lever/Coucher"
     },
     "timer": {
         "detailed":"Détaillé",
@@ -82,6 +100,7 @@
         "run":"Exécuter",
         "minutes":"minutes",
         "hours":"heures",
-        "seconds":"secondes"
+        "seconds":"secondes",
+        "azimuth":"Azimuth"
     }
 }
