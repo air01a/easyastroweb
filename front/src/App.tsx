@@ -9,7 +9,8 @@ import {  Suspense, useEffect } from "react";
 import CatalogPage from "./catalog/catalog";
 import { getNextSunriseDate, getNextSunsetDate } from "../lib/astro/astro-utils";
 import Plan from "./plan/plan";
-import ConfigDashboard from './config/config';
+import DarkManager from "./dark/dark-manager";
+import ToolsDashboard from './tools/tools';
 import ObservatoryConfig from "./config/observatories";
 import TelescopeConfig from "./config/telescopes";
 import { useLanguage } from '../i18n/hook';
@@ -76,11 +77,11 @@ function App() {
           <Route index element={<Home />} />
           <Route path="catalog" element={<CatalogPage />} />
           <Route path="plan" element={<Plan />} />
-          <Route path="config" element={<ConfigDashboard />} />
+          <Route path="tools" element={<ToolsDashboard />} />
           <Route path="config/observatories" element={ <ObservatoryConfig/> }/>
           <Route path="config/telescopes" element={ <TelescopeConfig/> }/>
           <Route path="config/general" element={<GeneralConfig />} />
-
+          <Route path="dark/config" element={<DarkManager />} />
         </Route>
         
       </Routes>

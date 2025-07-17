@@ -11,7 +11,8 @@
         "home":"Accueil",
         "catalog":"Catalogue",
         "plan":"Plan",
-        "config":"Config"
+        "config":"Config",
+        "tools":"Outils"
     },
     "form" : {
         "confirm":"Êtes vous sur ?",
@@ -30,7 +31,9 @@
         "refocus":"reFocus",
         "imagesNumber":"Nombre d'images",
         "filter":"filter",
-        "configurationAdd":"Ajouter une configuration"
+        "configurationAdd":"Ajouter une configuration",
+        "stop":"Stopper",
+        "dontstop":"Continuer"
     },
     "catalog": {
         "type":"type",
@@ -78,7 +81,10 @@
         "configuration":"Configuration",
         "filtersWheels":"Roues à filtres",
         "cameras":"Caméras",
-        "optics":"Optiques"
+        "optics":"Optiques",
+        "dark":"Darks",
+        "darkDesc":"Gestion des darks",
+        "tools":"Outils"
     },
     "global": {
 

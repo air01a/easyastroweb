@@ -13,7 +13,7 @@ const RootLayout: React.FC = () => {
     { name: t('nav.home'), href: '/', matcher: 'exact' },
     { name: t('nav.catalog'), href: '/catalog' },
     { name: t('nav.plan'), href: '/plan' },
-    { name: t('nav.config'), href: '/config' },
+    { name: t('nav.tools'), href: '/tools' },
   ];
 
 

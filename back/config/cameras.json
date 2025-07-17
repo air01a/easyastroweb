@@ -5,5 +5,12 @@
         "horizontal_pixels": 1936,
         "vertical_pixels": 1096,
         "pixel_size": 3.75
+    },
+    {
+        "id": "FHaUs3",
+        "name": "ASI533MC",
+        "horizontal_pixels": 3000,
+        "vertical_pixels": 3000,
+        "pixel_size": 3.76
     }
 ]

@@ -162,8 +162,31 @@
     "varType": "INT",
     "defaultValue": 20,
     "required":true
+  },  
+     {
+    "fieldName": "dark_options",
+    "description": "Dark",
+    "fieldType": "SEPARATOR",
+    "varType": "STR",
+    "defaultValue": "",
+    "required":false
   },
-    
+    {
+    "fieldName": "force_dark_exposition",
+    "description": "Force exposition to available dark",
+    "fieldType": "CHECKBOX",
+    "varType": "BOOL",
+    "defaultValue": true,
+    "required":true
+  },
+  {
+    "fieldName": "dark_directory",
+    "description": "Directory for dark storage",
+    "fieldType": "INPUT",
+    "varType": "STR",
+    "defaultValue": "dark",
+    "required":true
+  },
    {
     "fieldName": "ascom_options",
     "description": "Ascom",

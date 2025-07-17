@@ -18,3 +18,16 @@ ConfigPayload = Dict[str, ConfigAllowedValue]
 class KeyValuePayload(BaseModel):
     key: str
     value: ConfigAllowedValue
+
+
+class DarkLibraryType(BaseModel):
+    gain: int
+    temperature: int
+    exposition: int
+    count: int
+
+class DarkLibraryProcessType(DarkLibraryType):
+    done: bool
+    eta: int
+    in_progress : bool
+    

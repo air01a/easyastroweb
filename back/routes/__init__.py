@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from . import configuration,  observation, telescopes, websocket, observatories, cameras, filter_wheels, status
+from . import configuration,  observation, telescopes, websocket, observatories, cameras, filter_wheels, status, dark
 # Router principal qui combine tous les sous-routers
 api_router = APIRouter()
 
@@ -13,3 +13,4 @@ api_router.include_router(observatories.router)
 api_router.include_router(cameras.router)
 api_router.include_router(filter_wheels.router)
 api_router.include_router(status.router)
+api_router.include_router(dark.router)

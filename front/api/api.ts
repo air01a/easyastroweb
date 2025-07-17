@@ -1,5 +1,5 @@
 // services/api.ts
-import type { PlanType } from "../types/api.type";
+import type { PlanType, DarkLibraryType, DarkLibraryProcessType } from "../types/api.type";
 import type { ConfigItems } from "../store/config.type";
 import type {Field} from '../types/dynamicform.type'
 
@@ -228,9 +228,38 @@ export class ApiService {
   async stopPlan(): Promise<boolean> {
     return this.request<boolean>('/observation/stop', {
       method: 'POST',
+       body: ''
     });
   }
 
+
+  async getDarkForCamera(camera: string): Promise<DarkLibraryType[]> {
+    return this.request<DarkLibraryType[]>(`/dark/${camera}`, {
+      method: 'GET',
+    });
+  }
+
+    async stopDarkProcessing(): Promise<boolean> {
+    return this.request<boolean>(`/dark/stop`, {
+      method: 'PUT',
+      body: ''
+    });
+  }
+
+  async setNewDarkForCamera(camera: string, newDark:DarkLibraryType[]): Promise<boolean> {
+
+    return this.request<boolean>(`/dark/${camera}`, {
+      method: 'PUT',
+      body: JSON.stringify(newDark)
+    });
+  }
+
+
+    async getDarkProcessing(): Promise<DarkLibraryProcessType[]> {
+      return this.request<DarkLibraryProcessType[]>("/dark/current_process", {
+        method: 'GET',
+      });
+  }
 
   async getIsConnected(): Promise<Record<string, boolean>> {
     return this.request<Record<string, boolean>>('/status/is_connected', {
