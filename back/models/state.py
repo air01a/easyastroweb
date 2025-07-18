@@ -16,7 +16,7 @@ class TelescopeState:
     scheduler = None
     last_picture: np.ndarray = None
     last_stacked_picture : Path = Path("C:/Users/eniquet/Documents/dev/easyastroweb/back/services/astro_session/final/livestack.jpg")
-    dark_processor = []
+    dark_processor = None
 
     
 telescope_state = TelescopeState()

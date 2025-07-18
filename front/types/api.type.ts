@@ -15,6 +15,7 @@ export type DarkLibraryType = {
     temperature: number
     exposition: number
     count: number
+    date?: string
 }
 
 export type DarkLibraryProcessType = DarkLibraryType & {

@@ -58,3 +58,9 @@ db.sqlite3
 .DS_Store
 Thumbs.db
 
+dark/
+imageprocessing/astro_session/
+old/
+test.ini
+test.wcs
+pyvenv.cfg

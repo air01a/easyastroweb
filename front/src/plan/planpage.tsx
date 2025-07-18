@@ -134,7 +134,7 @@ function SortableObjectPlanificator({
   );
 }
 
-export default function PlanPage() {
+export default function PlanPage({refresh}:{refresh: ()=>void}) {
     const { catalog } = useCatalogStore()
     const [localCatalog, setLocalCatalog] = useState<CatalogItem[]>([]);
     const { sunRise, sunSet } = useObserverStore();
@@ -214,7 +214,7 @@ export default function PlanPage() {
         setSettings([...settings])
     }
 
-    const run = () => {
+    const run = async () => {
       const plan : PlanType[] = [];
       let start=dateToNumber(sunSet);
       settings.forEach((element, index) => {
@@ -241,7 +241,8 @@ export default function PlanPage() {
         });
       });
 
-      apiService.sendPlans(plan);
+      await apiService.sendPlans(plan);
+      refresh();
     }
 
     return (

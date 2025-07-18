@@ -31,3 +31,10 @@ class DarkLibraryProcessType(DarkLibraryType):
     eta: int
     in_progress : bool
     
+class DarkLibraryItem(BaseModel):
+    gain: int
+    temperature: int
+    exposition: int
+    count: int
+    date: str
+    filename:str

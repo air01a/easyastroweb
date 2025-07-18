@@ -12,7 +12,8 @@
         "catalog":"Catalogue",
         "plan":"Plan",
         "config":"Config",
-        "tools":"Outils"
+        "tools":"Outils",
+        "dark_manager":"Gestion des darks"
     },
     "form" : {
         "confirm":"Êtes vous sur ?",
@@ -33,7 +34,9 @@
         "filter":"filter",
         "configurationAdd":"Ajouter une configuration",
         "stop":"Stopper",
-        "dontstop":"Continuer"
+        "dontstop":"Continuer",
+        "add_dark":"Ajouter des darks",
+        "validate":"Valider"
     },
     "catalog": {
         "type":"type",
@@ -107,6 +110,10 @@
         "minutes":"minutes",
         "hours":"heures",
         "seconds":"secondes",
-        "azimuth":"Azimuth"
+        "azimuth":"Azimuth",
+        "temperature":"Température",
+        "exposition":"Expo",
+        "gain":"Gain",
+        "captures":"Captures"
     }
 }

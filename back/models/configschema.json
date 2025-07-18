@@ -187,6 +187,22 @@
     "defaultValue": "dark",
     "required":true
   },
+    {
+    "fieldName": "dark_default_captures",
+    "description": "Default number of exposition",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 40,
+    "required":false
+  },
+      {
+    "fieldName": "dark_default_exposition",
+    "description": "Default exposition for dark",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 10,
+    "required":false
+  },
    {
     "fieldName": "ascom_options",
     "description": "Ascom",

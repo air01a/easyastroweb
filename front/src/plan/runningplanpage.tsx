@@ -8,7 +8,7 @@ import  Button  from "../../design-system/buttons/main";
 import Swal from "sweetalert2";
 
 
-export default function RunningPlanPage() {
+export default function RunningPlanPage({refresh}:{refresh:()=>void}) {
    
 
   const [image1, setImage1] = useState<string | null>(null);
@@ -39,6 +39,7 @@ export default function RunningPlanPage() {
         }).then((result) => {        
           if (result.isConfirmed) {
             apiService.stopPlan();
+            refresh();
           }
         });
     }

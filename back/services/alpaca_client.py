@@ -436,6 +436,11 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
     def __init__(self, host="localhost", port=11111, device_number=0):
         super().__init__(ASCOMDeviceType.CAMERA, host, port, device_number)
     
+
+    def set_camera_gain(self, gain: int)-> None :
+        self._make_request("PUT", "gain", {
+            "Gain": gain        })
+
     def connect(self):
         super().connect()
         logger.info("Getting information from camera")

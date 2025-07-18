@@ -241,9 +241,15 @@ export class ApiService {
 
     async stopDarkProcessing(): Promise<boolean> {
     return this.request<boolean>(`/dark/stop`, {
-      method: 'PUT',
-      body: ''
+      method: 'POST',
+
     });
+  }
+
+  async deleteDark(camera:string, id: string) : Promise<DarkLibraryProcessType[]> {
+      return this.request<DarkLibraryProcessType[]>(`/dark/${camera}/${id}`, {
+        method: 'DELETE',
+      });
   }
 
   async setNewDarkForCamera(camera: string, newDark:DarkLibraryType[]): Promise<boolean> {

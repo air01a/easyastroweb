@@ -18,6 +18,11 @@ class TelescopeInterface(ABC):
         self.focuser_name : str = "Not connected"
         self.camera_name : str = "Not connected"
  
+
+    @abstractmethod
+    def set_camera_gain(self, gain: int):
+        pass
+    
     @abstractmethod
     def camera_capture(self, expo: float):
         pass
@@ -135,6 +140,10 @@ class AlpacaTelescope(TelescopeInterface):
         except Exception as e:
             print(e)
             return None
+
+    def set_camera_gain(self, gain: int):
+        alpaca_camera_client.set_camera_gain(gain)
+        return True
 
     def camera_connect(self):
         self.camera_name = alpaca_camera_client.connect()

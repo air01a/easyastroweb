@@ -34,5 +34,26 @@
         "fieldType": "INPUT",
         "varType": "FLOAT",
         "defaultValue": 2.4
+    },
+    {
+        "fieldName": "default_gain",
+        "description": "Default gain",
+        "fieldType": "INPUT",
+        "varType": "INT",
+        "defaultValue": 100
+    },
+    {
+        "fieldName": "is_cooled",
+        "description": "Camera is cooled",
+        "fieldType": "CHECKBOX",
+        "varType": "BOOL",
+        "defaultValue": false
+    },
+    {
+        "fieldName": "temperature",
+        "description": "Set the desired camera temperature",
+        "fieldType": "INPUT",
+        "varType": "INT",
+        "defaultValue": -15
     }
 ]

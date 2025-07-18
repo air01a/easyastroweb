@@ -1,17 +1,22 @@
 import { useEffect, useState } from "react";
-import { useObserverStore } from "../../store/store";
+import { useObserverStore, useConfigStore } from "../../store/store";
 import { CameraCard } from "../../components/observatory/cameraCard";
 import { Trash2, Plus, Check, Minus } from "lucide-react";
 import  TextInput  from "../../design-system/inputs/input";
 import Button from "../../design-system/buttons/main";
 import type { DarkLibraryType } from "../../types/api.type";
 import { apiService } from "../../api/api";
+import Swal from "sweetalert2";
+import { useTranslation } from 'react-i18next';
 
 export default function DarkEditor({refresh}: {refresh:() => void;}) {
   const { camera } = useObserverStore();
+  const { config } = useConfigStore();
   const [lib, setLib] = useState<DarkLibraryType[]>([]);
   const [newRows, setNewRows] = useState<DarkLibraryType[]>([
   ]);
+  const { t } = useTranslation();
+  
 
   useEffect(()=> {
     const getLibrary = async() => {
@@ -22,16 +27,32 @@ export default function DarkEditor({refresh}: {refresh:() => void;}) {
     getLibrary();
   }, [])
 
-  const handleDelete = (index: number) => {
-    const newLib = [...lib];
-    newLib.splice(index, 1);
-    setLib(newLib);
+  const  handleDelete = async(index: string|undefined) => {
+
+    if (index==undefined) return;
+    Swal.fire({
+          title: t('form.confirm'),
+          showCancelButton: true,
+          confirmButtonText: t('form.delete'),
+          denyButtonText: t('form.dontdelete')
+        }).then(async (result) => {
+          if (result.isConfirmed){
+            const newDark = await apiService.deleteDark(camera.id as string, index);
+            setLib(newDark);
+          }
+        });
+
   };
 
   const handleAddRow = () => {
+    console.log(camera)
     setNewRows([
       ...newRows,
-      { temperature: 0, exposition: 0, gain: 0, count: 1 },
+      { temperature: camera.temperature as number  , 
+        exposition: config.dark_default_exposition as number, 
+        gain: camera.default_gain as number, count: config.dark_default_captures as number, 
+        date:''
+      },
     ]);
   };
 
@@ -46,7 +67,7 @@ export default function DarkEditor({refresh}: {refresh:() => void;}) {
     field: keyof DarkLibraryType,
     value: number
   ) => {
-
+    if (field=='date') return
     const updated = [...newRows];
     updated[index][field] = value;
     setNewRows(updated);
@@ -59,10 +80,10 @@ export default function DarkEditor({refresh}: {refresh:() => void;}) {
         setNewRows([]);
         refresh();
     };
-
+    console.log(camera)
   return (
         <div className="p-4 space-y-6">
-            <h2 className="text-xl font-bold text-center">Dark Manager</h2>
+            <h2 className="text-xl font-bold text-center">{t('nav.dark_manager')}</h2>
 
             <div className="flex-1 bg-white/10 border border-blue-300 rounded-2xl p-6 shadow-lg backdrop-blur-md  mx-auto max-w-2xl w-[90%]">
             <CameraCard item={camera} />
@@ -75,13 +96,13 @@ export default function DarkEditor({refresh}: {refresh:() => void;}) {
                 className="flex items-center justify-between bg-gray-800 text-white p-4 rounded-xl shadow mx-auto max-w-2xl w-[90%]"
                 >
                 <div className="flex flex-wrap gap-4">
-                    <div><span className="font-semibold">Temp:</span> {item.temperature}°C</div>
-                    <div><span className="font-semibold">Expo:</span> {item.exposition}s</div>
-                    <div><span className="font-semibold">Gain:</span> {item.gain}</div>
-                    <div><span className="font-semibold">Captures:</span> {item.count}</div>
+                    {camera.is_cooled===true && <div><span className="font-semibold">{t('global.temperature')}:</span> {item.temperature}°C</div>}
+                    <div><span className="font-semibold">{t('global.exposition')}:</span> {item.exposition}s</div>
+                    <div><span className="font-semibold">{t('global.gain')}:</span> {item.gain}</div>
+                    <div><span className="font-semibold">{t('global.captures')}:</span> {item.count}</div>
                 </div>
                 <button
-                    onClick={() => handleDelete(index)}
+                    onClick={() => handleDelete(item.date)}
                     className="text-red-500 hover:text-red-700"
                     title="Supprimer"
                 >
@@ -91,7 +112,7 @@ export default function DarkEditor({refresh}: {refresh:() => void;}) {
             ))}
             </div>
 
-            <h3 className="flex text-lg font-semibold items-center justify-center text-center">Ajouter des darks                 <Button
+            <h3 className="flex text-lg font-semibold items-center justify-center text-center">{t('form.add_dark')}                <Button
                     onClick={handleAddRow}
                     className="flex items-center ml-4 gap-1 text-blue-600 hover:text-blue-800"
                 >
@@ -101,22 +122,23 @@ export default function DarkEditor({refresh}: {refresh:() => void;}) {
             {newRows.map((row, index) => (
                 <div
                 key={index}
-                className="flex flex-wrap items-end gap-4 bg-gray-100 p-4 rounded-xl mx-auto max-w-2xl w-[90%]"
-                >
+                className="flex flex-wrap items-end gap-4 bg-gray-100 p-4 rounded-xl mx-auto max-w-2xl w-[90%] justify-center"
+                >{camera.is_cooled===true && (
+                    <div className="flex flex-col">
+                        <label className="text-sm font-medium text-gray-700 mb-1 text-center">
+                        {t('global.temperature')}(°C)
+                        </label>
+                        <TextInput
+                        type="number"
+                        value={row.temperature}
+                        onChange={(e) => handleChange(index, "temperature", +e.target.value)}
+                        className="w-28 px-2 py-1 rounded border"
+                        />
+                    </div>
+                )}
                 <div className="flex flex-col">
                     <label className="text-sm font-medium text-gray-700 mb-1 text-center">
-                    Température (°C)
-                    </label>
-                    <TextInput
-                    type="number"
-                    value={row.temperature}
-                    onChange={(e) => handleChange(index, "temperature", +e.target.value)}
-                    className="w-28 px-2 py-1 rounded border"
-                    />
-                </div>
-                <div className="flex flex-col">
-                    <label className="text-sm font-medium text-gray-700 mb-1 text-center">
-                    Exposition (s)
+                    {t('global.exposition')} (s)
                     </label>
                     <TextInput
                     type="number"
@@ -127,7 +149,7 @@ export default function DarkEditor({refresh}: {refresh:() => void;}) {
                 </div>
                 <div className="flex flex-col">
                     <label className="text-sm font-medium text-gray-700 mb-1 text-center">
-                    Gain
+                    {t('global.gain')}
                     </label>
                     <TextInput
                     type="number"
@@ -138,7 +160,7 @@ export default function DarkEditor({refresh}: {refresh:() => void;}) {
                 </div>
                 <div className="flex flex-col">
                     <label className="text-sm font-medium text-gray-700 mb-1 text-center">
-                    Captures
+                    {t('global.captures')}
                     </label>
                     <TextInput
                     type="number"
@@ -163,7 +185,7 @@ export default function DarkEditor({refresh}: {refresh:() => void;}) {
                     onClick={() => handleValidateAll()}
                     className="flex items-center gap-1 text-green-600 hover:text-green-800"
                 >
-                    <Check size={20} /> Valider                 </Button>
+                    <Check size={20} /> {t('form.validate')}                 </Button>
                 )}
                 </div>
         </div>
