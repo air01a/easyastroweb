@@ -6,6 +6,7 @@ import {AddButton, RemoveButton} from '../../design-system/buttons/addremove';
 import type { ImageConfig } from './plan.type'
 import { useObserverStore } from "../../store/store";
 import Checkbox from '../../design-system/inputs/checkbox';
+import  ComboBoxSelect from '../../design-system/inputs/select-input';
 
 import { useTranslation } from 'react-i18next';
 
@@ -82,7 +83,8 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
           />
           <span> | </span>
           <span>{t('form.exposition')}</span>
-
+            <ComboBoxSelect
+           />
           <TextInput
             type="number"
             min={1}

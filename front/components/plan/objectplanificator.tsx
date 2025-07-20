@@ -5,7 +5,6 @@ import { dateToNumber } from "../../lib/astro/astro-utils";
 import { useEffect, useState } from 'react';
 import type { ImageConfig } from './plan.type';
 import { useTranslation } from 'react-i18next';
-
 export function ObjectPlanificator({index, sunrise, sunset, startDate, item, initialConfig, onUpdate}: { index:number,  sunrise: Date, sunset:Date, startDate: number, item:CatalogItem, initialConfig: ImageConfig[], onUpdate : (index:number, config: ImageConfig[]) => void}) {
     const sunsetNum = dateToNumber(sunset);
     const sunriseNum = dateToNumber(sunrise);
