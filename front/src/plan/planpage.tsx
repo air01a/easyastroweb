@@ -9,7 +9,7 @@ import { dateToNumber } from "../../lib/astro/astro-utils";
 import  Button  from "../../design-system/buttons/main";
 import { apiService } from "../../api/api";
 import { useTranslation } from 'react-i18next';
-
+import DarkInfoPanel from '../../components/dark/dark-warning'
 
 import {
   DndContext,
@@ -46,7 +46,9 @@ function SortableObjectPlanificator({
   sunset, 
   startDate,
   initialConfig,
-  onUpdate 
+  onUpdate,
+  gains,
+  expositions
 }: {
   id: number;
   index: number;
@@ -55,6 +57,8 @@ function SortableObjectPlanificator({
   sunset: Date;
   startDate: number;
   initialConfig: ImageConfig[];
+  gains: number[],
+  expositions: number[],
   onUpdate: (index: number, config: ImageConfig[]) => void;
 }) {
 
@@ -73,7 +77,7 @@ function SortableObjectPlanificator({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
-
+  
   return (
     <div 
       ref={setNodeRef} 
@@ -127,6 +131,8 @@ function SortableObjectPlanificator({
           sunset={sunset} 
           startDate={startDate}  
           initialConfig={initialConfig}
+          gains={gains}
+          expositions={expositions}
           onUpdate={onUpdate}
         />
       </div>
@@ -137,11 +143,33 @@ function SortableObjectPlanificator({
 export default function PlanPage({refresh}:{refresh: ()=>void}) {
     const { catalog } = useCatalogStore()
     const [localCatalog, setLocalCatalog] = useState<CatalogItem[]>([]);
-    const { sunRise, sunSet } = useObserverStore();
+    const { sunRise, sunSet, camera } = useObserverStore();
     const [settings, setSettings] = useState<ImageConfig[][]>([]);
     const [ spacer, setSpacer] = useState<number[]>([])
     const [startDates, setStartDates] = useState<{startDate:number, endDate:number}[]>([]);
     const { t } = useTranslation();
+    const [defaultGain, setDefaultGain] = useState<number[]>([]);
+    const [defaultExpositions, setDefaultExpositions] = useState<number[]>([]);
+
+
+    useEffect(() => {
+      const fetchDarks = async () => {
+        try {
+          const data = await apiService.getDarkForCamera(camera.id as string);
+          let uniqueGains = Array.from(new Set(data.map(d => d.gain))).sort((a, b) => a - b).filter((gain)=> gain!=camera.default_gain as number);
+          const  uniqueExpositions = Array.from(new Set(data.map(d => d.exposition))).sort((a, b) => a - b);
+          uniqueGains=[camera.default_gain as number,...uniqueGains]
+          setDefaultGain(uniqueGains);
+          setDefaultExpositions(uniqueExpositions);
+
+        } catch (error) {
+          console.error("Erreur lors du chargement des darks :", error);
+        } 
+      };
+
+      fetchDarks();
+    }, []);
+
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -227,6 +255,7 @@ export default function PlanPage({refresh}:{refresh: ()=>void}) {
           const dec = localCatalog[index].dec;
           const filter = capture.filter;
           const focus = capture.focus;
+          const gain = capture.gain;
           plan.push({
               start,
               expo,
@@ -235,7 +264,8 @@ export default function PlanPage({refresh}:{refresh: ()=>void}) {
               dec,
               filter,
               object,
-              focus
+              focus,
+              gain
           });
           start+=expo*nExpo / 3600;
         });
@@ -247,6 +277,9 @@ export default function PlanPage({refresh}:{refresh: ()=>void}) {
 
     return (
         <div>
+            <div className="flex items-center justify-center">
+              <DarkInfoPanel />
+            </div>
             <DndContext 
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -267,6 +300,8 @@ export default function PlanPage({refresh}:{refresh: ()=>void}) {
                                 item={item}
                                 sunrise={sunRise}
                                 sunset={sunSet}
+                                gains={defaultGain}
+                                expositions={defaultExpositions}
                                 startDate={startDates[index] ? startDates[index].startDate : 14}
                                 initialConfig={settings.length>index?settings[index]:[]}
                                 onUpdate={updateSettings}

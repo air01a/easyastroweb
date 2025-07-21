@@ -224,9 +224,18 @@ class LiveStacker:
             self.siril.cd(f"{output_dir}")
             
             # Convert and register images
-            self.siril.convert( 'light', out=f"{self.config.processed_dir}", debayer=True)
+            self.siril.convert( 'light', out=f"{self.config.processed_dir}", debayer=(self.dark==None))
             self.siril.cd(f"{self.config.processed_dir}")
-            self.siril.preprocess( 'light', dark=f"{self.dark}" if self.dark else None, cfa=True, equalize_cfa=True, debayer=True )
+            #self.siril.preprocess( 'light', dark=f"{self.dark}" if self.dark else None, cfa=True, equalize_cfa=True, debayer=True )
+            if self.dark!=None:
+                #self.siril.calibrate(
+                #    'light', 
+                #    dark=f"{self.dark}",
+                #    cfa=True,
+                #    debayer=True
+                # )
+                self.siril.Execute(f"calibrate light -dark={self.dark}")
+
             self.siril.register('light')
             result_path = self.config.stack_result / f"{sequence_name}_stacked.fit"
             self.siril.stack('r_light', type='rej', sigma_low=3, sigma_high=3, norm='addscale', output_norm=True, out=f"{result_path}")
@@ -250,7 +259,7 @@ class LiveStacker:
             for result_file in self.config.stack_result.glob("*.fit"):
                 batch_results.append(result_file)
             
-            if len(batch_results) < 2:
+            if len(batch_results) < 1:
                 return
             
             self.logger.info(f"Stacking {len(batch_results)} processed batches")
@@ -354,6 +363,7 @@ def main():
 
 
     config = Config()
+    config.initial_batch_size=2
     stacker = LiveStacker(config, on_image_processed=on_image_update, dark= "C:/Users/eniquet/Documents/dev/easyastroweb/utils/01-observation-m16/01-images-initial/dark/master.fit")
     # Replace with your camera output directory
     fits_dir = Path("C:/Users/eniquet/Documents/dev/easyastroweb/utils/01-observation-m16/01-images-initial")

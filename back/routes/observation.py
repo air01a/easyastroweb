@@ -112,7 +112,7 @@ def receive_plans(plans: List[PlanType]):
     for plan in plans: 
         if not isinstance(plan, PlanType):
             plan = PlanType(**plan)
-        obs = Observation(plan.start, plan.expo,plan.nExpo, plan.ra, plan.dec, plan.filter, plan.object, plan.focus)
+        obs = Observation(plan.start, plan.expo,plan.nExpo, plan.ra, plan.dec, plan.filter, plan.object, plan.focus, plan.gain)
         plans_for_scheduler.append(obs)
 
     telescope_state.scheduler.plan = plans_for_scheduler

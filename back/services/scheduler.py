@@ -10,6 +10,8 @@ from pathlib import Path
 from imageprocessing.fitsstacker import Config, LiveStacker
 from imageprocessing.fitsprocessor import FitsImageManager
 from imageprocessing.astrofilters import AstroFilters
+from services.dark_manager import DarkManager
+
 
 class Scheduler(threading.Thread):
     def __init__(self, telescope_interface):
@@ -25,7 +27,7 @@ class Scheduler(threading.Thread):
         self.fits_manager=FitsImageManager()
         self.astro_filters=AstroFilters()
         self.is_running = False
-
+        self.dark_config = Path(CONFIG['global'].get("dark_directory")) / Path("config.json")
 
     def run(self):
         logger.info("[SCHEDULER] Started in background thread.")
@@ -40,7 +42,7 @@ class Scheduler(threading.Thread):
                 self.telescope_interface.slew_to_target(ra, dec)
             except Exception as e:
                 logger.error(f"[SCHEDULER] - Error while slewing {e}")
-            image:Path = self.telescope_interface.capture_to_fit(3, ra, dec, "ps", "ps",self.fit_path)
+            image:Path = self.telescope_interface.capture_to_fit(3, ra, dec, "ps", "ps",self.fit_path, gain=CONFIG.get('camera',{}).get('default_gain',100))
             logger.info("[SCHEDULER] - Plate Solving")
 
             solution = self.solver.resolve(image, ra, dec, CONFIG['global'].get("astap_default_search_radius",10))
@@ -139,9 +141,21 @@ class Scheduler(threading.Thread):
             if not self.slew_to_target(obs.ra, obs.dec):
                 logger.error("[SCHEDULER] - Failed to slew to target")
                 continue
-                
+
+            if CONFIG.get('camera',{}).get("is_cooled", False):
+                temperature = CONFIG.get('camera',{}).get("temperature",0)
+            else:
+                temperature=None
+            print("++++",temperature)
+            dark=DarkManager.choose_dark(self.dark_config, obs.expo, obs.gain, temperature, CONFIG.get('camera',{}).get("id",""))
+
+            logger.info(f"[SCHEDULER] - Using Dark {dark}")
+            self.stacker.dark = dark
+            
+            
             self.stacker.start_live_stacking()
             while captures_done < obs.number:
+                
                 if self._stop_requested:
                     logger.info("[SCHEDULER] Stop requested during capture.")
                     break
@@ -154,6 +168,7 @@ class Scheduler(threading.Thread):
                 logger.info(f"[SCHEDULER] Capture {captures_done+1}/{obs.number} of {obs.object}")
                 image= self.telescope_interface.capture_to_fit(
                     exposure=obs.expo,
+                    gain=obs.gain,
                     ra=obs.ra,
                     dec=obs.dec,
                     filter_name=obs.filter,

@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 // Générateur d’ID unique
 let nextId = 0;
 
-export default function ImageSettings( { initialSettings,  onUpdate, maxDuration} : {initialSettings: ImageConfig[], onUpdate : ( settings: ImageConfig[]) => void , maxDuration:number}) {
+export default function ImageSettings( { initialSettings,  onUpdate, maxDuration, gains, expositions} : {initialSettings: ImageConfig[],gains : number[], expositions:number[], onUpdate : ( settings: ImageConfig[]) => void , maxDuration:number}) {
   const [settings, setSettings] = useState<ImageConfig[]>(initialSettings);
   //const [remaining, setRemaining] = useState<number>(0);
   const {filterWheel} = useObserverStore();
@@ -47,9 +47,10 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
       {
         id: nextId++,
         imageCount: 1,
-        exposureTime: 30,
+        exposureTime: expositions[0],
         filter: filters[0],
         focus: false,
+        gain: gains[0],
       },
     ];
     setSettings(prev);
@@ -63,14 +64,88 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
     setSettings(prev);
   };
 
+
+  let availableExposition: {label:string, value:string}[] = [];
+  let availableGains: {label:string, value:string}[] = [];
+  availableExposition = Array.from(expositions, (exposition)=>  { return {label:exposition.toString(), value:exposition.toString()}});
+  availableGains = Array.from(gains, (gain)=>  { return {label:gain.toString(), value:gain.toString()}});
+
+  console.log(gains);
+
   return (
     <div className="space-y-4 mt-4 items-center">
-      {settings && settings.map((config) => (
-        <div
-          key={config.id}
-          className="flex items-center gap-2 bg-gray-800 p-2 rounded"
+  {settings && settings.map((config) => (
+    <div
+      key={config.id}
+      className="bg-gray-800 p-2 rounded"
+    >
+      {/* Version Desktop - une ligne avec séparateurs */}
+      <div className="hidden md:flex md:flex-wrap md:flex-row md:items-center md:gap-2">
+        <span>{t('form.imagesNumber')}</span>
+        <TextInput
+          type="number"
+          min={1}
+          value={config.imageCount}
+          onChange={(e) =>
+            handleChange(config.id, 'imageCount', Number(e.target.value))
+          }
+          className="w-20 p-1 border rounded"
+          placeholder="Nb images"
+        />
+        <span>|</span>
+        
+        <span>{t('form.exposition')}</span>
+        <ComboBoxSelect 
+          options={availableExposition}
+          onSelectValue={(value)=> { handleChange(config.id, 'exposureTime', Number(value)) }}
+          defaultValue={availableExposition[0]}
+        />
+        <span>s |</span>
+        
+        <span>{t('form.gain')}</span>
+        <ComboBoxSelect 
+          options={availableGains}
+          onSelectValue={(value)=> { handleChange(config.id, 'gain', Number(value)) }}
+          defaultValue={availableGains[0]}
+        />
+        <span>|</span>
+        
+        <span>{t('form.filter')}</span>
+        <SelectInput
+          value={config.filter}
+          onChange={(e) =>
+            handleChange(config.id, 'filter', e.target.value)
+          }
+          className="p-1 border rounded"
         >
-          <span>{t('form.imagesNumber')}</span>
+          {filters.map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+        </SelectInput>
+        <span>|</span>
+        
+        <span>{t('form.refocus')}</span>
+        <Checkbox 
+          checked={config.focus===true}
+          onChange={() => handleChange(config.id, 'focus', !config.focus)}
+        />
+        
+        <AddButton
+          onClick={addRow}
+          title={t('form.add')}
+        />
+        <RemoveButton
+          onClick={() => removeRow(config.id)}
+          title={t('form.delete')}
+        />
+      </div>
+
+      {/* Version Mobile - colonnes avec labels */}
+      <div className="md:hidden space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="font-medium">{t('form.imagesNumber')}</span>
           <TextInput
             type="number"
             min={1}
@@ -81,22 +156,28 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
             className="w-20 p-1 border rounded"
             placeholder="Nb images"
           />
-          <span> | </span>
-          <span>{t('form.exposition')}</span>
-            <ComboBoxSelect
-           />
-          <TextInput
-            type="number"
-            min={1}
-            value={config.exposureTime}
-            onChange={(e) =>
-              handleChange(config.id, 'exposureTime', Number(e.target.value))
-            }
-            className="w-20 p-1 border rounded"
-            placeholder="Exposition (s)"
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <span className="font-medium">{t('form.exposition')}</span>
+          <ComboBoxSelect 
+            options={availableExposition}
+            onSelectValue={(value)=> { handleChange(config.id, 'exposureTime', Number(value)) }}
+            defaultValue={availableExposition[0]}
           />
-          <span>s | {t('form.filter')} </span>
-
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <span className="font-medium">{t('form.gain')}</span>
+          <ComboBoxSelect 
+            options={availableGains}
+            onSelectValue={(value)=> { handleChange(config.id, 'gain', Number(value)) }}
+            defaultValue={availableGains[0]}
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <span className="font-medium">{t('form.filter')}</span>
           <SelectInput
             value={config.filter}
             onChange={(e) =>
@@ -110,36 +191,35 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
               </option>
             ))}
           </SelectInput>
-
-          <div className="flex items-center justify-center">
-            <label className="mr-4">{t('form.refocus')}</label>
-            <Checkbox 
-              checked={config.focus===true}
-              onChange={() => handleChange(config.id, 'focus', !config.focus)}
-            />
-          </div>
-
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <span className="font-medium">{t('form.refocus')}</span>
+          <Checkbox 
+            checked={config.focus===true}
+            onChange={() => handleChange(config.id, 'focus', !config.focus)}
+          />
+        </div>
+        
+        <div className="flex justify-center gap-2 pt-2">
           <AddButton
             onClick={addRow}
             title={t('form.add')}
           />
-
-
           <RemoveButton
             onClick={() => removeRow(config.id)}
             title={t('form.delete')}
           />
-           
         </div>
-      ))}
-
-      {(!settings || settings.length === 0) && (
-        <Button
-          onClick={addRow}
-        >
-          {t('form.configurationAdd')}
-        </Button>
-      )}
+      </div>
     </div>
+  ))}
+  
+  {(!settings || settings.length === 0) && (
+    <Button onClick={addRow}>
+      {t('form.configurationAdd')}
+    </Button>
+  )}
+</div>
   );
 }

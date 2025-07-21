@@ -24,7 +24,7 @@ async def current_process() -> List[DarkLibraryProcessType]:
 async def get_dark(numero_camera: str) -> List[DarkLibraryItem]:
     """Retrieve the list of darks for a camera."""
 
-    config = Path(CONFIG['global'].get("dark_directory")).resolve() / Path("config.json")
+    config = Path(CONFIG['global'].get("dark_directory")) / Path("config.json")
     data = DarkManager.get_dark_config(config, False)
 
     if numero_camera in data.keys():

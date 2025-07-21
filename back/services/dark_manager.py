@@ -40,6 +40,19 @@ class DarkManager(threading.Thread):
             return dark_dict_loaded
         return data
         
+    def choose_dark(config: Path, exposition: int, gain: int, temperature: Union[int,None], camera : str):
+        config = DarkManager.get_dark_config(config, True)
+        if not camera in config.keys():
+            return None
+        darks = config[camera]
+        for dark in darks : 
+            if dark.exposition==exposition and dark.gain==gain:
+                if (not temperature) or (temperature and temperature==dark.temperature):
+                    return Path(dark.filename)
+            
+        return None
+
+
     def save_dark_config(fit_config: Path, data, already_serialized: bool = False):
         if already_serialized:
             serializable_dict= data
@@ -181,4 +194,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    print(DarkManager.choose_dark(Path("../dark/config.json"),10,100,-15,"FHaUs3"))
+    #main()

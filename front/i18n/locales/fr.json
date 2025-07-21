@@ -31,12 +31,13 @@
         "exposition":"Exposition",
         "refocus":"reFocus",
         "imagesNumber":"Nombre d'images",
-        "filter":"filter",
+        "filter":"Filtre",
         "configurationAdd":"Ajouter une configuration",
         "stop":"Stopper",
         "dontstop":"Continuer",
         "add_dark":"Ajouter des darks",
-        "validate":"Valider"
+        "validate":"Valider",
+        "gain":"Gain"
     },
     "catalog": {
         "type":"type",

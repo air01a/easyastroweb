@@ -10,6 +10,7 @@ class PlanType(BaseModel):
     filter: str
     object: str
     focus: bool
+    gain: int
 
 ConfigAllowedValue = Union[str, int, float, bool, List[bool], List[str]]
 

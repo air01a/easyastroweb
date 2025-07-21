@@ -23,6 +23,7 @@ class Observation:
     filter: str
     object: str
     focus: bool
+    gain: int
     
 
 class StopScheduler:

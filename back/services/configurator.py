@@ -69,7 +69,7 @@ def load_config() -> None:
         CONFIG_SCHEME = json.load(f)
 
     new_config = load_layout(tmp_config, CONFIG_SCHEME)
-
+    new_config['dark_directory'] = Path(new_config['dark_directory']).resolve()
     CONFIG['global'].clear()
     CONFIG['global'].update(new_config)
 

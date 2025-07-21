@@ -103,9 +103,12 @@ class TelescopeInterface(ABC):
         best_position, best_method, details = self.autofocus.calculate_best_focus()
         logger.info(f"[Focuser] - Results {best_position}, method={best_method}")
         self.move_focuser(best_position)
+    
+    def set_gain(self, gain: int):
+        pass
 
-    def capture_to_fit(self, exposure : int, ra : float, dec : float, filter_name : str, target_name, path: Path) :
-
+    def capture_to_fit(self, exposure : int, ra : float, dec : float, filter_name : str, target_name, path: Path, gain : int) :
+        self.set_gain(gain)
         image = self.camera_capture(exposure)
         header={}
 
@@ -140,6 +143,10 @@ class AlpacaTelescope(TelescopeInterface):
         except Exception as e:
             print(e)
             return None
+        
+    def set_gain(self, gain: int):
+        logger.info(f"[CAMERA] - Setting gain to {gain}")
+        alpaca_camera_client.set_camera_gain(gain)
 
     def set_camera_gain(self, gain: int):
         alpaca_camera_client.set_camera_gain(gain)

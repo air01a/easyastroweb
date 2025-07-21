@@ -7,6 +7,7 @@ export type PlanType = {
   filter: string;
   object: string;
   focus: boolean;
+  gain: number;
 };
 
 

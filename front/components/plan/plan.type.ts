@@ -4,4 +4,5 @@ export type ImageConfig = {
   exposureTime: number;
   filter: string;
   focus: boolean;
+  gain: number;
 };
