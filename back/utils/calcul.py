@@ -5,7 +5,10 @@ def calculate_fov(focale: int, pixel_x, pixel_y, pixel_size: float):
     resolution = pixel_size / focale * 206.265 
     horizontalFov = resolution * pixel_x /  3600
     verticalFov = resolution * pixel_y / 3600
-    fov = (horizontalFov ** 2 + verticalFov ** 2) ** (1/2)
+    #fov = (horizontalFov ** 2 + verticalFov ** 2) ** (1/2)
+    fov=max(horizontalFov, verticalFov)
+    #fov=0.8
+    print((resolution, horizontalFov, verticalFov, fov))
     return (resolution, horizontalFov, verticalFov, fov)
 
 def get_solver(CONFIG):
@@ -13,6 +16,7 @@ def get_solver(CONFIG):
     pixel_x = CONFIG["camera"].get("horizontal_pixels",2000)
     pixel_y = CONFIG["camera"].get("vertical_pixels",1000)
     pixel_size = CONFIG["camera"].get("pixel_size",3.6)
+    print(focale, pixel_x, pixel_y, pixel_size)
     fov = calculate_fov(focale, pixel_x, pixel_y, pixel_size)[3]
     print("fov:",fov)
     return PlateSolveAstap(fov,CONFIG["global"].get("astap_catalog"), search_radius=CONFIG["global"].get("astap_default_search_radius",10))

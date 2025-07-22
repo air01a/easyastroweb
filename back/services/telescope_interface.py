@@ -116,6 +116,10 @@ class TelescopeInterface(ABC):
         header['DATE-OBS'] = time.strftime('%Y-%m-%dT%H.%M.%S')
         header['RA'] = ra
         header['DEC'] = dec
+        header['NAXIS1'] = image.data.shape[1]  # largeur
+        header['NAXIS2'] = image.data.shape[0]  # hauteur
+        header['CTYPE1'] = 'PIXELS'
+        header['CTYPE2'] = 'PIXELS'
         file_name = path / f"capture-{target_name.replace(' ', '_')}-{filter_name.replace(' ', '_')}-{header['DATE-OBS']}.fits"
         if image is None:
             logger.error("[CAPTURE] - Error capturing image")
@@ -137,7 +141,8 @@ class AlpacaTelescope(TelescopeInterface):
             while alpaca_camera_client.get_camera_state()==CameraState.EXPOSING:
                 sleep(1)
             image =  alpaca_camera_client.get_image_array()
-            image.data = np.array(image.data)
+            image.data = np.array(image.data).T
+            print(np.array(image.data).shape)
             telescope_state.last_picture = image.data
             return image
         except Exception as e:

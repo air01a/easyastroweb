@@ -54,6 +54,7 @@ class PlateSolveAstap(object):
             '-s', str(self.MAX_STARS),
             '-z', str(self.DOWNSAMPLE_FACTOR),
              '-d', self.CATALOG,
+             '-fov',str(self.FOV),
              '-update'
         ]
         if ra!=None:
