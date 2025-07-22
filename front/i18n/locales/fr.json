@@ -90,6 +90,16 @@
         "darkDesc":"Gestion des darks",
         "tools":"Outils"
     },
+    "details": {
+        "ra":"RA",
+        "dec":"Dec",
+        "size":"Taille",
+        "visibleHours":"Nombre d'heures visibles",
+        "angularDistance":"Distance angulaire à la Lune",
+        "description":"Description",
+        "skyAltitude":"Altitude dans le ciel",
+        "position":"Localisation"
+    },
     "global": {
 
         "rise":"Lever",
@@ -115,6 +125,7 @@
         "temperature":"Température",
         "exposition":"Expo",
         "gain":"Gain",
-        "captures":"Captures"
+        "captures":"Captures",
+        "name":"Nom"
     }
 }

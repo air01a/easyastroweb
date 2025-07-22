@@ -51,7 +51,7 @@ export default function AstronomyObjectList({
             <div className="flex-1 mt-4">
 
               <h2 className="text-xl font-bold">{obj.name}</h2>
-              <p className="text-sm text-gray-600">{obj.objectType}</p>
+              <p className="text-sm text-gray-600">{t(`catalog.${obj.objectType}`)}</p>
               <p className="text-sm">{t('catalog.magnitude')} : {obj.magnitude}</p>
               { obj.illumination && <p className="text-sm">{t('catalog.illumination')} : {obj.illumination}%</p> }
               <p className="text-sm">

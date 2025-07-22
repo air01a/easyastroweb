@@ -122,7 +122,6 @@ Type;Name;NGC;Object type;Season;Magnitude;Constellation (EN);Constellation (FR)
 0;NGC7293;NGC 7293;planetary_nebula;Autumn / Automne;13;Aquarius;Aquarius;Aquarius;22:29:38.00;-20:50:13.00;700;16' x 16';NGC7293.jpg;-;Aqu;location/location_ngc7293.png
 0;NGC7686;NGC 7686;open_cluster;Autumn / Automne;10;Andromeda;Andromeda;Andromeda;23:30:40.00;+61:41:53.00;1800;15' x 15;NGC7686.jpg;-;And;location/location_NGC7686.png
 0;NGC7662;NGC 7662;planetary_nebula;Summer / Été;9;Lyra;Lyra;Lyra;18:36:58.00;+33:59:20.00;1600;1' x 1';NGC7662.jpg;-;Lyr;location/location_7662.png
-0;NGC752;NGC 752;open_cluster;Winter / Hiver;12;Cassiopeia;Cassiopeia;Cassiopeia;01:57:41.00;+37:42:06.00;1300;60' x 60';NGC752.jpg;-;Cas;location/location_ngc752.png
 0;NGC7009;NGC 7009;planetary_nebula;Summer / Été;9;Aquarius;Aquarius;Aquarius;21:04:10.00;-11:21:48.00;2000;"41"" x 31""";NGC7009.jpg;-;Aqu;location/location_ngc7009.png
 0;NGC7184;NGC 7184;galaxy;Autumn / Automne;12;Pegasus;Pegasus;Pegasus;22:03:46.00;-26:18:11.00;72000000; 5' x 3';NGC7184.jpg;-;Peg;location/location_ngc7184.png
 0;NGC6781;NGC 6781;planetary_nebula;Autumn / Automne;12;Aquarius;Aquarius;Aquarius;19:18:25.00;+06:32:45.00;4000;"30"" x 20""";NGC6781.jpg;-;Aqu;location/location_ngc6781.png
@@ -134,9 +133,9 @@ Type;Name;NGC;Object type;Season;Magnitude;Constellation (EN);Constellation (FR)
 0;NGC6543;NGC 6543;planetary_nebula;Summer / Été;8;Draco;Draco;Draco;17:58:33.00;+66:37:59.00;2000;"27"" x 18""";NGC6543.jpg;-;Dra;location/location_ngc6543.png
 0;NGC2371;NGC 2371;planetary_nebula;Winter / Hiver;14;Gemini;Gemini;Gemini;07:25:28.00;+29:29:04.00;4400;"20"" x 15""";NGC2371.jpg;-;Gem;location/location_ngc2371.png
 0;NGC2440;NGC 2440;planetary_nebula;Winter / Hiver;9;Puppis;Puppis;Puppis;07:41:54.00;+18:12:29.00;4000;"45"" x 30""";NGC2440.jpg;-;Pup;location/location_ngc2440.png
-0;NGC2237/2244;NGC2237/2244;emission_nebula;Autumn / Automne;9;Unicorn;Licorne;Unicorn;06:30:54.6;+05:02:57.2;4710;130' x 110';NGC2244.jpg;-;Mon;
+0;NGC2237-2244;NGC2237-2244;emission_nebula;Autumn / Automne;9;Unicorn;Licorne;Unicorn;06:30:54.6;+05:02:57.2;4710;130' x 110';NGC2244.jpg;-;Mon;
 0;NGC4438;NGC4438;galaxy;Autumn / Automne;10;Virgo;Vierge;Virgo;12:27:45.6;+13:00:31.0;52000000;9' x 4';NGC4438.jpg;-;;
-0;NGC884/869;NGC884/869;open_cluster;Autumn / Automne;3.7;Perseus;Persée;Perseus;02:19:06.0;+57:9:0.0;7640;60' x 60';NGC884.jpg;-;;
-0;NGC6960;NGC6960;emission_nebula;Autumn / Automne;7;Cygnus;Cygne;Cygnus;20:45:38.0;+30:42:30.0;2400;3°;NGC6960.jpg;-;;
+0;NGC884-869;NGC884-869;open_cluster;Autumn / Automne;3.7;Perseus;Persée;Perseus;02:19:06.0;+57:9:0.0;7640;60' x 60';NGC884.jpg;-;;
+0;NGC6960;NGC6960;emission_nebula;Autumn / Automne;7;Cygnus;Cygne;Cygnus;20:45:38.0;+30:42:30.0;2400;3�;NGC6960.jpg;-;;
 0;NGC7789;NGC7789;open_cluster;Autumn / Automne;6.7;Cassiopeia;Cassiopée;Cassiopeia;23:57:24.0;+56:42:30.0;8000;25';NGC7789.jpg;-;;
 0;NGC7000;NGC7000;emission_nebula;Autumn / Automne;5;Cygnus;Cygnus;Cygnus;20:59:17.2;+44:31:07.00;2590;120' x 100';NGC7000.jpg;-;;

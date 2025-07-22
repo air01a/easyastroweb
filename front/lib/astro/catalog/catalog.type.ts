@@ -14,7 +14,7 @@ export type CatalogItem = {
     ra: number;
     dec: number;
     distance: number;
-    size: number;
+    size: string;
     image: string;
     imageCiel: string;
     location: string;

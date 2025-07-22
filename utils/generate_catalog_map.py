@@ -24,7 +24,7 @@ def generate_map(object_name: str) -> io.BytesIO:
         
         if not dso:
             return None
-        
+        print(dso)
         p = MapPlot(
                 projection=Projection.MERCATOR,
                 ra_min=(dso.ra-30),
@@ -64,7 +64,10 @@ def generate_map(object_name: str) -> io.BytesIO:
         p.dsos(where=[_.magnitude < 8], labels=None)
         
         p.constellation_labels()
-        p.milky_way()
+        try:
+            p.milky_way()
+        except:
+            print("Error generatng milky way")
         p.ecliptic()
 
         p.marker(
@@ -97,24 +100,24 @@ def generate_map(object_name: str) -> io.BytesIO:
         return image_bytes
         
     finally:
-        # Nettoyer explicitement les objets matplotlib/starplot
-        try:
-            if 'p' in locals():
-                # Fermer la figure matplotlib associée
-                if hasattr(p, 'fig') and p.fig is not None:
-                    plt.close(p.fig)
-                elif hasattr(p, 'ax') and p.ax is not None and hasattr(p.ax, 'figure'):
-                    plt.close(p.ax.figure)
-                del p
-        except:
-            pass
-        
-        # Forcer le garbage collection
-        gc.collect()
+            # Nettoyer explicitement les objets matplotlib/starplot
+            try:
+                if 'p' in locals():
+                    # Fermer la figure matplotlib associée
+                    if hasattr(p, 'fig') and p.fig is not None:
+                        plt.close(p.fig)
+                    elif hasattr(p, 'ax') and p.ax is not None and hasattr(p.ax, 'figure'):
+                        plt.close(p.ax.figure)
+                    del p
+            except:
+                pass
+            
+    # Forcer le garbage collection
+    gc.collect()
 
 
 # Ouvrir et lire le fichier CSV
-with open('../catalog/catalog.csv', 'r', encoding='utf-8') as file:
+with open('./catalog.csv', 'r', encoding='utf-8') as file:
     reader = csv.DictReader(file, delimiter=';')
     
     count = 0
@@ -126,12 +129,12 @@ with open('../catalog/catalog.csv', 'r', encoding='utf-8') as file:
             try:
                 image = generate_map(row['Name'])
                 if image:
-                    with open(f'../catalog/location/{row["Name"]}.jpg', 'wb') as f:
+                    with open(f'{row["Name"]}.jpg', 'wb') as f:
                         f.write(image.getvalue())
                     # Libérer explicitement l'objet BytesIO
                     image.close()
                     del image
-                
+                    
             except Exception as e:
                 print(f"Erreur pour {row['Name']}: {e}")
             

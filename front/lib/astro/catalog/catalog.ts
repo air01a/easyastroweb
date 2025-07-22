@@ -146,7 +146,7 @@ export async function loadCatalogFromCSV(csvText:string): Promise<CatalogItem[]>
         ra: ra || 0,
         dec: dec || 0,
         distance: parseFloat(get('Distance')) || 0,
-        size: parseFloat(get('Size')) || 0,
+        size: (get('Size')) || 'unknown',
         image: get('Image'),
         imageCiel: get('Image ciel'),
         location: get('Location'),

@@ -17,7 +17,7 @@ export function toRadians(deg: number): number {
 
 
 export function todeg(rad: number): number {
-  return rad * Math.PI / 180;
+  return rad * 180 / Math.PI;
 }
 
 export function angularSeparation(ra1: number, dec1: number, ra2: number, dec2: number): number {
@@ -199,4 +199,21 @@ export function isObjectVisible(altitude: number, azimuth: number, azimuthMask: 
 
 export function dateToNumber(date: Date) {
   return date.getHours()+date.getMinutes()/60;
+}
+
+export function raToHour(coord: number) {
+
+  const hour = Math.floor(coord);
+  const minute = Math.floor((coord - hour)*60);
+  const seconde = Math.floor((coord - hour - minute/60)*3600);
+
+  return `${String(hour).padStart(2, '0')}h${String(minute).padStart(2, '0')}m${String(seconde).padStart(2, '0')}s`;
+}
+
+export function decToAngle(coord:number) {
+  const angle = Math.floor(coord);
+  const minutes = Math.floor((coord - angle) * 60);
+  const secondes = Math.floor((coord - angle - minutes/60)*3600)
+  return `${angle}°${String(minutes).padStart(2, '0')}'${String(secondes).padStart(2, '0')}"`
+
 }
