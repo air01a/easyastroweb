@@ -226,8 +226,12 @@ class LiveStacker:
             # Convert and register images
             self.siril.convert( 'light', out=f"{self.config.processed_dir}", debayer=(self.dark==None))
             self.siril.cd(f"{self.config.processed_dir}")
+
+            # Too much siril implementation does not know command preprocess
             #self.siril.preprocess( 'light', dark=f"{self.dark}" if self.dark else None, cfa=True, equalize_cfa=True, debayer=True )
             if self.dark!=None:
+
+                # In recent version of pysiril, calibrate use preprocess command 
                 #self.siril.calibrate(
                 #    'light', 
                 #    dark=f"{self.dark}",
