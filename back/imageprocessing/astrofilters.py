@@ -943,7 +943,7 @@ class AstroFilters:
             #                            (0, 1))
             if len(image.shape)>2 and image.shape[2]>1:
                 for channel in range(3):
-                    image[:,:,channel] = Stretch(target_bkg=strength, shadows_clip=shadow_clip).stretch(image[:,:,channel])
+                    image[:,:,channel] = Stretch(target_bkg=strength).stretch(image[:,:,channel])
                 else:
                     image = Stretch(target_bkg=strength).stretch(image)
 

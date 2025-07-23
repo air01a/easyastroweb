@@ -60,13 +60,14 @@ class Scheduler(threading.Thread):
              
             retry+=1
             try:
-                for ext in ['.wcs', '.ini']:
-                    wcs = image.with_suffix(ext)
+                if not CONFIG["global"].get("mode_debug", False):
+                    for ext in ['.wcs', '.ini']:
+                        wcs = image.with_suffix(ext)
 
-                    if wcs.exists():
-                        wcs.unlink()
-                if image.exists():
-                    image.unlink()
+                        if wcs.exists():
+                            wcs.unlink()
+                    if image.exists():
+                        image.unlink()
             except:
                 pass
         self.telescope_interface.telescope_set_tracking(0)
@@ -75,7 +76,8 @@ class Scheduler(threading.Thread):
 
     def _on_image_stack(self, path: Path):
         image = self.fits_manager.open_fits(f"{path}")
-        image.data  = self.astro_filters.denoise_gaussian(self.astro_filters.replace_lowest_percent_by_zero(self.astro_filters.auto_stretch(image.data, 0.25, algo=1, shadow_clip=-2),80))
+        #image.data  = self.astro_filters.denoise_gaussian(self.astro_filters.replace_lowest_percent_by_zero(self.astro_filters.auto_stretch(image.data, 0.25, algo=1, shadow_clip=-2),10))
+        image.data  = self.astro_filters.auto_stretch(image.data, 0.10, algo=1, shadow_clip=-10)
         self.fits_manager.save_as_image(image, output_filename=f"{path}".replace(".fit",".jpg"))
         telescope_state.last_stacked_picture = path.with_suffix(".jpg")
         

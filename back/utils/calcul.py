@@ -6,7 +6,7 @@ def calculate_fov(focale: int, pixel_x, pixel_y, pixel_size: float):
     horizontalFov = resolution * pixel_x /  3600
     verticalFov = resolution * pixel_y / 3600
     #fov = (horizontalFov ** 2 + verticalFov ** 2) ** (1/2)
-    fov=max(horizontalFov, verticalFov)
+    fov=min(horizontalFov, verticalFov)
     #fov=0.8
     print((resolution, horizontalFov, verticalFov, fov))
     return (resolution, horizontalFov, verticalFov, fov)

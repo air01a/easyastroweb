@@ -1,11 +1,13 @@
 import httpx
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union
 from pydantic import BaseModel
 from enum import Enum
 import threading
 import time
 from utils.logger import logger
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+
 
 SIMULATOR = True
 # Générateur thread-safe pour les IDs de transaction
@@ -54,7 +56,22 @@ class ASCOMAlpacaBaseClient:
         self.base_url = f"http://{host}:{port}/api/v1/{device_type.value}/{device_number}"
         self.client = httpx.Client(timeout=30.0)
 
-    def _make_request(self, method: str, endpoint: str, data: Optional[Dict] = None) -> Dict[str, Any]:
+    def _make_request(
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[Dict] = None,
+        raw_response: bool = False
+    ) -> Union[Dict[str, Any], bytes]:
+        """
+        Effectue une requête HTTP vers l'API Alpaca.
+
+        :param method: "GET" ou "PUT"
+        :param endpoint: endpoint Alpaca sans le préfixe de version
+        :param data: paramètres à inclure dans la requête
+        :param raw_response: si True, retourne le contenu brut (bytes), utile pour imagearraybytes
+        :return: soit un dict JSON, soit des bytes
+        """
         url = f"{self.base_url}/{endpoint}"
         if data is None:
             data = {}
@@ -64,6 +81,7 @@ class ASCOMAlpacaBaseClient:
             "ClientID": self.client_id,
             "ClientTransactionID": transaction_id
         })
+
         try:
             if method.upper() == "GET":
                 response = self.client.get(url, params=data)
@@ -71,10 +89,13 @@ class ASCOMAlpacaBaseClient:
                 response = self.client.put(url, data=data)
 
             response.raise_for_status()
+
+            if raw_response:
+                return response.content  # retourne les bytes directement
+
             result = response.json()
             if result.get("ErrorNumber", 0) != 0:
                 raise Exception(f"Erreur ASCOM {result['ErrorNumber']}: {result.get('ErrorMessage', 'Erreur inconnue')}")
-
             return result
 
         except httpx.RequestError as e:
@@ -435,7 +456,8 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
 
     def __init__(self, host="localhost", port=11111, device_number=0):
         super().__init__(ASCOMDeviceType.CAMERA, host, port, device_number)
-    
+        self.last_exposure=0
+        self.last_time=None
 
     def set_camera_gain(self, gain: int)-> None :
         self._make_request("PUT", "gain", {
@@ -520,7 +542,8 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
 
     def start_exposure(self, settings: ExposureSettings) -> None:
         """Démarre une exposition"""
-
+        self.last_exposure=settings.duration
+        self.last_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         #print(settings)
         self._make_request("PUT", "startexposure", {
             "Duration": settings.duration,
@@ -550,20 +573,20 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         result = self._make_request("GET", "imagearray")
         image_data = result.get("Value", [])
 
-        try:
+        """try:
             last_exposure_duration = self._make_request("GET", "lastexposureduration")
             last_exposure_start = self._make_request("GET", "lastexposurestarttime")
         except:
             last_exposure_duration={"Value":1}
-            last_exposure_start = {"Value":""}
+            last_exposure_start = {"Value":""}"""
 
 
         return ImageData(
             width=len(image_data[0]) if image_data else 0,
             height=len(image_data) if image_data else 0,
             data=image_data,
-            exposure_duration=last_exposure_duration.get("Value", 0.0),
-            timestamp=last_exposure_start.get("Value", "")
+            exposure_duration=self.last_exposure,
+            timestamp=self.last_time
         )
 
     def set_ccd_temperature(self, temperature: float) -> None:

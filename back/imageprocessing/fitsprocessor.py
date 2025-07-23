@@ -78,7 +78,7 @@ class FitsImageManager:
     def set_dark(self, dark: np.ndarray):
         self.dark = dark
  
-    def open_fits(self, filename: str, hdu_index: int = 0) -> None:
+    def open_fits(self, filename: str, hdu_index: int = 0) -> FitsImage:
         """
         Ouvre un fichier FITS et charge les données.
         
@@ -435,6 +435,8 @@ class FitsImageManager:
 
     def save_fits_from_array(array, filename:Path, headers: Dict[str,str]):
         image=np.array(array,dtype=np.uint16)
+        if image.ndim==3 : 
+            image = np.transpose(image, (2, 0, 1))
         hdu = fits.PrimaryHDU(image)
         if headers:
             for key, value in headers.items():

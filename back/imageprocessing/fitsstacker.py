@@ -14,7 +14,7 @@ import json
 from datetime import datetime
 import shutil
 from utils.logger import logger
-
+from os import chdir
 try:
     import pysiril
     from pysiril.wrapper import Wrapper
@@ -27,7 +27,7 @@ except ImportError:
 class Config:
     def __init__(self):
         # Directories
-        self.base_dir = Path(f"{Path.cwd()}/astro_session")
+        self.base_dir = Path(f"{Path.cwd()}/astro_session").resolve()
         self.raw_dir = self.base_dir / "raw"
         self.processed_dir = self.base_dir / "process"
         self.stack_result = self.base_dir / "processed"
@@ -35,9 +35,8 @@ class Config:
         self.log_dir = self.base_dir / "log"
         self.current_dir = Path.cwd()
         # Processing parameters
-        self.batch_size = 20
-        self.initial_batch_size = 40  # Smaller for first batch
-        
+        self.batch_size = 10
+        self.initial_batch_size = 10  # Smaller for first batch
         # File patterns
         self.image_extensions = ['.fit', '.fits', '.tif', '.tiff']
         
@@ -48,7 +47,7 @@ class Config:
     
     def create_directories(self):
         """Create necessary directories"""
-        for dir_path in [self.raw_dir, self.processed_dir, self.final_dir, self.stack_result]:
+        for dir_path in [self.raw_dir, self.processed_dir, self.final_dir, self.stack_result, self.log_dir]:
             dir_path.mkdir(parents=True, exist_ok=True)
 
 class LiveStacker:
@@ -67,6 +66,7 @@ class LiveStacker:
         self.event_stop = threading.Event()
         self.is_processing = False
         self.dark = dark
+        self.current_dir = Path.cwd()
 
         # Statistics
         self.stats = {
@@ -331,7 +331,7 @@ class LiveStacker:
         while not self.batch_ready_queue.empty() or self.is_processing:
             time.sleep(3)
 
-        
+        chdir(self.current_dir)
         # Close Siril
         if self.siril:
             self.siril.close()

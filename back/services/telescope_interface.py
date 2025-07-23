@@ -17,7 +17,7 @@ class TelescopeInterface(ABC):
         self.fw_name : str = "Not connected"
         self.focuser_name : str = "Not connected"
         self.camera_name : str = "Not connected"
- 
+
 
     @abstractmethod
     def set_camera_gain(self, gain: int):
@@ -108,18 +108,23 @@ class TelescopeInterface(ABC):
         pass
 
     def capture_to_fit(self, exposure : int, ra : float, dec : float, filter_name : str, target_name, path: Path, gain : int) :
-        self.set_gain(gain)
+        #self.set_gain(gain)
         image = self.camera_capture(exposure)
         header={}
-
+        
         header["EXPTIME"] = 1
         header['DATE-OBS'] = time.strftime('%Y-%m-%dT%H.%M.%S')
         header['RA'] = ra
         header['DEC'] = dec
-        header['NAXIS1'] = image.data.shape[1]  # largeur
-        header['NAXIS2'] = image.data.shape[0]  # hauteur
-        header['CTYPE1'] = 'PIXELS'
-        header['CTYPE2'] = 'PIXELS'
+        #header['NAXIS'] = image.data.ndim
+        #header['NAXIS1'] = image.data.shape[1]  # largeur
+        #header['NAXIS2'] = image.data.shape[0]  # hauteur
+
+        #if (image.data.ndim==3):
+        #    header['NAXIS3'] = image.data.shape[2]
+        #header['CTYPE1'] = 'PIXELS'
+        #header['CTYPE2'] = 'PIXELS'
+        print(header, image.data.shape)
         file_name = path / f"capture-{target_name.replace(' ', '_')}-{filter_name.replace(' ', '_')}-{header['DATE-OBS']}.fits"
         if image is None:
             logger.error("[CAPTURE] - Error capturing image")
@@ -134,6 +139,14 @@ class TelescopeInterface(ABC):
 
     
 class AlpacaTelescope(TelescopeInterface):
+
+    def __init__(self):
+        super().__init__()
+        self.fits_dir = Path("C:/Users/eniquet/Documents/dev/easyastroweb/utils/01-observation-m16/01-images-initial") #        "D:/Astronomie/observations/2024-02-12/DARK"
+
+        self.fits_files =  (list(self.fits_dir.glob("*.fit")) + list(self.fits_dir.glob("*.fits")))
+        self.index = 0
+
     def camera_capture(self, expo: float):
         try:
             expo = ExposureSettings(duration=expo)
@@ -141,9 +154,20 @@ class AlpacaTelescope(TelescopeInterface):
             while alpaca_camera_client.get_camera_state()==CameraState.EXPOSING:
                 sleep(1)
             image =  alpaca_camera_client.get_image_array()
-            image.data = np.array(image.data).T
-            print(np.array(image.data).shape)
+            image.data = np.array(image.data)
+            if image.data.ndim == 2:
+                # Image en niveaux de gris : transposition classique
+                image.data = np.array(image.data).T
+            else:
+                image.data = np.transpose(np.array(image.data), (1, 0, 2))
             telescope_state.last_picture = image.data
+            fits_manager = FitsImageManager(True, False)
+        
+            new = fits_manager.open_fits(self.fits_files[self.index])
+            print(self.fits_files[self.index])
+            self.index=(self.index+1) % len(self.fits_files)
+            print(new.data.shape)
+            image.data=new.data
             return image
         except Exception as e:
             print(e)
