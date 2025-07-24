@@ -124,7 +124,7 @@ class TelescopeInterface(ABC):
         #    header['NAXIS3'] = image.data.shape[2]
         #header['CTYPE1'] = 'PIXELS'
         #header['CTYPE2'] = 'PIXELS'
-        print(header, image.data.shape)
+
         file_name = path / f"capture-{target_name.replace(' ', '_')}-{filter_name.replace(' ', '_')}-{header['DATE-OBS']}.fits"
         if image is None:
             logger.error("[CAPTURE] - Error capturing image")
@@ -164,9 +164,7 @@ class AlpacaTelescope(TelescopeInterface):
             fits_manager = FitsImageManager(True, False)
         
             new = fits_manager.open_fits(self.fits_files[self.index])
-            print(self.fits_files[self.index])
             self.index=(self.index+1) % len(self.fits_files)
-            print(new.data.shape)
             image.data=new.data
             return image
         except Exception as e:

@@ -19,7 +19,7 @@ CONFIG['camera'] = {}
 CONFIG['filterwheel'] = {}
 
 
-CURRENT_DIR = Path(__file__).parent
+CURRENT_DIR = Path(__file__).parent.resolve()
 CONFIG_PATH = CURRENT_DIR.parent / "config" / "config.json"
 CONFIG_SCHEMA_PATH = CURRENT_DIR.parent / "models" / "configschema.json"
 OBSERVATORY_PATH = CURRENT_DIR.parent / "config" / "observatory.json"

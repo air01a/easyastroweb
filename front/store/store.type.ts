@@ -32,7 +32,7 @@ export type ObserverStore = {
 export type WebSocketState = {
   socket: WebSocket | null;
   isConnected: boolean;
-  messages: string[];
+  messages: Record<string,string|number|number[]>[];
   connect: () => void;
   sendMessage: (msg: string) => void;
 };

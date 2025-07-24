@@ -11,7 +11,8 @@ from imageprocessing.astrofilters import AstroFilters
 import numpy as np
 import io
 from PIL import Image
-
+from services.configurator import CURRENT_DIR
+from pathlib import Path
 
 router = APIRouter(prefix="/observation", tags=["observation"])
 astro_filters = AstroFilters()
@@ -29,12 +30,14 @@ async def get_last_stacked_image():
     """
     # Définir le chemin du dossier d'images
     image_path = telescope_state.last_stacked_picture
-    if not image_path:
-        raise HTTPException(status_code=404, detail="Chemin invalide")
+    if not image_path or not image_path.exists():
+        return FileResponse(
+            path=(CURRENT_DIR.parent / Path("assets") /  Path("stacking_waiting.png")).resolve(),
+            media_type="image/png",  # Adapter selon le type d'image
+            filename=image_path.name
+        )
+        
     
-    # Vérifier que le fichier existe
-    if not image_path.exists():
-        raise HTTPException(status_code=404, detail="Image non trouvée")
     
     # Vérifier que c'est bien un fichier (pas un dossier)
     if not image_path.is_file():
@@ -57,7 +60,11 @@ def get_last_image():
     # Récupérer l'image depuis telescope_state
     image = telescope_state.last_picture
     if image is None:
-        raise HTTPException(status_code=404, detail="Aucune image capturée")
+        return FileResponse(
+            path=(CURRENT_DIR.parent / Path("assets") /  Path("image_waiting.png")).resolve(),
+            media_type="image/png",  # Adapter selon le type d'image
+            filename="image_waiting.png"
+        )
     
     # Appliquer les filtres 
     processed_image = astro_filters.denoise_gaussian(

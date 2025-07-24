@@ -136,7 +136,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
     };
 
     socket.onmessage = (event) => {
-      const data = event.data;//JSON.parse(event.data);
+      const data = JSON.parse(event.data);//JSON.parse(event.data);
       set((state) => ({ messages: [...state.messages, data] }));
     };
 

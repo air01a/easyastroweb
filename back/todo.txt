@@ -1,1 +1,0 @@
-AstroFilters -> ne pas à avoir à instancier l'objet pour utiliser

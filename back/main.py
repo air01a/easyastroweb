@@ -6,7 +6,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 from pathlib import Path
-
+from ws.websocket_manager import ws_manager
+import asyncio
 
 app = FastAPI(title="EasyAstro API", version="1.0.0")
 
@@ -45,6 +46,9 @@ def serve_react_app(path: str):
         return FileResponse(file_path)  # ex: favicon.ico
     return FileResponse(frontend_path / "index.html")  # fallback pour React Router
 
+@app.on_event("startup")
+async def startup_event():
+    ws_manager.set_loop(asyncio.get_running_loop())
 
 if __name__ == "__main__":
     import uvicorn 
