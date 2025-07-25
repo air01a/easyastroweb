@@ -75,6 +75,27 @@
         "addDelay":"Ajouter un délai",
         "validDelay":"OK"
     },
+    "plan" : {
+        "history":"Historique du plan",
+        "target":"cible",
+        "start":"Début",
+        "end":"Fin",
+        "images":"Images",
+        "filter":"Filtre",
+        "expo":"Expo",
+        "unknown_status":"Statut inconnu",
+        "stop_plan":"Arrêter le plan ?",
+        "confirm_stop":"L'arrêt est irréversible.",
+        "yes":"Oui, arrêter",
+        "cancel":"Annuler"
+    },
+    "dark":{
+        "library":"Informations sur les darks",
+        "loading":"Chargement des darks...",
+        "noTemp":"Aucun dark ne correspond à la température actuelle de la caméra",
+        "couples":"Couples Exposition / Gain disponibles",
+        "noDark":"Aucun dark disponible pour cette caméra."
+    },
     "config": {
         "generalConfig":"Configuration Générale",
         "generalConfigDesc":"Modifier les paramètres globaux de l'application.",

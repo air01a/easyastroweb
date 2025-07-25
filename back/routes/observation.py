@@ -6,13 +6,15 @@ from services.skymap import generate_dso_image, generate_map
 from models.state import telescope_state
 from services.scheduler import Scheduler
 from services.telescope_interface import telescope_interface
-from models.observation import Observation
+from models.observation import Observation,PlansExecutionType
 from imageprocessing.astrofilters import AstroFilters
 import numpy as np
 import io
 from PIL import Image
 from services.configurator import CURRENT_DIR
 from pathlib import Path
+from services.history_manager import HistoryManager
+
 
 router = APIRouter(prefix="/observation", tags=["observation"])
 astro_filters = AstroFilters()
@@ -23,13 +25,7 @@ def get_dso_image(object: str = Query(..., description="Nom ou identifiant de l'
     return StreamingResponse(image_stream, media_type="image/png")
 
 
-@router.get("/last_stacked_image")
-async def get_last_stacked_image():
-    """
-    Retourne une image depuis le dossier images/
-    """
-    # Définir le chemin du dossier d'images
-    image_path = telescope_state.last_stacked_picture
+async def return_image(image_path: Path):
     if not image_path or not image_path.exists():
         return FileResponse(
             path=(CURRENT_DIR.parent / Path("assets") /  Path("stacking_waiting.png")).resolve(),
@@ -49,6 +45,15 @@ async def get_last_stacked_image():
         media_type="image/jpeg",  # Adapter selon le type d'image
         filename=image_path.name
     )
+
+@router.get("/last_stacked_image")
+async def get_last_stacked_image():
+    """
+    Retourne une image depuis le dossier images/
+    """
+    # Définir le chemin du dossier d'images
+    image_path = telescope_state.last_stacked_picture
+    return await return_image(image_path)
 
 
 
@@ -105,6 +110,27 @@ def get_last_image():
     )
 
 
+@router.get("/history")
+def get_history() -> PlansExecutionType:
+    if is_running():
+        print(telescope_state.scheduler.history)
+        return telescope_state.scheduler.history.history
+    else:
+        history = HistoryManager()
+        history.open_history()
+        return history.history
+        
+@router.get("/history/{index}")
+async def get_history_image(index: int):
+    history = get_history()
+
+    if index<len(history):
+        print("History index ok")
+        image = history[index].jpg
+        print(image)
+        if image!=None:
+            return await return_image(Path(image))
+    raise HTTPException(status_code=404, detail="Chemin invalide")
 
 @router.post("/start")
 def receive_plans(plans: List[PlanType]):
@@ -119,7 +145,17 @@ def receive_plans(plans: List[PlanType]):
     for plan in plans: 
         if not isinstance(plan, PlanType):
             plan = PlanType(**plan)
-        obs = Observation(plan.start, plan.expo,plan.nExpo, plan.ra, plan.dec, plan.filter, plan.object, plan.focus, plan.gain)
+        obs = Observation(
+            start=plan.start,
+            expo=plan.expo,
+            number=plan.nExpo,
+            ra=plan.ra,
+            dec=plan.dec,
+            filter=plan.filter,
+            object=plan.object,
+            focus=plan.focus,
+            gain=plan.gain,
+        )
         plans_for_scheduler.append(obs)
 
     telescope_state.scheduler.plan = plans_for_scheduler

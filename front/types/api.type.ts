@@ -24,3 +24,22 @@ export type DarkLibraryProcessType = DarkLibraryType & {
     done: boolean;
     in_progress: boolean;
 }
+
+
+export interface PlanHistory {
+  start: number;
+  expo: number;
+  number: number;
+  ra: number;
+  dec: number;
+  filter: string;
+  object: string;
+  focus: boolean;
+  gain: number;
+  real_start: string;
+  end: string;
+  images: number;
+  jpg: string;
+}
+
+export type PlansHistory = PlanHistory[];

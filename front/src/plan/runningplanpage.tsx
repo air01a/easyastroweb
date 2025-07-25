@@ -2,20 +2,26 @@ import { useEffect, useState } from "react";
 import { apiService } from "../../api/api";
 import Button from "../../design-system/buttons/main";
 import Swal from "sweetalert2";
-import { X, LoaderCircle } from "lucide-react"; // icône animée de statut
+import { X, LoaderCircle } from "lucide-react";
 import { useWebSocketStore } from "../../store/store";
+import ImageBox from "../../design-system/box/imagebox";
+import History from "../../components/history/history"
+import { useTranslation } from 'react-i18next';
+
 
 export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
   const [image1, setImage1] = useState<string | null>(null);
   const [image2, setImage2] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<string>("En attente d’instructions...");
-  
+  const { t } = useTranslation();
+
   const connect = useWebSocketStore((state) => state.connect);
   const messages = useWebSocketStore((state) => state.messages);
   const isConnected = useWebSocketStore((state) => state.isConnected);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
-  const fetchImages = () => {
+  const fetchImages = async () => {
     const baseUrl = apiService.getBaseUrl();
     const timestamp = Date.now();
 
@@ -26,14 +32,15 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
     fetch(`${baseUrl}/observation/last_image?t=${timestamp}`)
       .then((res) => res.blob())
       .then((blob) => setImage2(URL.createObjectURL(blob)));
+
+
   };
+
 
   useEffect(() => {
     fetchImages();
-    if (!isConnected) {
-      connect();
-    }
-  }, [connect, isConnected]);
+    if (!isConnected) connect();
+  }, []);
 
   useEffect(() => {
     const newMessage = messages[messages.length - 1];
@@ -42,21 +49,23 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
     if (newMessage.sender === "SCHEDULER") {
       if (newMessage.message === "NEWIMAGE") {
         fetchImages();
+        setHistoryRefreshKey((prev) => prev + 1);
       } else if (newMessage.message === "STATUS") {
-        setJobStatus(newMessage.data as string|| "Statut inconnu");
+        setJobStatus((newMessage.data as string) || t("plan.unknown_status"));
+      } else if (newMessage.message==="REFRESHINFO") {
+        setHistoryRefreshKey((prev) => prev + 1);
       }
     }
   }, [messages]);
 
   const handleClick = () => {
     Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
+      title: t("plan.stop_plan"),
+      text: t("plan.confirm"),
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, stop it!",
+      confirmButtonText: t("plan.yes"),
+      cancelButtonText: t("plan.cancel"),
     }).then((result) => {
       if (result.isConfirmed) {
         apiService.stopPlan();
@@ -67,50 +76,34 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
 
   return (
     <div className="flex flex-col items-center justify-center p-4 space-y-6">
-      
-      {/* ✅ Encart de statut visible en permanence */}
+      {/* STATUT */}
       <div className="w-full max-w-4xl bg-blue-50 text-blue-800 border border-blue-200 rounded-md px-4 py-3 flex items-center gap-3 shadow-sm">
-        <LoaderCircle className="animate-spin w-5 h-5" />
+        {jobStatus!="finished" && (<LoaderCircle className="animate-spin w-5 h-5" />)}
         <p className="text-sm font-medium">{jobStatus}</p>
       </div>
 
+      {/* IMAGES EN COURS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl">
         {image1 && (
-          <div className="flex flex-col items-center w-full">
-            <div
-              className="w-full h-64 border rounded overflow-hidden bg-black cursor-pointer"
-              onClick={() => setModalImage(image1)}
-            >
-              <img
-                src={image1}
-                alt="Last stacked"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <p className="mt-2 text-center text-sm text-gray-600">Last stacked image</p>
-          </div>
+          <ImageBox
+            src={image1}
+            label="Last stacked image"
+            onClick={() => setModalImage(image1)}
+          />
         )}
         {image2 && (
-          <div className="flex flex-col items-center w-full">
-            <div
-              className="w-full h-64 border rounded overflow-hidden bg-black cursor-pointer"
-              onClick={() => setModalImage(image2)}
-            >
-              <img
-                src={image2}
-                alt="Last taken"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <p className="mt-2 text-center text-sm text-gray-600">Last image taken</p>
-          </div>
+          <ImageBox
+            src={image2}
+            label="Last image taken"
+            onClick={() => setModalImage(image2)}
+          />
         )}
       </div>
 
-      <div>
-        <Button onClick={handleClick}>Stop plan</Button>
-      </div>
+      <Button onClick={handleClick}>Arrêter le plan</Button>
 
+      <History refreshKey={historyRefreshKey} />
+      {/* MODAL IMAGE */}
       {modalImage && (
         <div
           className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center"
@@ -134,3 +127,5 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
     </div>
   );
 }
+
+

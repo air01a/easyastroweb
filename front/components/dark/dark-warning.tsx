@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {apiService} from '../../api/api';
 import type {DarkLibraryType} from '../../types/api.type';
 import {  useObserverStore } from "../../store/store";
+import { useTranslation } from 'react-i18next';
 
 
 
@@ -9,6 +10,8 @@ export default function DarkInfoPanel() {
   const [darkItems, setDarkItems] = useState<DarkLibraryType[]>([]);
   const [loading, setLoading] = useState(true);
   const {camera} = useObserverStore();
+  const { t } = useTranslation();
+
   useEffect(() => {
     const fetchDarks = async () => {
       try {
@@ -44,15 +47,15 @@ export default function DarkInfoPanel() {
 
   return (
     <div className="bg-gray-800 rounded-xl p-4 shadow-md mt-4 max-w-xl mb-4">
-      <h2 className="text-lg font-semibold mb-2">📦 Dark Library Info</h2>
+      <h2 className="text-lg font-semibold mb-2">📦 {t('dark.library')}</h2>
 
       {loading ? (
-        <p className="text-gray-100">Chargement des darks...</p>
+        <p className="text-gray-100">{t('dark.loading')}</p>
       ) : (
         <>
           {camera.isCooled && !hasMatchingTemperature && (
             <div className="bg-yellow-100 border-l-4 border-yellow-500 text-gray-100 p-3 rounded mb-4">
-              ⚠️ Aucun dark ne correspond à la température actuelle de la caméra
+              ⚠️ {t('dark.noTemp')}
               ({camera.temperature}°C).
             </div>
           )}
@@ -60,7 +63,7 @@ export default function DarkInfoPanel() {
           {exposureGainPairs.length > 0 ? (
             <div>
               <p className="text-gray-100 mb-2">
-                💡 Couples <strong>Exposition / Gain</strong> disponibles :
+                💡 {t('dark.couples')}
               </p>
               <ul className="list-disc list-inside text-sm text-gray-200">
                 {exposureGainPairs.map((pair, index) => (
@@ -70,7 +73,7 @@ export default function DarkInfoPanel() {
             </div>
           ) : (
             <p className="text-gray-500 italic">
-              Aucun dark disponible pour cette caméra.
+              {t('dark.noDark')}
             </p>
           )}
         </>

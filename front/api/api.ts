@@ -1,5 +1,5 @@
 // services/api.ts
-import type { PlanType, DarkLibraryType, DarkLibraryProcessType } from "../types/api.type";
+import type { PlanType, DarkLibraryType, DarkLibraryProcessType, PlansHistory} from "../types/api.type";
 import type { ConfigItems } from "../store/config.type";
 import type {Field} from '../types/dynamicform.type'
 
@@ -232,6 +232,12 @@ export class ApiService {
     });
   }
 
+
+  async getPlanHistory(): Promise<PlansHistory> {
+    return this.request<PlansHistory>(`/observation/history`, {
+      method: 'GET',
+    });
+  }
 
   async getDarkForCamera(camera: string): Promise<DarkLibraryType[]> {
     return this.request<DarkLibraryType[]>(`/dark/${camera}`, {

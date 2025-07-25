@@ -12,6 +12,8 @@ from imageprocessing.fitsprocessor import FitsImageManager
 from imageprocessing.astrofilters import AstroFilters
 from services.dark_manager import DarkManager
 from ws.websocket_manager import ws_manager
+from services.history_manager import HistoryManager
+
 
 class Scheduler(threading.Thread):
     def __init__(self, telescope_interface):
@@ -20,8 +22,7 @@ class Scheduler(threading.Thread):
         self._stop_requested = False
         self.solver = get_solver(CONFIG)
         self.has_fw = self.telescope_interface.filter_wheel_connect() if len(CONFIG['filterwheel'].get("filters", []))>1 else False
-        self.stacker_config = Config()
-        self.stacker = LiveStacker(self.stacker_config, self._on_image_stack)
+
         self.fit_path = Path(CONFIG['global'].get("fits_storage_dir")).resolve()
         self.fit_path.mkdir(parents=True, exist_ok=True)
         self.fits_manager=FitsImageManager(True, True)
@@ -29,6 +30,8 @@ class Scheduler(threading.Thread):
         self.is_running = False
         self.dark_config = Path(CONFIG['global'].get("dark_directory")) / Path("config.json")
         self.status = "not_started"
+        self.history = HistoryManager()
+
 
 
     def set_status(self,status:str):
@@ -86,14 +89,17 @@ class Scheduler(threading.Thread):
         image.data  = self.astro_filters.denoise_gaussian(self.astro_filters.replace_lowest_percent_by_zero(self.astro_filters.auto_stretch(image.data, 0.25, algo=1, shadow_clip=-2),80))
         self.fits_manager.save_as_image(image, output_filename=f"{path}".replace(".fit",".jpg"))
         telescope_state.last_stacked_picture = Path(path).with_suffix(".jpg")
+        self.history.update_obs_image(None, telescope_state.last_stacked_picture)
         ws_manager.broadcast_sync(ws_manager.format_message("SCHEDULER","NEWIMAGE"))
 
         
 
     def _execute_plan(self, plan: list[Observation]):
         plan = sorted(self.plan, key=lambda obs: obs.start)
+        self.history.add_plan(plan)
         self.is_running=True
         for i, obs in enumerate(plan):
+
             if self._stop_requested:
                 logger.info("[SCHEDULER] Stop during execution.")
                 break
@@ -160,11 +166,16 @@ class Scheduler(threading.Thread):
             dark=DarkManager.choose_dark(self.dark_config, obs.expo, obs.gain, temperature, CONFIG.get('camera',{}).get("id",""))
 
             logger.info(f"[SCHEDULER] - Using Dark {dark}")
-            self.stacker.dark = dark
             
             directory = self.fit_path / Path(f"{time.strftime('%Y-%m-%d')}-{obs.object.replace(' ', '_')}")
             directory.mkdir(exist_ok=True)
+
+            self.stacker_config = Config(directory / Path("session"))
+            self.stacker = LiveStacker(self.stacker_config, self._on_image_stack)
+            self.stacker.dark = dark
+
             self.stacker.start_live_stacking()
+            self.history.new_obs()
             while captures_done < obs.number:
                 self.set_status("capturing")
                 if self._stop_requested:
@@ -188,11 +199,20 @@ class Scheduler(threading.Thread):
                 )
                 self.stacker.process_new_image(image)
                 captures_done += 1
+                self.history.update_obs_image(captures_done)
+            
+            # Update History for plan information
+
+
+            self.history.close_obs()
+            self.history.save_history()
+            ws_manager.broadcast_sync(ws_manager.format_message("SCHEDULER","REFRESHINFO"))
             self.stacker.stop_live_stacking()
 
         logger.info("[SCHEDULER] Execution completed.")
         self.is_running=False
         telescope_state.plan_active=False
+        ws_manager.broadcast_sync(ws_manager.format_message("SCHEDULER","REFRESHINFO"))
         self.set_status("finished")
 
 

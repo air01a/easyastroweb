@@ -25,9 +25,9 @@ except ImportError:
 
 # Configuration
 class Config:
-    def __init__(self):
+    def __init__(self, base_dir: Path):
         # Directories
-        self.base_dir = Path(f"{Path.cwd()}/astro_session").resolve()
+        self.base_dir = base_dir
         self.raw_dir = self.base_dir / "raw"
         self.processed_dir = self.base_dir / "process"
         self.stack_result = self.base_dir / "processed"

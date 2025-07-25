@@ -10,6 +10,7 @@ import  Button  from "../../design-system/buttons/main";
 import { apiService } from "../../api/api";
 import { useTranslation } from 'react-i18next';
 import DarkInfoPanel from '../../components/dark/dark-warning'
+import History from "../../components/history/history"
 
 import {
   DndContext,
@@ -311,6 +312,7 @@ export default function PlanPage({refresh}:{refresh: ()=>void}) {
                 </SortableContext>
             </DndContext>
             <div className="flex items-center justify-center"><Button onClick={() => run()}>{t('global.run')}</Button></div>
+            <History refreshKey={0}/>
         </div>
     )
 }

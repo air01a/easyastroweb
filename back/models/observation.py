@@ -1,5 +1,8 @@
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Union
+from pathlib import Path
+from pydantic import BaseModel
+
 
 @dataclass
 class SchedulerStatus:
@@ -13,8 +16,7 @@ class SchedulerStatus:
     stop_scheduler: bool = False
     retry: int = 0
 
-@dataclass
-class Observation:
+class Observation(BaseModel):
     start: float  # Heure décimale UTC
     expo: float
     number: int
@@ -24,7 +26,14 @@ class Observation:
     object: str
     focus: bool
     gain: int
-    
+
+class PlanExecutionType(Observation):
+    real_start: Union[str, None]
+    end: Union[str, None]
+    images: int
+    jpg: Union[str, None]
+
+PlansExecutionType = List[PlanExecutionType]
 
 class StopScheduler:
     pass
