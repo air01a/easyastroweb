@@ -57,7 +57,7 @@ export default function DarkProcessStatus({ processList, refresh }: Props) {
                 <span className="font-semibold">Gain:</span> {item.gain}
               </div>
               <div>
-                <span className="font-semibold">Captures:</span> {item.count}
+                <span className="font-semibold">Captures:</span> {item.progress} / {item.count}
               </div>
             </div>
 

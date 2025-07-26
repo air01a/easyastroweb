@@ -133,7 +133,11 @@ class DarkManager(threading.Thread):
                 
                 captures_done += 1
                 self.plan[i].eta = max(0, self.plan[i].eta-obs.exposition)
-
+                self.plan[i].progress = captures_done
+            if self._stop_requested:
+                logger.info("[DARKMANAGER] Stop requested during capture.")
+                break
+            
 
             now = time.strftime('%Y-%m-%dT%H.%M.%S')
             filename = self.fit_path / Path(f"dark_{obs.exposition}_{obs.gain}_{obs.temperature}.fits")

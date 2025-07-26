@@ -23,6 +23,7 @@ export type DarkLibraryProcessType = DarkLibraryType & {
     eta: number;
     done: boolean;
     in_progress: boolean;
+    progress: number;
 }
 
 

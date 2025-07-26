@@ -21,7 +21,7 @@
     "initial_batch_size": 40,
     "dark_options": "",
     "force_dark_exposition": true,
-    "dark_directory": "C:\\Users\\eniquet\\Documents\\dev\\easyastroweb\\back\\dark",
+    "dark_directory": "C:\\Users\\erwan\\Documents\\dev\\easyastroweb\\back",
     "dark_default_captures": 40,
     "dark_default_exposition": 10,
     "ascom_options": "",

@@ -161,11 +161,11 @@ class AlpacaTelescope(TelescopeInterface):
             else:
                 image.data = np.transpose(np.array(image.data), (1, 0, 2))
             telescope_state.last_picture = image.data
-            fits_manager = FitsImageManager(True, False)
+            #fits_manager = FitsImageManager(True, False)
         
-            new = fits_manager.open_fits(self.fits_files[self.index])
-            self.index=(self.index+1) % len(self.fits_files)
-            image.data=new.data
+            #new = fits_manager.open_fits(self.fits_files[self.index])
+            #self.index=(self.index+1) % len(self.fits_files)
+            #image.data=new.data
             return image
         except Exception as e:
             print(e)

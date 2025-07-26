@@ -33,6 +33,7 @@ class DarkLibraryProcessType(DarkLibraryType):
     done: bool
     eta: int
     in_progress : bool
+    progress: int=0
     
 class DarkLibraryItem(BaseModel):
     gain: int
