@@ -160,6 +160,8 @@ class SimulatorTelescope(TelescopeInterface):
         self.index_dark = 0
         self.focuser_name = "Simulator Focuser"
         self.focuser_position = 25000
+        self.initial_temperature = 15
+        self.target_temperature = 15
 
     def camera_capture(self, expo: float, light: bool = True):
         try:
@@ -244,9 +246,15 @@ class SimulatorTelescope(TelescopeInterface):
         
 
     def get_ccd_temperature(self)-> int:
-        return CONFIG['camera'].get("temperature", 20)
+        if self.initial_temperature > self.target_temperature:
+            self.initial_temperature -= 1
+        else:
+            self.initial_temperature += 1
+        logger.info(f"[CCD] - Current temperature: {self.initial_temperature}°C")
+        return self.initial_temperature
 
     def set_ccd_temperature(self, temperature:int)-> None:
+        self.target_temperature = temperature
         pass
     def set_cooler(self, cooler: bool):
         pass
