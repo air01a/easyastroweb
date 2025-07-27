@@ -125,6 +125,21 @@ class AlpacaTelescope(TelescopeInterface):
     def set_cooler(self, cooler: bool):
         alpaca_camera_client.set_cooler_on(cooler)
 
+
+    def sync_location(self, latitude: float, longitude : float, elevation: float):
+        """
+        Synchronize the telescope's location with the provided latitude, longitude, and elevation.
+        """
+        try:
+            alpaca_telescope_client.set_elevation(elevation)
+            alpaca_telescope_client.set_latitude(latitude)
+            alpaca_telescope_client.set_longitude(longitude) 
+            logger.info(f"[TELESCOPE] - Location synchronized to lat: {latitude}, lon: {longitude}, elev: {elevation}")
+            return True
+        except Exception as e:
+            logger.error(f"[TELESCOPE] - Error synchronizing location: {e}")
+            return False
+
     def connect(self):
         try:
             telescope_interface.focuser_connect()
@@ -144,6 +159,12 @@ class AlpacaTelescope(TelescopeInterface):
             telescope_state.is_telescope_connected = True
         except:
             telescope_state.is_telescope_connected = False  
+
+        self.sync_location(
+            CONFIG["observatory"].get("latitude", 0.0), 
+            CONFIG["observatory"].get("longitude", 0.0),
+            CONFIG["observatory"].get("altitude", 0.0)
+        )
         
 class SimulatorTelescope(TelescopeInterface):
 
@@ -206,6 +227,10 @@ class SimulatorTelescope(TelescopeInterface):
     
     def telescope_disconnect(self):
         return True
+    
+
+    def sync_location(self, latitude: float, longitude : float, elevation: float):
+        logger.info(f"[TELESCOPE] - Simulated location synchronized to lat: {latitude}, lon: {longitude}, elev: {elevation}")
 
     def slew_to_target(self,ra: float, dec: float):
         try:
@@ -276,7 +301,14 @@ class SimulatorTelescope(TelescopeInterface):
             telescope_state.is_telescope_connected = True
         except:
             telescope_state.is_telescope_connected = False  
-        
+        try:
+            self.sync_location(
+                CONFIG["observatory"].get("latitude", 0.0),
+                CONFIG["observatory"].get("longitude", 0.0),
+                CONFIG["observatory"].get("altitude", 0.0)
+            )
+        except Exception as e:
+            logger.error(f"[TELESCOPE] - Error synchronizing location: {e}")
 
 if CONFIG["global"].get("mode_simulator", False):
     logger.info("[TELESCOPE] - Running in simulator mode")

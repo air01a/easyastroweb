@@ -52,6 +52,11 @@ class TelescopeInterface(ABC):
     @abstractmethod
     def telescope_disconnect(self):
         pass
+    
+    @abstractmethod
+    def sync_location(self, latitude: float, longitude : float, elevation: float):
+        pass
+
 
     @abstractmethod
     def telescope_set_tracking(self, rate : int):

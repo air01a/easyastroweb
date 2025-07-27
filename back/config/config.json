@@ -32,7 +32,7 @@
     "server_port": 8000,
     "mode_debug": true,
     "simulator_options": "",
-    "mode_simulator": true,
+    "mode_simulator": false,
     "simulator_dark_directory": "simulator/dark",
     "simulator_light_directory": "C:\\Users\\erwan\\Documents\\dev\\easyastroweb\\utils\\01-observation-m16\\01-images-initial\\m27"
 }
