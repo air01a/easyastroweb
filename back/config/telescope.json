@@ -5,7 +5,8 @@
         "focale": 650,
         "apperture": 130,
         "altaz": true,
-        "has_focuser": true
+        "has_focuser": true,
+        "has_gps": true
     },
     {
         "id": "vClymA",

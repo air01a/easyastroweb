@@ -41,6 +41,13 @@
     "fieldType": "CHECKBOX",
     "varType": "BOOL",
     "defaultValue": false
+  },
+    {
+    "fieldName": "has_gps",
+    "description": "Telescope has GPS (no sync)",
+    "fieldType": "CHECKBOX",
+    "varType": "BOOL",
+    "defaultValue": false
   }
 ]
 

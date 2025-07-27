@@ -160,11 +160,13 @@ class AlpacaTelescope(TelescopeInterface):
         except:
             telescope_state.is_telescope_connected = False  
 
-        self.sync_location(
-            CONFIG["observatory"].get("latitude", 0.0), 
-            CONFIG["observatory"].get("longitude", 0.0),
-            CONFIG["observatory"].get("altitude", 0.0)
-        )
+        if CONFIG["telescope"].get("has_gps", False):
+            logger.info("[TELESCOPE] - Synchronizing location with GPS")
+            self.sync_location(
+                CONFIG["observatory"].get("latitude", 0.0), 
+                CONFIG["observatory"].get("longitude", 0.0),
+                CONFIG["observatory"].get("altitude", 0.0)
+            )
         
 class SimulatorTelescope(TelescopeInterface):
 
