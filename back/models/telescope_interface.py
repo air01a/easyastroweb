@@ -22,7 +22,7 @@ class TelescopeInterface(ABC):
         pass
     
     @abstractmethod
-    def camera_capture(self, expo: float):
+    def camera_capture(self, expo: float, light: bool = True):
         pass
     
     @abstractmethod

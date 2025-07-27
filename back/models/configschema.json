@@ -258,6 +258,38 @@
     "varType": "BOOL",
     "defaultValue": false,
     "required":true
+  },
+     {
+    "fieldName": "simulator_options",
+    "description": "Simulator options",
+    "fieldType": "SEPARATOR",
+    "varType": "STR",
+    "defaultValue": "",
+    "required":false
+  },
+    {
+    "fieldName": "mode_simulator",
+    "description": "Activate mode simulator",
+    "fieldType": "CHECKBOX",
+    "varType": "BOOL",
+    "defaultValue": false,
+    "required":true
+  },
+  {
+    "fieldName": "simulator_dark_directory",
+    "description": "Simulator dark directory",
+    "fieldType": "INPUT",
+    "varType": "STR",
+    "defaultValue": "simulator/dark",
+    "required":true
+  },
+    {
+    "fieldName": "simulator_light_directory",
+    "description": "Simulator light directory",
+    "fieldType": "INPUT",
+    "varType": "STR",
+    "defaultValue": "simulator/light",
+    "required":true
   }
 
 

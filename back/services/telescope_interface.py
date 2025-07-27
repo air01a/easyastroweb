@@ -1,4 +1,4 @@
-from services.alpaca_client import alpaca_camera_client, alpaca_focuser_client, alpaca_telescope_client, alpaca_fw_client, ExposureSettings, CameraState
+from services.alpaca_client import ImageData, alpaca_camera_client, alpaca_focuser_client, alpaca_telescope_client, alpaca_fw_client, ExposureSettings, CameraState
 from time import sleep
 import time
 from utils.logger import logger
@@ -7,18 +7,18 @@ import numpy as np
 from pathlib import Path
 from models.state import telescope_state
 from models.telescope_interface import TelescopeInterface
+from imageprocessing.fitsprocessor import FitsImageManager
+from utils.calcul import apply_focus_blur
 
-    
+
+
 class AlpacaTelescope(TelescopeInterface):
 
     def __init__(self):
         super().__init__()
-        self.fits_dir = Path("C:/Users/eniquet/Documents/dev/easyastroweb/utils/01-observation-m16/01-images-initial") #        "D:/Astronomie/observations/2024-02-12/DARK"
 
-        self.fits_files =  (list(self.fits_dir.glob("*.fit")) + list(self.fits_dir.glob("*.fits")))
-        self.index = 0
 
-    def camera_capture(self, expo: float):
+    def camera_capture(self, expo: float, light: bool = True):
         try:
             expo = ExposureSettings(duration=expo)
             alpaca_camera_client.start_exposure(expo)
@@ -32,11 +32,7 @@ class AlpacaTelescope(TelescopeInterface):
             else:
                 image.data = np.transpose(np.array(image.data), (1, 0, 2))
             telescope_state.last_picture = image.data
-            #fits_manager = FitsImageManager(True, False)
-        
-            #new = fits_manager.open_fits(self.fits_files[self.index])
-            #self.index=(self.index+1) % len(self.fits_files)
-            #image.data=new.data
+
             return image
         except Exception as e:
             print(e)
@@ -149,9 +145,136 @@ class AlpacaTelescope(TelescopeInterface):
         except:
             telescope_state.is_telescope_connected = False  
         
+class SimulatorTelescope(TelescopeInterface):
+
+    def __init__(self):
+        super().__init__()
+        self.fits_dir = Path(CONFIG["global"].get("simulator_light_directory",".")) #        "D:/Astronomie/observations/2024-02-12/DARK"
+        self.fits_files =  (list(self.fits_dir.glob("*.fit")) + list(self.fits_dir.glob("*.fits")))
+        self.fits_manager = FitsImageManager()
+
+        self.dark_dir = Path(CONFIG["global"].get("simulator_dark_directory",".")) #        "D:/Astronomie/observations/2024-02-12/DARK"
+        self.dark_files =  (list(self.fits_dir.glob("*.fit")) + list(self.fits_dir.glob("*.fits")))
+        logger.info(f"[SIMULATOR] - Found {len(self.fits_files)} FITS files in {self.fits_dir}")
+        self.index = 0
+        self.index_dark = 0
+        self.focuser_name = "Simulator Focuser"
+        self.focuser_position = 25000
+
+    def camera_capture(self, expo: float, light: bool = True):
+        try:
+            if light:
+        
+                new = self.fits_manager.open_fits(self.fits_files[self.index])
+                new.data = apply_focus_blur(new.data, self.focuser_position, 25000, 0.01)
+                self.index = (self.index + 1) % len(self.fits_files)
+            else:
+                new = self.fits_manager.open_fits(self.dark_files[self.index_dark])
+                self.index_dark = (self.index_dark + 1) % len(self.dark_files)
+
+            telescope_state.last_picture = new.data
+
+            return new
+        except Exception as e:
+            print(e)
+            return None
+        
+    def set_gain(self, gain: int):
+        logger.info(f"[CAMERA] - Setting gain to {gain}")
+
+    def set_camera_gain(self, gain: int):
+        return True
+
+    def camera_connect(self):
+        return True
+
+    def move_focuser(self, position: int):
+        self.focuser_position = position
+        sleep(1)
+
+    def focuser_connect(self):
+        self.focuser_name = "test"
+
+    def focuser_get_current_position(self):
+        return self.focuser_position
+
+    def telescope_connect(self):
+
+        return True
+    
+    def telescope_disconnect(self):
+        return True
+
+    def slew_to_target(self,ra: float, dec: float):
+        try:
+
+            time.sleep(1)
+        except Exception as e:
+            logger.error(f"[TELESCOPE] - Error slewing to target: {e}")
+            return False
+
+    def sync_to_coordinates(self, ra:float, dec: float) -> bool:
+        try:
+            return True
+        except:
+            return False
+
+    def telescope_unpark(self):
+        pass
+
+    def filter_wheel_connect(self)-> bool:
+        try:
+            return True
+        except:
+            return False
+
+    def change_filter(self, filter)-> bool:
+        try:
+            filters = CONFIG['filterwheel'].get("filters", [])
+            index = filters.index(filter)
+            logger.info(f"[FILTERWHEEL] - Moving to position {index}")
+
+            return True
+        except:
+            logger.info(f"[FILTERWHEEL] - Error during filter change")
+            return False
+
+    def telescope_set_tracking(self, rate : int):
+        pass
+        
+
+    def get_ccd_temperature(self)-> int:
+        return CONFIG['camera'].get("temperature", 20)
+
+    def set_ccd_temperature(self, temperature:int)-> None:
+        pass
+    def set_cooler(self, cooler: bool):
+        pass
 
 
-telescope_interface = AlpacaTelescope()
+    def connect(self):
+        try:
+            telescope_state.is_focuser_connected = True
+        except:
+            telescope_state.is_focuser_connected = False
+            
+        try:
+            telescope_state.is_camera_connected = True
+        except Exception as e:
+            telescope_state.is_camera_connected = False
+            print(f"[CAMERA] - Error connecting camera: {e}")
+
+        try:
+            telescope_state.is_telescope_connected = True
+        except:
+            telescope_state.is_telescope_connected = False  
+        
+
+if CONFIG["global"].get("mode_simulator", False):
+    logger.info("[TELESCOPE] - Running in simulator mode")
+    telescope_interface = SimulatorTelescope()
+else:
+    telescope_interface = AlpacaTelescope()
 if not CONFIG["global"].get("mode_debug", False):
     telescope_interface.connect()
 

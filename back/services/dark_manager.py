@@ -125,7 +125,7 @@ class DarkManager(BasicAutomate):
                     break
 
                 logger.info(f"[DARKMANAGER] Capture {captures_done+1}/{obs.count} for expo {obs.exposition}")
-                image = self.telescope_interface.camera_capture(expo=obs.exposition)
+                image = self.telescope_interface.camera_capture(expo=obs.exposition, light=False)
                 if dark:
                     dark.data += image.data.astype(np.float64) / obs.count
                 else:

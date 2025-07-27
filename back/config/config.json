@@ -30,5 +30,9 @@
     "server_options": "",
     "server_ip": "127.0.0.1",
     "server_port": 8000,
-    "mode_debug": true
+    "mode_debug": true,
+    "simulator_options": "",
+    "mode_simulator": true,
+    "simulator_dark_directory": "simulator/dark",
+    "simulator_light_directory": "C:\\Users\\erwan\\Documents\\dev\\easyastroweb\\utils\\01-observation-m16\\01-images-initial\\m27"
 }

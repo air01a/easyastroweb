@@ -1,5 +1,5 @@
 from services.platesolver import PlateSolveAstap
-
+from cv2 import GaussianBlur
 def calculate_fov(focale: int, pixel_x, pixel_y, pixel_size: float):
 
     resolution = pixel_size / focale * 206.265 
@@ -27,3 +27,8 @@ def get_slew_error( ra1, dec1, ra2, dec2):
     return error_rate
 
 
+def apply_focus_blur(image, focus_position, best_position=1020, blur_scale=0.01):
+    deviation = abs(focus_position - best_position)
+    sigma = deviation * blur_scale + 0.8  # un peu de flou même au mieux
+    #print(sigma)
+    return GaussianBlur(image, (0, 0), sigma)
