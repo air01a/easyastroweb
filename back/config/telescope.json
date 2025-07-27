@@ -4,8 +4,8 @@
         "name": "SK-PDS-130",
         "focale": 650,
         "apperture": 130,
-        "altaz": false,
-        "has_focuser": false
+        "altaz": true,
+        "has_focuser": true
     },
     {
         "id": "vClymA",

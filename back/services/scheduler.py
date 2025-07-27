@@ -13,76 +13,20 @@ from imageprocessing.astrofilters import AstroFilters
 from services.dark_manager import DarkManager
 from ws.websocket_manager import ws_manager
 from services.history_manager import HistoryManager
+from models.basic_automate import BasicAutomate
 
-
-class Scheduler(threading.Thread):
+class Scheduler(BasicAutomate):
     def __init__(self, telescope_interface):
-        super().__init__(daemon=True)
-        self.telescope_interface = telescope_interface
-        self._stop_requested = False
-        self.solver = get_solver(CONFIG)
-        self.has_fw = self.telescope_interface.filter_wheel_connect() if len(CONFIG['filterwheel'].get("filters", []))>1 else False
-
+        super().__init__(telescope_interface, name="SCHEDULER")
+        
         self.fit_path = Path(CONFIG['global'].get("fits_storage_dir")).resolve()
         self.fit_path.mkdir(parents=True, exist_ok=True)
         self.fits_manager=FitsImageManager(True, True)
         self.astro_filters=AstroFilters()
-        self.is_running = False
         self.dark_config = Path(CONFIG['global'].get("dark_directory")) / Path("config.json")
-        self.status = "not_started"
         self.history = HistoryManager()
 
 
-
-    def set_status(self,status:str):
-        self.status = status
-        ws_manager.broadcast_sync(ws_manager.format_message('SCHEDULER','STATUS',status))
-
-    def run(self):
-        logger.info("[SCHEDULER] Started in background thread.")
-        self._execute_plan(self.plan)
-
-    def slew_to_target(self, ra: float, dec: float):
-        logger.info(f"[SCHEDULER] - Slewing to {ra}/{dec}")
-        final=False
-        retry=0
-        self.set_status("slewing")
-        while not final and retry < CONFIG['global']['astap_slew_max_retry'] and not self._stop_requested:
-            try:
-                self.telescope_interface.slew_to_target(ra, dec)
-            except Exception as e:
-                logger.error(f"[SCHEDULER] - Error while slewing {e}")
-            image:Path = self.telescope_interface.capture_to_fit(3, ra, dec, "ps", "ps",self.fit_path, gain=CONFIG.get('camera',{}).get('default_gain',100))
-            logger.info("[SCHEDULER] - Plate Solving")
-            self.set_status("plate_solving")
-            solution = self.solver.resolve(image, ra, dec, CONFIG['global'].get("astap_default_search_radius",10))
-            if solution['error']==0:
-
-                self.telescope_interface.sync_to_coordinates(ra, dec)
-                error = get_slew_error(ra, dec, solution['ra'], solution['dec'])
-                logger.info(f"[SCHEDULER] - Position error {error}")
-
-                if error<CONFIG['global']['astap_acceptable_error']:
-                    logger.info("[SCHEDULER] - slewing done")
-                    final=True
-            else:
-                logger.error(f"[SCHEDULER] - Error Solving {image}")
-             
-            retry+=1
-            try:
-                if not CONFIG["global"].get("mode_debug", False):
-                    for ext in ['.wcs', '.ini']:
-                        wcs = image.with_suffix(ext)
-
-                        if wcs.exists():
-                            wcs.unlink()
-                    if image.exists():
-                        image.unlink()
-            except:
-                pass
-        self.telescope_interface.telescope_set_tracking(0)
-        return final
-    
 
     def _on_image_stack(self, path: Path):
         image = self.fits_manager.open_fits(f"{path}")
@@ -98,6 +42,9 @@ class Scheduler(threading.Thread):
         plan = sorted(self.plan, key=lambda obs: obs.start)
         self.history.add_plan(plan)
         self.is_running=True
+
+        temperature, cooler_on = self.set_temperature()
+
         for i, obs in enumerate(plan):
 
             if self._stop_requested:
@@ -152,17 +99,14 @@ class Scheduler(threading.Thread):
             if CONFIG["telescope"].get("has_focuser", False) and (not telescope_state.is_focused or obs.focus):
                 logger.info("[SCHEDULER] - FOCUS process")
                 self.set_status("focusing")
-                self.telescope_interface.get_focus()
+                self.telescope_interface.get_focus(obs.ra, obs.dec)
                 telescope_state.is_focused = True
                 
             if not self.slew_to_target(obs.ra, obs.dec):
                 logger.error("[SCHEDULER] - Failed to slew to target")
                 continue
 
-            if CONFIG.get('camera',{}).get("is_cooled", False):
-                temperature = CONFIG.get('camera',{}).get("temperature",0)
-            else:
-                temperature=None
+            
             dark=DarkManager.choose_dark(self.dark_config, obs.expo, obs.gain, temperature, CONFIG.get('camera',{}).get("id",""))
 
             logger.info(f"[SCHEDULER] - Using Dark {dark}")
@@ -210,6 +154,9 @@ class Scheduler(threading.Thread):
             self.stacker.stop_live_stacking()
 
         logger.info("[SCHEDULER] Execution completed.")
+        if temperature:
+            logger.info("[SCHEDULER] - Turning off cooler")
+            self.telescope_interface.set_cooler(False)
         self.is_running=False
         telescope_state.plan_active=False
         ws_manager.broadcast_sync(ws_manager.format_message("SCHEDULER","REFRESHINFO"))
@@ -217,11 +164,8 @@ class Scheduler(threading.Thread):
 
 
     def request_stop(self): 
-        self._stop_requested = True
-        logger.info("[Scheduler] Stop requested.")
-        self.is_running=False
+        self._request_stop()
         telescope_state.plan_active=False
-        self.set_status("stopped")
 
 
 

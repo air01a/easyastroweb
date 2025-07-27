@@ -25,3 +25,5 @@ def get_solver(CONFIG):
 def get_slew_error( ra1, dec1, ra2, dec2):
     error_rate = ((ra1 -ra2)**2 + (dec1 -dec2)**2)**(1/2)
     return error_rate
+
+

@@ -1,0 +1,30 @@
+{
+  "vClymB": [
+    {
+      "gain": 100,
+      "temperature": -15,
+      "exposition": 10,
+      "count": 1,
+      "date": "2025-07-26T15.41.11",
+      "filename": "C:\\Users\\erwan\\Documents\\dev\\easyastroweb\\back\\vClymB\\dark_10_100_-15.fits"
+    },
+    {
+      "gain": 200,
+      "temperature": -15,
+      "exposition": 10,
+      "count": 40,
+      "date": "2025-07-27T11.40.24",
+      "filename": "C:\\Users\\erwan\\Documents\\dev\\easyastroweb\\back\\vClymB\\dark_10_200_-15.fits"
+    }
+  ],
+  "FHaUs3": [
+    {
+      "gain": 100,
+      "temperature": -10,
+      "exposition": 10,
+      "count": 40,
+      "date": "2025-07-27T07.38.24",
+      "filename": "C:\\Users\\erwan\\Documents\\dev\\easyastroweb\\back\\FHaUs3\\dark_10_100_-10.fits"
+    }
+  ]
+}

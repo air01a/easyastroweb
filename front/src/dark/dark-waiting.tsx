@@ -3,14 +3,46 @@ import Button from "../../design-system/buttons/main";
 import Swal from "sweetalert2";
 import { useTranslation } from 'react-i18next';
 import { apiService } from "../../api/api";
+import { useWebSocketStore } from "../../store/store";
+import { useEffect, useRef, useState } from "react";
+import { LoaderCircle } from "lucide-react";
 
 type Props = {
   processList: DarkLibraryProcessType[];
   refresh: () => void;
 };
 
-export default function DarkProcessStatus({ processList, refresh }: Props) {
+export default  function DarkProcessStatus({ processList, refresh }: Props) {
     const { t } = useTranslation();
+    const connect = useWebSocketStore((state) => state.connect);
+    const messages = useWebSocketStore((state) => state.messages);
+    const isConnected = useWebSocketStore((state) => state.isConnected);
+    const [jobStatus, setJobStatus] = useState<string>("En attente d’instructions...");
+    const lastMessageRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        if (!isConnected) connect();
+      }, [isConnected, connect]);
+
+
+    useEffect(() => {
+
+       if (messages.length === lastMessageRef.current)  return;
+
+        lastMessageRef.current = messages.length;
+        const newMessage = messages[messages.length - 1];
+        if (!newMessage) return;
+        console.log(newMessage);
+        if (newMessage.sender === "DARKMANAGER") {
+          if (newMessage.message === "NEWIMAGE") {
+            refresh();
+          } else if (newMessage.message === "STATUS") {
+            setJobStatus((newMessage.data as string) || t("plan.unknown_status"));
+          } else if (newMessage.message === "TEMPERATURE") {
+            setJobStatus(`${t("plan.temperature")} [${newMessage.data}]`);
+          }
+        }
+      }, [messages, refresh, setJobStatus, t]);
     
     const  handleStop= async () => {
         Swal.fire({
@@ -35,6 +67,11 @@ export default function DarkProcessStatus({ processList, refresh }: Props) {
       {processList.length === 0 && (
         <p className="text-center text-gray-900">Aucune tâche en cours.</p>
       )}
+
+        <div className="w-full max-w-4xl bg-blue-50 text-blue-800 border border-blue-200 rounded-md px-4 py-3 flex items-center gap-3 shadow-sm">
+        {jobStatus!="finished" && (<LoaderCircle className="animate-spin w-5 h-5" />)}
+        <p className="text-sm font-medium">{jobStatus}</p>
+      </div>
 
       {processList.map((item, index) => {
         let status = "En attente ⬜️";

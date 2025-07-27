@@ -87,7 +87,8 @@
         "stop_plan":"Arrêter le plan ?",
         "confirm_stop":"L'arrêt est irréversible.",
         "yes":"Oui, arrêter",
-        "cancel":"Annuler"
+        "cancel":"Annuler",
+        "temperature":"Refroidissement de la caméra "
     },
     "dark":{
         "library":"Informations sur les darks",

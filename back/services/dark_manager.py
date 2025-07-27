@@ -10,18 +10,17 @@ from models.api import DarkLibraryProcessType, DarkLibraryItem
 import numpy as np
 import json
 from typing import Optional, Union
+from ws.websocket_manager import ws_manager
+from models.basic_automate import BasicAutomate
 
 
-class DarkManager(threading.Thread):
+class DarkManager(BasicAutomate):
     def __init__(self, telescope_interface, camera: str, plan: list[DarkLibraryProcessType]):
-        super().__init__(daemon=True)
-        self.telescope_interface = telescope_interface
-        self._stop_requested = False
+        super().__init__(telescope_interface, name="DARKMANAGER")
         self.fit_path = Path(CONFIG['global'].get("dark_directory")).resolve() / Path(camera)
         self.fit_config = Path(CONFIG['global'].get("dark_directory")).resolve() / Path("config.json")
         self.fit_path.mkdir(parents=True, exist_ok=True)
         self.fits_manager=FitsImageManager()
-        self.is_running = False
         self.plan = plan
         self.camera = camera
 
@@ -83,9 +82,6 @@ class DarkManager(threading.Thread):
 
         return None
 
-    def run(self):
-        logger.info("[DARKMANAGER] Started in background thread.")
-        self._execute_plan(self.plan)
 
     def add_to_config(self, obs: DarkLibraryProcessType, date: str, file:str):
         config = DarkManager.get_dark_config(self.fit_config, True)
@@ -104,6 +100,9 @@ class DarkManager(threading.Thread):
         for i,_ in enumerate(plan):
             self.plan[i].eta = plan[i].exposition * plan[i].count
 
+
+        temperature, cooler_on = self.set_temperature()
+
         for i, obs in enumerate(plan):
             self.plan[i].in_progress=True
             if self._stop_requested:
@@ -117,7 +116,10 @@ class DarkManager(threading.Thread):
             except Exception as e:
                 logger.error("[DARKMANAGER] Error setting gain")
             dark = None    
+            self.set_status("CAPTURING")
+
             while captures_done < obs.count:
+
                 if self._stop_requested:
                     logger.info("[DARKMANAGER] Stop requested during capture.")
                     break
@@ -132,6 +134,8 @@ class DarkManager(threading.Thread):
                     dark.data /= obs.count
                 
                 captures_done += 1
+                ws_manager.broadcast_sync(ws_manager.format_message("DARKMANAGER","NEWIMAGE"))
+
                 self.plan[i].eta = max(0, self.plan[i].eta-obs.exposition)
                 self.plan[i].progress = captures_done
             if self._stop_requested:
@@ -142,19 +146,22 @@ class DarkManager(threading.Thread):
             now = time.strftime('%Y-%m-%dT%H.%M.%S')
             filename = self.fit_path / Path(f"dark_{obs.exposition}_{obs.gain}_{obs.temperature}.fits")
             FitsImageManager.save_fits_from_array(image.data, filename, [])
+            ws_manager.broadcast_sync(ws_manager.format_message("DARKMANAGER","NEWIMAGE"))
+
             self.add_to_config(obs, now, f"{filename.resolve()}")
             self.plan[i].done=True
 
-
+        self.set_status("finished")
         logger.info("[DARKMANAGER] Execution completed.")
         self.is_running=False
         telescope_state.dark_processor=None
+        if cooler_on:
+            logger.info("[DARKMANAGER] - Turning off cooler")
+            self.telescope_interface.set_cooler(False)
 
 
     def request_stop(self): 
-        self._stop_requested = True
-        logger.info("[DARKMANAGER] Stop requested.")
-        self.is_running=False
+        self._request_stop()
         telescope_state.dark_processor=None
 
 

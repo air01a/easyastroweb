@@ -68,7 +68,28 @@ class AutoFocusLib:
         return result
     
 
+    def count_stars(self, image: np.ndarray) -> int:
+        """
+        Counts the number of stars in an image
 
+        Args:
+            image: Grayscale or color image
+
+        Returns:
+            Number of detected stars
+        """
+        if len(image.shape) == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        mean_bg = np.median(image)
+        std_bg = np.std(image)
+        
+        daofind = DAOStarFinder(threshold=self.star_detection_threshold * std_bg, fwhm=6.0, brightest=self.max_stars)
+        sources = daofind(image - mean_bg)
+        
+        return len(sources) if sources is not None else 0   
+    
+    
     def _calculate_image_fwhm_detailed(self, image: np.ndarray) -> Tuple[Optional[float], int]:
         """
         Calculates the average FWHM of an image with detailed information

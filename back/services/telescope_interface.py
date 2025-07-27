@@ -1,141 +1,12 @@
 from services.alpaca_client import alpaca_camera_client, alpaca_focuser_client, alpaca_telescope_client, alpaca_fw_client, ExposureSettings, CameraState
 from time import sleep
-from abc import ABC, abstractmethod
-from services.focuser import AutoFocusLib
 import time
-from imageprocessing.fitsprocessor import FitsImageManager
 from utils.logger import logger
 from services.configurator import CONFIG
 import numpy as np
 from pathlib import Path
 from models.state import telescope_state
-
-class TelescopeInterface(ABC):
-    def __init__(self):
-        self.autofocus = AutoFocusLib()
-        self.mount_name : str = "Not connected"
-        self.fw_name : str = "Not connected"
-        self.focuser_name : str = "Not connected"
-        self.camera_name : str = "Not connected"
-
-
-    @abstractmethod
-    def set_camera_gain(self, gain: int):
-        pass
-    
-    @abstractmethod
-    def camera_capture(self, expo: float):
-        pass
-    
-    @abstractmethod
-    def move_focuser(self, position: int):
-        pass
-
-    @abstractmethod
-    def camera_connect(self):
-        pass
-    
-    @abstractmethod
-    def focuser_connect(self):
-        pass
-
-    @abstractmethod
-    def focuser_get_current_position(self):
-        pass
-
-    @abstractmethod
-    def slew_to_target(self, ra: float, dec: float):
-        pass
-
-    @abstractmethod
-    def telescope_connect(self):
-        pass
-
-    @abstractmethod
-    def telescope_disconnect(self):
-        pass
-
-    @abstractmethod
-    def telescope_set_tracking(self, rate : int):
-        pass
-
-    @abstractmethod
-    def telescope_disconnect(self):
-        pass
-    
-    @abstractmethod
-    def telescope_unpark(self):
-        pass
-
-    @abstractmethod
-    def sync_to_coordinates(ra: float, dec: float):
-        pass
-
-    @abstractmethod
-    def filter_wheel_connect(self)-> bool:
-        pass
-
-    @abstractmethod
-    def change_filter(self, filter)-> bool:
-        pass
-
-    
-
-    def get_focus(self):
-        current_position = self.focuser_get_current_position()
-        focuser_range = CONFIG['global'].get('focuser_range', 250)
-        focuser_step = CONFIG['global'].get('focuser_step', 50)
-        positions = list(range(current_position-focuser_range, current_position+focuser_range, focuser_step))
-
-        for position in positions:
-            logger.info(f"[Focuser] - Moving to position {position}")
-            self.move_focuser(position)
-            for i in range(CONFIG['global'].get('focuser_image_by_position',1)):
-                logger.info(f"[Focuser] - MTaking picture {i}")
-                try:
-                    image = (self.camera_capture(CONFIG['global']['focuser_exposition']).data/255).astype(np.uint8)
-                except:
-                    logger.error("[FOCUS] - Error capturing image")
-                result = self.autofocus.analyze_image(image,position)
-                if not result['valid']:
-                    logger.error("[Focuser] - Invalid capture for autofocus")
-
-        best_position, best_method, details = self.autofocus.calculate_best_focus()
-        logger.info(f"[Focuser] - Results {best_position}, method={best_method}")
-        self.move_focuser(best_position)
-    
-    def set_gain(self, gain: int):
-        pass
-
-    def capture_to_fit(self, exposure : int, ra : float, dec : float, filter_name : str, target_name, path: Path, gain : int) :
-        #self.set_gain(gain)
-        image = self.camera_capture(exposure)
-        header={}
-        
-        header["EXPTIME"] = 1
-        header['DATE-OBS'] = time.strftime('%Y-%m-%dT%H.%M.%S')
-        header['RA'] = ra
-        header['DEC'] = dec
-        #header['NAXIS'] = image.data.ndim
-        #header['NAXIS1'] = image.data.shape[1]  # largeur
-        #header['NAXIS2'] = image.data.shape[0]  # hauteur
-
-        #if (image.data.ndim==3):
-        #    header['NAXIS3'] = image.data.shape[2]
-        #header['CTYPE1'] = 'PIXELS'
-        #header['CTYPE2'] = 'PIXELS'
-
-        file_name = path / f"capture-{target_name.replace(' ', '_')}-{filter_name.replace(' ', '_')}-{header['DATE-OBS']}.fits"
-        if image is None:
-            logger.error("[CAPTURE] - Error capturing image")
-            return None
-        FitsImageManager.save_fits_from_array(image.data, file_name, header)
-        return file_name
-    
-    @abstractmethod
-    def connect(self):
-        pass
-    
+from models.telescope_interface import TelescopeInterface
 
     
 class AlpacaTelescope(TelescopeInterface):
@@ -205,9 +76,13 @@ class AlpacaTelescope(TelescopeInterface):
         return alpaca_telescope_client.disconnect()
 
     def slew_to_target(self,ra: float, dec: float):
-        alpaca_telescope_client.slew_to_coordinates(ra, dec)
-        while alpaca_telescope_client.is_slewing():
-            time.sleep(1)
+        try:
+            alpaca_telescope_client.slew_to_coordinates(ra, dec)
+            while alpaca_telescope_client.is_slewing():
+                time.sleep(1)
+        except Exception as e:
+            logger.error(f"[TELESCOPE] - Error slewing to target: {e}")
+            return False
 
     def sync_to_coordinates(self, ra:float, dec: float) -> bool:
         try:
@@ -244,6 +119,16 @@ class AlpacaTelescope(TelescopeInterface):
         alpaca_telescope_client.set_tracking_rate(rate)
         alpaca_telescope_client.set_tracking(True)
         
+
+    def get_ccd_temperature(self)-> int:
+        return round(alpaca_camera_client.get_ccd_temperature())
+
+    def set_ccd_temperature(self, temperature:int)-> None:
+        alpaca_camera_client.set_ccd_temperature(temperature)
+
+    def set_cooler(self, cooler: bool):
+        alpaca_camera_client.set_cooler_on(cooler)
+
     def connect(self):
         try:
             telescope_interface.focuser_connect()

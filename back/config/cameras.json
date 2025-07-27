@@ -17,6 +17,6 @@
         "pixel_size": 3.76,
         "default_gain": 100,
         "is_cooled": true,
-        "temperature": -15
+        "temperature": -10
     }
 ]
