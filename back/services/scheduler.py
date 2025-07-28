@@ -38,7 +38,7 @@ class Scheduler(BasicAutomate):
             ws_manager.broadcast_sync(ws_manager.format_message("SCHEDULER","NEWIMAGE"))
         except Exception as ex: 
             logger.error("[SCHEDULER] - Error while transforming siril new image")
-            """import traceback
+            import traceback
 
             tb = traceback.extract_tb(ex.__traceback__)
             last_call = tb[-1]  # dernière ligne de la pile
@@ -47,7 +47,7 @@ class Scheduler(BasicAutomate):
             function_name = last_call.name
 
             logger.error(f"[FITSSTACKER] - Erreur dans {function_name}() ({filename}:{line_number}): {ex}")
-            logger.debug("Traceback complet :\n" + "".join(traceback.format_tb(ex.__traceback__)))"""
+            logger.debug("Traceback complet :\n" + "".join(traceback.format_tb(ex.__traceback__)))
         
 
     def _execute_plan(self, plan: list[Observation]):

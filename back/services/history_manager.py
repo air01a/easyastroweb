@@ -39,6 +39,8 @@ class HistoryManager:
         self.save_history()
 
     def update_obs_image(self,  capture: int = None,image : Path=None):
+        if self.index >= len(self.history):
+            return
         if (image!=None):
             self.history[self.index].jpg=str(image.resolve())
         if (capture!=None):
