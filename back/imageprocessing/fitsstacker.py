@@ -260,7 +260,7 @@ class LiveStacker:
             #time.sleep(1600)
             result_path = self.config.stack_result / f"{sequence_name}_stacked.fit"
             self.siril.InitParam()
-            self.siril.Execute(f"stack r_light rej w 3 3 -weight=noise  -norm=addscale -output_norm -out={result_path}", bEndTest=False)
+            self.siril.Execute(f"stack r_light rej w 3 3 -weight=noise  -norm=addscale -output_norm -out={result_path}")
             #self.siril.stack('r_light', type='rej', rejection_type="w", sigma_low=3, sigma_high=3, weight_from_noise=True, norm='addscale', output_norm=True, out=f"{result_path}")
             # Stack with rejection
 
@@ -295,7 +295,7 @@ class LiveStacker:
                 result_path = f"{self.config.final_dir}/final{len(batch_results)}.fit"
                 #self.siril.stack('r_light', type='rej', sigma_low=3, sigma_high=3, weight_from_noise=True, norm='addscale', output_norm=True, out=f"{result_path}")
                 self.siril.InitParam()
-                self.siril.Execute(f"stack r_light rej w 3 3 -weight=noise -norm=addscale -output_norm -out={result_path}",bEndTest=False)
+                self.siril.Execute(f"stack r_light rej w 3 3 -weight=noise -norm=addscale -output_norm -out={result_path}")
 
 
             # Stack with rejection
