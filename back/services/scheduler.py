@@ -29,13 +29,25 @@ class Scheduler(BasicAutomate):
 
 
     def _on_image_stack(self, path: Path):
-        image = self.fits_manager.open_fits(f"{path}")
-        image.data  = self.astro_filters.denoise_gaussian(self.astro_filters.replace_lowest_percent_by_zero(self.astro_filters.auto_stretch(image.data, 0.25, algo=1, shadow_clip=-2),80))
-        self.fits_manager.save_as_image(image, output_filename=f"{path}".replace(".fit",".jpg"))
-        telescope_state.last_stacked_picture = Path(path).with_suffix(".jpg")
-        self.history.update_obs_image(None, telescope_state.last_stacked_picture)
-        ws_manager.broadcast_sync(ws_manager.format_message("SCHEDULER","NEWIMAGE"))
+        try:
+            image = self.fits_manager.open_fits(f"{path}")
+            image.data  = self.astro_filters.denoise_gaussian(self.astro_filters.replace_lowest_percent_by_zero(self.astro_filters.auto_stretch(image.data, 0.20, algo=1, shadow_clip=-2),80))
+            self.fits_manager.save_as_image(image, output_filename=f"{path}".replace(".fit",".jpg"))
+            telescope_state.last_stacked_picture = Path(path).with_suffix(".jpg")
+            self.history.update_obs_image(None, telescope_state.last_stacked_picture)
+            ws_manager.broadcast_sync(ws_manager.format_message("SCHEDULER","NEWIMAGE"))
+        except Exception as ex: 
+            logger.error("[SCHEDULER] - Error while transforming siril new image")
+            """import traceback
 
+            tb = traceback.extract_tb(ex.__traceback__)
+            last_call = tb[-1]  # dernière ligne de la pile
+            filename = last_call.filename
+            line_number = last_call.lineno
+            function_name = last_call.name
+
+            logger.error(f"[FITSSTACKER] - Erreur dans {function_name}() ({filename}:{line_number}): {ex}")
+            logger.debug("Traceback complet :\n" + "".join(traceback.format_tb(ex.__traceback__)))"""
         
 
     def _execute_plan(self, plan: list[Observation]):
@@ -114,9 +126,9 @@ class Scheduler(BasicAutomate):
             directory = self.fit_path / Path(f"{time.strftime('%Y-%m-%d')}-{obs.object.replace(' ', '_')}")
             directory.mkdir(exist_ok=True)
 
-            self.stacker_config = Config(directory / Path("session"))
+            self.stacker_config = Config(directory / Path("session"), batch_size=CONFIG['global'].get('fits_batch_size',150), initial_batch_size=CONFIG['global'].get('initial_batch_size',140))
             self.stacker = LiveStacker(self.stacker_config, self._on_image_stack)
-            self.stacker.dark = dark
+            self.stacker.add_dark(dark)
 
             self.stacker.start_live_stacking()
             self.history.new_obs()

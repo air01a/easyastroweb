@@ -1,17 +1,17 @@
 [
     {
-        "start": 22.316666666666666,
+        "start": 22.3,
         "expo": 10.0,
-        "number": 1,
+        "number": 30,
         "ra": 19.993438888888893,
         "dec": 22.720852777777775,
         "filter": "No filter",
         "object": "M27",
         "focus": false,
         "gain": 100,
-        "real_start": "2025-07-27T15.53.35",
-        "end": "2025-07-27T15.53.37",
-        "images": 1,
-        "jpg": "C:\\Users\\erwan\\Documents\\dev\\easyastroweb\\back\\fits\\2025-07-27-M27\\session\\final\\livestack.jpg"
+        "real_start": "2025-07-28T18.31.25",
+        "end": "2025-07-28T18.32.04",
+        "images": 30,
+        "jpg": "C:\\Users\\eniquet\\Documents\\dev\\easyastroweb\\back\\fits\\2025-07-28-M27\\session\\final\\final4.jpg"
     }
 ]

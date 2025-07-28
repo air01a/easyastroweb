@@ -145,7 +145,7 @@ class DarkManager(BasicAutomate):
 
             now = time.strftime('%Y-%m-%dT%H.%M.%S')
             filename = self.fit_path / Path(f"dark_{obs.exposition}_{obs.gain}_{obs.temperature}.fits")
-            FitsImageManager.save_fits_from_array(image.data, filename, [])
+            FitsImageManager.save_fits_from_array(image.data, filename, self.telescope_interface.get_fit_header(obs.exposition, obs.gain))
             ws_manager.broadcast_sync(ws_manager.format_message("DARKMANAGER","NEWIMAGE"))
 
             self.add_to_config(obs, now, f"{filename.resolve()}")

@@ -90,6 +90,9 @@ class TelescopeInterface(ABC):
     def set_ccd_temperature(self, temperature:int)-> int:
         pass
 
+    @abstractmethod
+    def get_bayer_pattern(self):
+        pass
 
     def get_focus(self, ra: float, dec: float):
 
@@ -135,13 +138,23 @@ class TelescopeInterface(ABC):
     def set_gain(self, gain: int):
         pass
 
-    def capture_to_fit(self, exposure : int, ra : float, dec : float, filter_name : str, target_name, path: Path, gain : int) :
-        #self.set_gain(gain)
-        image = self.camera_capture(exposure)
+    def get_fit_header(self, exposure: int, gain:int):
+        sensor, bayer, color_type = self.get_bayer_pattern()
         header={}
-        
-        header["EXPTIME"] = 1
+        header['SENSOR'] = sensor
+        if bayer:
+            header['BAYERPAT']=bayer
+        if color_type:
+            header['COLORTYP']=color_type
+        header["EXPTIME"] = exposure
+        header["GAIN"] = gain
         header['DATE-OBS'] = time.strftime('%Y-%m-%dT%H.%M.%S')
+        return header
+
+    def capture_to_fit(self, exposure : int, ra : float, dec : float, filter_name : str, target_name, path: Path, gain : int) :
+        self.set_gain(gain)
+        image = self.camera_capture(exposure)
+        header = self.get_fit_header(exposure, gain)
         header['RA'] = ra
         header['DEC'] = dec
         #header['NAXIS'] = image.data.ndim

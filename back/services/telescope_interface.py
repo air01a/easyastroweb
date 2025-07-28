@@ -167,42 +167,86 @@ class AlpacaTelescope(TelescopeInterface):
                 CONFIG["observatory"].get("longitude", 0.0),
                 CONFIG["observatory"].get("altitude", 0.0)
             )
+
+    def get_bayer_pattern(self):
+        sensor_type = alpaca_camera_client.camera_info.sensor_type
         
+        if sensor_type == 0:
+            return  'MONOCHROME', None, None
+        elif sensor_type == 1:
+            return  'COLOR', None, None
+        elif sensor_type == 2:
+            return  'RGGB', 'RGGB', 'BAYER'
+        elif sensor_type == 3:
+            return 'CMYG', 'CMYG', 'BAYER'
+
+        elif sensor_type == 4:
+            return 'CMYG2', 'CMYG2', 'BAYER'
+        elif sensor_type == 5:
+            return 'LRGB', None, None
+        else:
+            return 'UNKNOWN', None, None
+                
 class SimulatorTelescope(TelescopeInterface):
 
     def __init__(self):
         super().__init__()
         self.fits_dir = Path(CONFIG["global"].get("simulator_light_directory",".")) #        "D:/Astronomie/observations/2024-02-12/DARK"
         self.fits_files =  (list(self.fits_dir.glob("*.fit")) + list(self.fits_dir.glob("*.fits")))
-        self.fits_manager = FitsImageManager()
+        self.fits_manager = FitsImageManager(auto_debayer=False)
 
         self.dark_dir = Path(CONFIG["global"].get("simulator_dark_directory",".")) #        "D:/Astronomie/observations/2024-02-12/DARK"
-        self.dark_files =  (list(self.fits_dir.glob("*.fit")) + list(self.fits_dir.glob("*.fits")))
+        self.dark_files =  (list(self.dark_dir.glob("*.fit")) + list(self.dark_dir.glob("*.fits")))
         logger.info(f"[SIMULATOR] - Found {len(self.fits_files)} FITS files in {self.fits_dir}")
+        logger.info(f"[SIMULATOR] - Found {len(self.dark_files)} DARK FITS files in {self.dark_dir}")
         self.index = 0
         self.index_dark = 0
         self.focuser_name = "Simulator Focuser"
         self.focuser_position = 25000
         self.initial_temperature = 15
         self.target_temperature = 15
+        self.bayer = None
 
     def camera_capture(self, expo: float, light: bool = True):
         try:
             if light:
         
                 new = self.fits_manager.open_fits(self.fits_files[self.index])
-                new.data = apply_focus_blur(new.data, self.focuser_position, 25000, 0.01)
+                if self.focuser_position!=25000:
+                    new.data = self.fits_manager.debayer(new.data, new.bayer_pattern)
+                    new.data = apply_focus_blur(new.data, self.focuser_position, 25000, 0.01)
+                    new.data = self.fits_manager._convert_to_bayer(new.data, new.bayer_pattern)
+            
                 self.index = (self.index + 1) % len(self.fits_files)
+
             else:
                 new = self.fits_manager.open_fits(self.dark_files[self.index_dark])
                 self.index_dark = (self.index_dark + 1) % len(self.dark_files)
 
+            sleep(1)
+            self.bayer = new.bayer_pattern
             telescope_state.last_picture = new.data
 
             return new
         except Exception as e:
             print(e)
             return None
+        
+    def get_bayer_pattern(self):
+        sensor_type = self.bayer
+        
+        if sensor_type == 'RGGB':
+            return  'RGGB', 'RGGB', 'BAYER'
+        elif sensor_type == 'CMYG':
+            return 'CMYG', 'CMYG', 'BAYER'
+        elif sensor_type == 'CMYG2':
+            return 'CMYG2', 'CMYG2', 'BAYER'
+        elif sensor_type == 'LRGB':
+            return 'LRGB', None, None
+        elif sensor_type == 'COLOR':
+            return 'COLOR', None, None
+        else:
+            return 'MONOCHROME', None, None
         
     def set_gain(self, gain: int):
         logger.info(f"[CAMERA] - Setting gain to {gain}")

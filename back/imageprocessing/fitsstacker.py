@@ -15,6 +15,8 @@ from datetime import datetime
 import shutil
 from utils.logger import logger
 from os import chdir
+from imageprocessing.fitsprocessor import FitsImageManager
+from numpy import int32
 try:
     import pysiril
     from pysiril.wrapper import Wrapper
@@ -22,10 +24,11 @@ try:
 except ImportError:
     print("PySiril not found. Install with: pip install pysiril")
     exit(1)
+from astropy.io import fits
 
 # Configuration
 class Config:
-    def __init__(self, base_dir: Path):
+    def __init__(self, base_dir: Path, batch_size=150, initial_batch_size=100):
         # Directories
         self.base_dir = base_dir
         self.raw_dir = self.base_dir / "raw"
@@ -35,8 +38,8 @@ class Config:
         self.log_dir = self.base_dir / "log"
         self.current_dir = Path.cwd()
         # Processing parameters
-        self.batch_size = 10
-        self.initial_batch_size = 10  # Smaller for first batch
+        self.batch_size = batch_size
+        self.initial_batch_size = initial_batch_size  # Smaller for first batch
         # File patterns
         self.image_extensions = ['.fit', '.fits', '.tif', '.tiff']
         
@@ -65,7 +68,6 @@ class LiveStacker:
         self.current_batch_files : List[Path] = []
         self.event_stop = threading.Event()
         self.is_processing = False
-        self.dark = dark
         self.current_dir = Path.cwd()
 
         # Statistics
@@ -77,7 +79,18 @@ class LiveStacker:
             'last_batch_time': None
         }
         self.logger = logger
+        self.fits_manager = FitsImageManager(auto_debayer=False, auto_normalize=False)
+        if dark:
+            self.add_dark(dark)
+        else:
+            self.dark=None
+            self.dark_image = None
+
         
+    def add_dark(self, dark : Path):
+        self.dark = dark
+        self.dark_image = self.fits_manager.open_fits(dark)
+        self.fits_manager.set_dark(self.dark_image.data)
 
         
     def initialize_siril(self) -> bool:
@@ -102,9 +115,11 @@ class LiveStacker:
         self.is_live_stacking = True
 
     def add_initial_live_stack_image(self, img_path: Path):
+        print(f"{img_path}", f"{self.config.final_dir / Path('livestack.fit')}")
         self.siril.livestack(f"{img_path}")
-        shutil.copy("live_stack_00001.fit",f"{self.config.final_dir / Path('livestack.fit')}")
-        self.on_image_processed(self.config.final_dir / Path("livestack.fit"))
+        if Path("live_stack_00001.fit").is_file():
+            shutil.copy("live_stack_00001.fit",f"{self.config.final_dir / Path('livestack.fit')}")
+            self.on_image_processed(self.config.final_dir / Path("livestack.fit"))
 
 
     def stop_initial_live_stack(self):
@@ -128,14 +143,11 @@ class LiveStacker:
             
             self.logger.info(f"New image: {img_path} (Total: {self.stats['total_images']})")
 
-
-
             # Check if batch is ready
             batch_size = self.config.initial_batch_size if self.stats['processed_batches'] == 0 else self.config.batch_size
             if (self.stats['total_images']<batch_size and self.is_live_stacking):
                 self.add_initial_live_stack_image(raw_dest)
                 self.logger.info(f"Initial Live Stacking {raw_dest}")
-
 
             if self.stats['current_batch_count'] >= batch_size:
                 if self.is_live_stacking:
@@ -216,33 +228,40 @@ class LiveStacker:
 
     def stack_batch(self, batch_images: List[Path], output_dir: Path) -> Optional[Path]:
         """Stack a batch of images with Siril"""
+
+        sequence_name = f"batch_{int(time.time())}"
         try:
-            sequence_name = f"batch_{int(time.time())}"
+
+            logger.info("[FITSSTACKER] - Applying dark")
             for file in batch_images:
                 shutil.move(f"{file}",f"{output_dir}")
+                fname = (output_dir / file.name).resolve()
+                try:
+                    if self.dark and self.dark_image:
+                        logger.info(f"[FITSSTACKER] - Application du dark à {fname}")
+                        image = self.fits_manager.open_fits(fname)
+                        self.fits_manager.save_fits(image, fname)
+                    else:
+                        logger.info(f"[FITSSTACKER] - Pas de dark pour {fname}")
+                except Exception as ex:
+                    logger.error(f"[FITSSTACKER] - Erreur lors de l'application du dark sur {fname}: {ex}")
+
+                    
             # Prepare images
             self.siril.cd(f"{output_dir}")
             
             # Convert and register images
-            self.siril.convert( 'light', out=f"{self.config.processed_dir}", debayer=(self.dark==None))
+            self.siril.convert( 'light', out=f"{self.config.processed_dir}", debayer=True)
             self.siril.cd(f"{self.config.processed_dir}")
-
             # Too much siril implementation does not know command preprocess
             #self.siril.preprocess( 'light', dark=f"{self.dark}" if self.dark else None, cfa=True, equalize_cfa=True, debayer=True )
-            if self.dark!=None:
-
-                # In recent version of pysiril, calibrate use preprocess command 
-                #self.siril.calibrate(
-                #    'light', 
-                #    dark=f"{self.dark}",
-                #    cfa=True,
-                #    debayer=True
-                # )
-                self.siril.Execute(f"calibrate light -dark={self.dark}")
-
             self.siril.register('light')
+
+            #time.sleep(1600)
             result_path = self.config.stack_result / f"{sequence_name}_stacked.fit"
-            self.siril.stack('r_light', type='rej', sigma_low=3, sigma_high=3, norm='addscale', output_norm=True, out=f"{result_path}")
+            self.siril.InitParam()
+            self.siril.Execute(f"stack r_light rej w 3 3 -weight=noise  -norm=addscale -output_norm -out={result_path}", bEndTest=False)
+            #self.siril.stack('r_light', type='rej', rejection_type="w", sigma_low=3, sigma_high=3, weight_from_noise=True, norm='addscale', output_norm=True, out=f"{result_path}")
             # Stack with rejection
 
             self.clear_directory(self.config.processed_dir)
@@ -262,20 +281,23 @@ class LiveStacker:
 
             for result_file in self.config.stack_result.glob("*.fit"):
                 batch_results.append(result_file)
-            
+                        
+            self.logger.info(f"Stacking {len(batch_results)} processed batches")
             if len(batch_results) < 1:
                 return
-            
-            self.logger.info(f"Stacking {len(batch_results)} processed batches")
-            
-            self.siril.cd(f"{self.config.stack_result}")
-            
-            # Convert and register images
-            self.siril.convert( 'light', out=f"{self.config.processed_dir}", debayer=True)
-            self.siril.cd(f"{self.config.processed_dir}")
-            self.siril.register('light')
-            result_path = f"{self.config.final_dir}/final{len(batch_results)}.fit"
-            self.siril.stack('r_light', type='rej', sigma_low=3, sigma_high=3, norm='addscale', output_norm=True, out=f"{result_path}")
+            else:
+                self.siril.cd(f"{self.config.stack_result}")
+                
+                # Convert and register images
+                self.siril.convert( 'light', out=f"{self.config.processed_dir}", debayer=True)
+                self.siril.cd(f"{self.config.processed_dir}")
+                self.siril.register('light')
+                result_path = f"{self.config.final_dir}/final{len(batch_results)}.fit"
+                #self.siril.stack('r_light', type='rej', sigma_low=3, sigma_high=3, weight_from_noise=True, norm='addscale', output_norm=True, out=f"{result_path}")
+                self.siril.InitParam()
+                self.siril.Execute(f"stack r_light rej w 3 3 -weight=noise -norm=addscale -output_norm -out={result_path}",bEndTest=False)
+
+
             # Stack with rejection
             if (self.on_image_processed):
                 self.on_image_processed(result_path,)

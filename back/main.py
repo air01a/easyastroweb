@@ -8,7 +8,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from ws.websocket_manager import ws_manager
 import asyncio
+import sys
+import io
 
+# Remplace stdout par un flux utf-8
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 app = FastAPI(title="EasyAstro API", version="1.0.0")
 
 # Configuration CORS

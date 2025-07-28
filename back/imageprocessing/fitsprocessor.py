@@ -102,8 +102,9 @@ class FitsImageManager:
             header = hdu.header.copy()
             original_shape = original_data.shape
 
-        if self.dark and self.dark.shape == original_shape:
-            original_data -= self.dark
+        if self.dark is not None and self.dark.shape == original_shape:
+            original_data = (original_data - self.dark)
+            original_data[original_data < 0] = 0
             dark_applied=True
             print("dark applied")
 
@@ -438,8 +439,10 @@ class FitsImageManager:
         if image.ndim==3 : 
             image = np.transpose(image, (2, 0, 1))
         hdu = fits.PrimaryHDU(image)
+        print("headers",headers)
         if headers:
             for key, value in headers.items():
+                print(key, value)
                 hdu.header[key]= value
         
         hdul = fits.HDUList([hdu])

@@ -15,7 +15,7 @@ from services.configurator import CURRENT_DIR
 from pathlib import Path
 from services.history_manager import HistoryManager
 from imageprocessing.fitsprocessor import FitsImageManager
-
+from services.configurator import CONFIG
 
 router = APIRouter(prefix="/observation", tags=["observation"])
 astro_filters = AstroFilters()
@@ -76,7 +76,11 @@ def get_last_image():
             )
     
     # Appliquer les filtres 
+        sensor, bayer, color_type = telescope_interface.get_bayer_pattern()
+        if bayer:
+            image = fits_manager.debayer(image, bayer)
         image = fits_manager.normalize(image)
+        
         processed_image = astro_filters.denoise_gaussian(
             astro_filters.replace_lowest_percent_by_zero(
                 astro_filters.auto_stretch(image, 0.25, algo=1, shadow_clip=-2), 
