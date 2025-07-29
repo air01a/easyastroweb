@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {  PlanHistory} from "../../types/api.type";
 import { apiService } from "../../api/api";
 import { X } from "lucide-react";
@@ -7,8 +7,9 @@ import { useTranslation } from 'react-i18next';
 export default function History({ refreshKey }: { refreshKey: number }) {
   const [history, setHistory] = useState<PlanHistory[]>([]);
   const [modalImage, setModalImage] = useState<string | null>(null);
-  const { t } = useTranslation();
+  const randomRef = useRef(Math.random());
 
+  const { t } = useTranslation();
   const fetchHistory = async () => {
     const data: PlanHistory[] = await apiService.getPlanHistory();
     setHistory(data);
@@ -57,10 +58,10 @@ export default function History({ refreshKey }: { refreshKey: number }) {
                 </div>
                 {plan.jpg && plan.end &&(
                   <img
-                    src={apiService.getBaseUrl() + `/observation/history/${index}`}
+                    src={apiService.getBaseUrl() + `/observation/history/${index}?t=${index}`}
                     alt="Miniature"
                     className="w-32 h-20 object-cover rounded border mt-2 md:mt-0 cursor-pointer"
-                    onClick={() => setModalImage(apiService.getBaseUrl() + `/observation/history/${index}`)}
+                    onClick={() => setModalImage(apiService.getBaseUrl() + `/observation/history/${index}?t=${randomRef}i=${index}`)}
                   />
                 )}
               </div>

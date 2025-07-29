@@ -77,7 +77,11 @@ Below are some example screenshots showcasing the main features of **AstroAutoma
   <br>
   <em>🔹 Observation planner to schedule your imaging sessions (number of exposures, filters, durations).</em>
 </p>
-
+<p align="center">
+  <img src="./doc/runningplan.png" alt="Observation Planner" width="70%">
+  <br>
+  <em>🔹 See results in real time with live stacking</em>
+</p>
 
 ## 🚀 Technology Stack
 

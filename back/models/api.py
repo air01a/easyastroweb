@@ -42,3 +42,8 @@ class DarkLibraryItem(BaseModel):
     count: int
     date: str
     filename:str
+
+
+class ImageSettings(BaseModel):
+    stretch: float
+    black_point: int

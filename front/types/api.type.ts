@@ -44,3 +44,8 @@ export interface PlanHistory {
 }
 
 export type PlansHistory = PlanHistory[];
+
+export interface ImageSettings {
+  stretch: number;
+  black_point: number;
+}

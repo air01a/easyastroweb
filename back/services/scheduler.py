@@ -31,10 +31,10 @@ class Scheduler(BasicAutomate):
     def _on_image_stack(self, path: Path):
         try:
             image = self.fits_manager.open_fits(f"{path}")
-            image.data  = self.astro_filters.denoise_gaussian(self.astro_filters.replace_lowest_percent_by_zero(self.astro_filters.auto_stretch(image.data, 0.20, algo=1, shadow_clip=-2),80))
-            self.fits_manager.save_as_image(image, output_filename=f"{path}".replace(".fit",".jpg"))
-            telescope_state.last_stacked_picture = Path(path).with_suffix(".jpg")
-            self.history.update_obs_image(None, telescope_state.last_stacked_picture)
+            #image.data  = self.astro_filters.denoise_gaussian(self.astro_filters.replace_lowest_percent_by_zero(self.astro_filters.auto_stretch(image.data, 0.20, algo=1, shadow_clip=0),85))
+            #self.fits_manager.save_as_image(image, output_filename=f"{path}".replace(".fit",".jpg"))
+            telescope_state.last_stacked_picture = image.data
+            self.history.update_obs_image(None, path)
             ws_manager.broadcast_sync(ws_manager.format_message("SCHEDULER","NEWIMAGE"))
         except Exception as ex: 
             logger.error("[SCHEDULER] - Error while transforming siril new image")

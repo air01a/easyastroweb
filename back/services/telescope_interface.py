@@ -223,7 +223,7 @@ class SimulatorTelescope(TelescopeInterface):
                 new = self.fits_manager.open_fits(self.dark_files[self.index_dark])
                 self.index_dark = (self.index_dark + 1) % len(self.dark_files)
 
-            sleep(1)
+            sleep(expo)
             self.bayer = new.bayer_pattern
             telescope_state.last_picture = new.data
 

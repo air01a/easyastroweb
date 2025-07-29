@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException
 from fastapi.responses import StreamingResponse, FileResponse
 from typing import List
-from models.api import PlanType
+from models.api import PlanType, ImageSettings
 from services.skymap import generate_dso_image, generate_map
 from models.state import telescope_state
 from services.scheduler import Scheduler
@@ -48,46 +48,32 @@ async def return_image(image_path: Path):
         filename=image_path.name
     )
 
-@router.get("/last_stacked_image")
-async def get_last_stacked_image():
-    """
-    Retourne une image depuis le dossier images/
-    """
-    # Définir le chemin du dossier d'images
-    image_path = telescope_state.last_stacked_picture
-    return await return_image(image_path)
-
-
-
-@router.get("/last_image")
-def get_last_image():
-    """
-    Retourne une image depuis le dossier images/ au format JPG
-    """
+def transform_to_jpg(image):
     try:
 
-        # Récupérer l'image depuis telescope_state
-        image = telescope_state.last_picture.copy()
         if image is None:
+            print("No image")
             return FileResponse(
                 path=(CURRENT_DIR.parent / Path("assets") /  Path("image_waiting.png")).resolve(),
                 media_type="image/png",  # Adapter selon le type d'image
                 filename="image_waiting.png"
             )
-    
-    # Appliquer les filtres 
-        sensor, bayer, color_type = telescope_interface.get_bayer_pattern()
-        if bayer:
-            image = fits_manager.debayer(image, bayer)
+
+
+        if len(image.shape)<3:
+            # Appliquer les filtres 
+            sensor, bayer, color_type = telescope_interface.get_bayer_pattern()
+            if bayer:
+                image = fits_manager.debayer(image, bayer)
         image = fits_manager.normalize(image)
-        
-        processed_image = astro_filters.denoise_gaussian(
-            astro_filters.replace_lowest_percent_by_zero(
-                astro_filters.auto_stretch(image, 0.25, algo=1, shadow_clip=-2), 
-                80
-            )
-        )
-        
+        processed_image =  astro_filters.replace_lowest_percent_by_zero(astro_filters.auto_stretch(image, telescope_state.image_settings.stretch, algo=0, shadow_clip=-2),telescope_state.image_settings.black_point)
+        #processed_image = astro_filters.asinh_stretch_color(image, 0.2)
+
+        #astro_filters.denoise_gaussian()
+        #astro_filters.replace_lowest_percent_by_zero(
+        #, 
+        #        80
+        #    )
         # Convertir en format PIL Image
         # Supposons que processed_image est un array numpy
         if isinstance(processed_image, np.ndarray):
@@ -111,6 +97,7 @@ def get_last_image():
         pil_image.save(img_buffer, format='JPEG', quality=95)
         img_buffer.seek(0)
         
+
         # Retourner la réponse streaming
         return StreamingResponse(
             io.BytesIO(img_buffer.read()),
@@ -118,7 +105,7 @@ def get_last_image():
             headers={"Content-Disposition": "inline; filename=last_image.jpg"}
         )
     except Exception as e:
-        print(f"Error processing image: {e}")
+        
         return FileResponse(
             path=(CURRENT_DIR.parent / Path("assets") /  Path("image_waiting.png")).resolve(),
             media_type="image/png",  # Adapter selon le type d'image
@@ -126,10 +113,44 @@ def get_last_image():
         )
 
 
+@router.get('/image_settings')
+def get_image_settings() -> ImageSettings:
+    return telescope_state.image_settings
+
+@router.put('/image_settings')
+def set_image_settings(settings: ImageSettings) -> ImageSettings:
+    telescope_state.image_settings = settings
+    return get_image_settings()
+
+
+
+@router.get("/last_stacked_image")
+def get_last_stacked_image():
+    """
+    Retourne une image depuis le dossier images/
+    """
+    # Définir le chemin du dossier d'images
+    image = telescope_state.last_stacked_picture
+    return transform_to_jpg(image)
+
+
+
+@router.get("/last_image")
+def get_last_image():
+    """
+    Retourne une image depuis le dossier images/ au format JPG
+    """
+    if telescope_state.last_picture is not None:
+        image = telescope_state.last_picture.copy()
+    else:
+        image=None
+    return transform_to_jpg(image)
+        
+
+
 @router.get("/history")
 def get_history() -> PlansExecutionType:
     if is_running():
-        print(telescope_state.scheduler.history)
         return telescope_state.scheduler.history.history
     else:
         history = HistoryManager()
@@ -137,15 +158,13 @@ def get_history() -> PlansExecutionType:
         return history.history
         
 @router.get("/history/{index}")
-async def get_history_image(index: int):
+def get_history_image(index: int):
     history = get_history()
-
     if index<len(history):
-        print("History index ok")
         image = history[index].jpg
-        print(image)
+        image = fits_manager.open_fits(image)
         if image!=None:
-            return await return_image(Path(image))
+            return transform_to_jpg(image.data)
     raise HTTPException(status_code=404, detail="Chemin invalide")
 
 @router.post("/start")

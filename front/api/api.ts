@@ -1,5 +1,5 @@
 // services/api.ts
-import type { PlanType, DarkLibraryType, DarkLibraryProcessType, PlansHistory} from "../types/api.type";
+import type { PlanType, DarkLibraryType, DarkLibraryProcessType, PlansHistory, ImageSettings} from "../types/api.type";
 import type { ConfigItems } from "../store/config.type";
 import type {Field} from '../types/dynamicform.type'
 
@@ -143,6 +143,20 @@ export class ApiService {
 
   }
 
+
+  async getImageSettings(): Promise<ImageSettings> {
+    return this.request<ImageSettings>('/observation/image_settings', {
+      method: 'GET',
+    });
+  }
+
+    async setImageSettings(stretch:number, black_point: number): Promise<void> {
+    this.request<ConfigItems>('/observation/image_settings', {
+      method: 'PUT',
+      body: JSON.stringify({stretch, black_point})
+    });
+
+  }
 
   async getCameras(): Promise<ConfigItems[]> {
     return this.request<ConfigItems[]>('/cameras', {

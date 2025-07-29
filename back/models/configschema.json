@@ -163,6 +163,22 @@
     "defaultValue": 20,
     "required":true
   },  
+  {
+    "fieldName": "initial_stretch",
+    "description": "Default value for histogram strech",
+    "fieldType": "INPUT",
+    "varType": "FLOAT",
+    "defaultValue": 0.2,
+    "required":true
+  },  
+    {
+    "fieldName": "initial_black_point",
+    "description": "Default value for histogram black point (%)",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 80,
+    "required":true
+  },  
      {
     "fieldName": "dark_options",
     "description": "Dark",

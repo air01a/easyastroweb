@@ -7,7 +7,7 @@ import { useWebSocketStore } from "../../store/store";
 import ImageBox from "../../design-system/box/imagebox";
 import History from "../../components/history/history"
 import { useTranslation } from 'react-i18next';
-
+import ImageSettingsSliders from "../../components/image-settings/sliders"
 
 export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
   const [image1, setImage1] = useState<string | null>(null);
@@ -24,6 +24,8 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
   const fetchImages = async () => {
     const baseUrl = apiService.getBaseUrl();
     const timestamp = Date.now();
+
+    console.log("fetch images)");
 
     fetch(`${baseUrl}/observation/last_stacked_image?t=${timestamp}`)
       .then((res) => res.blob())
@@ -100,7 +102,7 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
           />
         )}
       </div>
-
+        <ImageSettingsSliders onUpdate={fetchImages}/>
       <Button onClick={handleClick}>Arrêter le plan</Button>
 
       <History refreshKey={historyRefreshKey} />
