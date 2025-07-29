@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build with OpenCV",
+      "type": "shell",
+      "command": "g++",
+      "args": [
+        "main.cpp",
+        "-o",
+        "main",
+        "-IC:\\msys64\\mingw64\\include\\opencv4",
+        "-LC:\\msys64\\mingw64\\lib",
+        "`pkg-config",
+        "--cflags",
+        "--libs",
+        "opencv4`"
+      ],
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": ["-c"]
+        }
+      }
+    }
+  ]
+}
