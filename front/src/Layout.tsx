@@ -4,17 +4,22 @@ import NavBar from '../design-system/navbar/navbar'; // adapte le chemin si beso
 import Footer from '../design-system/navbar/footer';
 
 import { useTranslation } from 'react-i18next';
+import { useObserverStore } from "../store/store"; // adapte le chemin si besoin
 
 // On ne peut plus passer `params.locale`, donc on détecte le locale autrement (par ex. navigateur)
 const RootLayout: React.FC = () => {
   const { t } = useTranslation();
+  const { isConnected } = useObserverStore(); 
 
   const navbarItems = [
-    { name: t('nav.home'), href: '/', matcher: 'exact' },
-    { name: t('nav.catalog'), href: '/catalog' },
-    { name: t('nav.plan'), href: '/plan' },
-    { name: t('nav.tools'), href: '/tools' },
-  ];
+      { name: t('nav.home'), href: '/', matcher: 'exact' },
+      { name: t('nav.catalog'), href: '/catalog' },
+    ];
+
+  if (isConnected) {
+    navbarItems.push({ name: t('nav.plan'), href: '/plan' });
+  }
+  navbarItems.push({ name: t('nav.tools'), href: '/tools' });
 
 
   return (

@@ -8,6 +8,7 @@ export default function NavBar({menu}:NavBarProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const page=useLocation().pathname;
 
+
     const checkSelection = (href:string, page:string, type:string|undefined):boolean => {
         if (type=='exact') {
         return page==href;

@@ -50,11 +50,16 @@ export const useObserverStore = create<ObserverStore>()(
       observatory : {},
       camera : {},
       filterWheel : {},
+      isConnected: false,
 
       setCamera : (camera : ConfigItems)=> 
         set({
           camera
         }),
+
+      setConnected(isConnected: boolean) {
+        set({ isConnected })
+      },
 
       setFilterWheel : (filterWheel : ConfigItems) => 
         set({

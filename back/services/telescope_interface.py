@@ -384,8 +384,14 @@ class SimulatorTelescope(TelescopeInterface):
                 CONFIG["observatory"].get("longitude", 0.0),
                 CONFIG["observatory"].get("altitude", 0.0)
             )
+        
         except Exception as e:
             logger.error(f"[TELESCOPE] - Error synchronizing location: {e}")
+            
+        self.mount_name = "Simulator Mount"
+        self.fw_name = "Simulator Filter Wheel"
+        self.camera_name = "Simulator Camera"
+        self.focuser_name = "Simulator Focuser"
 
 if CONFIG["global"].get("mode_simulator", False):
     logger.info("[TELESCOPE] - Running in simulator mode")
