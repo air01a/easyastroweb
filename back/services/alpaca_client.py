@@ -390,8 +390,18 @@ class ASCOMAlpacaTelescopeClient(ASCOMAlpacaBaseClient):
     def set_elevation(self, elevation: float) -> None:
         self._make_request("PUT", "siteelevation", {"SiteElevation": elevation})
 
-    def get_altitude(self) -> float:
-        result = self._make_request("GET", "altitude")
+
+    
+    def get_elevation(self) -> float:
+        result = self._make_request("GET", "siteelevation")
+        return result.get("Value", 0.0)
+    
+    def get_latitude(self) -> float:
+        result = self._make_request("GET", "sitelatitude")
+        return result.get("Value", 0.0)
+    
+    def get_longitude(self) -> float:
+        result = self._make_request("GET", "sitelongitude")
         return result.get("Value", 0.0)
 
 # ===== CLIENT CAMÉRA =====
