@@ -36,6 +36,10 @@ export default function Home() {
       try {
         if (rescan) {
           await apiService.connectHardWare();
+          const nowUtcIso = new Date().toISOString();
+
+          await apiService.setUtcDate(nowUtcIso);
+
         } 
         const hardwareData = await apiService.getHardwareName();
         setHardware(hardwareData);
@@ -88,6 +92,9 @@ export default function Home() {
             fw_name={hardware.fw_name}
             focuser_name={hardware.focuser_name}
             camera_name={hardware.camera_name} 
+            date={hardware.utc_date}
+            location={hardware.telescope_location}
+            
           />}
           {!hardware && <LoadingIndicator/>}
           <div className="mt-4 flex items-center justify-center"><Button onClick={()=>{  setHardware(null);fetchHardware(true)}}>{t('global.update')} </Button></div>

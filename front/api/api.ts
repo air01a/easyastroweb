@@ -305,6 +305,13 @@ export class ApiService {
     });
   }
 
+  async setUtcDate(date: string): Promise<Record<string, string>> {
+    return this.request<Record<string, string>>('/status/set_telescope_date', {
+      method: 'POST',
+      body: JSON.stringify({date})
+    });
+  }
+
   // Exemple pour un GET générique
   async getSomething<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {

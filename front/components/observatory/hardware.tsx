@@ -6,6 +6,8 @@ type DeviceStatusProps = {
   fw_name: string;
   focuser_name: string;
   camera_name: string;
+  date: string;
+  location: string;
 };
 
 const isConnected = (name: string) => name !== "Not connected";
@@ -24,6 +26,8 @@ const DeviceStatus: React.FC<DeviceStatusProps> = ({
   fw_name,
   focuser_name,
   camera_name,
+  date,
+  location,
 }) => {
   const { t } = useTranslation();
 
@@ -48,6 +52,12 @@ const DeviceStatus: React.FC<DeviceStatusProps> = ({
           </span>
         </div>
       ))}
+      <div className="bg-gray-400 p-2 rounded flex justify-between items-center">
+        <span className="flex-1 text-gray-800">Date : {date}</span>
+      </div>
+      <div className="bg-gray-400 p-2 rounded flex justify-between items-center">
+        <span className="flex-1 text-gray-800">Location : {location}</span>
+      </div>
     </div>
   );
 };

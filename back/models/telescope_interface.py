@@ -94,6 +94,19 @@ class TelescopeInterface(ABC):
     def get_bayer_pattern(self):
         pass
 
+    @abstractmethod
+    def set_utc_date(self, date: str):
+        pass
+
+    @abstractmethod
+    def get_utc_date(self):
+        pass
+
+    @abstractmethod
+    def get_telescope_location(self):
+        pass
+
+
     def get_focus(self, ra: float, dec: float):
 
         dec = 70 + CONFIG['observatory'].get("latitude", 50) + dec - 90

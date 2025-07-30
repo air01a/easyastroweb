@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Body, HTTPException
 from fastapi.responses import StreamingResponse, FileResponse
 from typing import Dict
 from models.api import PlanType
@@ -29,21 +29,37 @@ def connect_telescope() -> Dict[str, bool]:
     """
     Connect the telescope interface.
     """
+
     try:
         telescope_interface.connect()
         return {"telescope_connected": telescope_state.is_telescope_connected, "camera_connected": telescope_state.is_camera_connected, "filter_wheel_connected": telescope_state.is_fw_connected, "focuser_connected": telescope_state.is_focuser_connected}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+@router.post("/set_telescope_date")
+def set_telescope_date(date: str = Body(..., embed=True)) -> Dict[str, str]:
+    """
+    Set the date for the telescope.
+    """
+    try:
+        telescope_interface.set_utc_date(date)
+        return {"date": date}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
 
 @router.get("/connected_hardware")
 def get_connected_hardware() -> Dict[str, str]:
     """
     Get the names of connected hardware components.
     """
+
     return {
         "mount_name": telescope_interface.mount_name,
         "fw_name": telescope_interface.fw_name,
         "focuser_name": telescope_interface.focuser_name,
-        "camera_name": telescope_interface.camera_name
+        "camera_name": telescope_interface.camera_name,
+        "telescope_location": telescope_interface.get_telescope_location(),
+        "utc_date": telescope_interface.get_utc_date()
     }

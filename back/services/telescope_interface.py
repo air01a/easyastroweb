@@ -9,8 +9,7 @@ from models.state import telescope_state
 from models.telescope_interface import TelescopeInterface
 from imageprocessing.fitsprocessor import FitsImageManager
 from utils.calcul import apply_focus_blur
-
-
+from datetime import datetime, timezone
 
 class AlpacaTelescope(TelescopeInterface):
 
@@ -186,7 +185,21 @@ class AlpacaTelescope(TelescopeInterface):
             return 'LRGB', None, None
         else:
             return 'UNKNOWN', None, None
-                
+        
+    def set_utc_date(self, date: str):
+        """ Set the date for the telescope.
+        """
+
+        logger.info(f"[TELESCOPE] - Setting date to {date}")
+        alpaca_telescope_client.set_utc_date(date)
+
+    def get_utc_date(self):
+        return alpaca_telescope_client.get_utc_date()
+
+    def get_telescope_location(self):
+        return f"{alpaca_telescope_client.get_latitude()}°, {alpaca_telescope_client.get_longitude()}°, {alpaca_telescope_client.get_elevation()}m"
+
+
 class SimulatorTelescope(TelescopeInterface):
 
     def __init__(self):
@@ -206,6 +219,15 @@ class SimulatorTelescope(TelescopeInterface):
         self.initial_temperature = 15
         self.target_temperature = 15
         self.bayer = None
+        self.location = "0.0°, 0.0°, 0.0m"  # Default location
+
+    def set_utc_date(self, date: str):
+        """
+        Set the date for the simulator.
+        """
+        logger.info(f"[SIMULATOR] - Setting date to {date}")
+        # In a real implementation, this would set the date in the simulator environment.
+        # Here we just log it for demonstration purposes.
 
     def camera_capture(self, expo: float, light: bool = True):
         try:
@@ -277,6 +299,15 @@ class SimulatorTelescope(TelescopeInterface):
 
     def sync_location(self, latitude: float, longitude : float, elevation: float):
         logger.info(f"[TELESCOPE] - Simulated location synchronized to lat: {latitude}, lon: {longitude}, elev: {elevation}")
+        self.location = f"{latitude}°, {longitude}°, {elevation}m"
+
+
+    def get_utc_date(self):
+        return datetime.now(timezone.utc).isoformat()
+
+    def get_telescope_location(self):
+        return self.location
+
 
     def slew_to_target(self,ra: float, dec: float):
         try:
