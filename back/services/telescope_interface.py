@@ -63,9 +63,13 @@ class AlpacaTelescope(TelescopeInterface):
         return alpaca_focuser_client.get_position()
 
     def telescope_connect(self):
-        alpaca_telescope_client.connect()
-        self.mount_name = alpaca_telescope_client.get_name()
-        return True
+        try:
+            alpaca_telescope_client.connect()
+            self.mount_name = alpaca_telescope_client.get_name()
+            return True
+        except Exception as e:
+            logger.error(f"[TELESCOPE] - Connecting telescope: {e}")
+
     
     def telescope_disconnect(self):
         return alpaca_telescope_client.disconnect()
@@ -83,7 +87,8 @@ class AlpacaTelescope(TelescopeInterface):
         try:
             alpaca_telescope_client.sync_to_coordinates(ra, dec)
             return True
-        except:
+        except Exception as e:
+            logger.error(f"[TELESCOPE] - Error slewing to target: {e}")
             return False
 
     def telescope_unpark(self):
@@ -110,19 +115,34 @@ class AlpacaTelescope(TelescopeInterface):
             logger.info(f"[FILTERWHEEL] - Error during filter change")
             return False
 
-    def telescope_set_tracking(self, rate : int):
-        alpaca_telescope_client.set_tracking_rate(rate)
-        alpaca_telescope_client.set_tracking(True)
+    def telescope_set_tracking(self, rate : int)->bool:
+        try:
+            alpaca_telescope_client.set_tracking_rate(rate)
+            alpaca_telescope_client.set_tracking(True)
+            return True
+        except:
+            logger.error("[TELESCOPE] - Error setting tracking")
+            return False
         
 
     def get_ccd_temperature(self)-> int:
         return round(alpaca_camera_client.get_ccd_temperature())
 
-    def set_ccd_temperature(self, temperature:int)-> None:
-        alpaca_camera_client.set_ccd_temperature(temperature)
+    def set_ccd_temperature(self, temperature:int)-> bool:
+        try:
+            alpaca_camera_client.set_ccd_temperature(temperature)
+            return True
+        except Exception as e:
+            logger.error('[CAMERA] - Error setting temperature')
+            return False
 
-    def set_cooler(self, cooler: bool):
-        alpaca_camera_client.set_cooler_on(cooler)
+    def set_cooler(self, cooler: bool)-> bool:
+        try:
+            alpaca_camera_client.set_cooler_on(cooler)
+            return True
+        except:
+            logger.error('[CAMERA] - Error setting cooler on')
+
 
 
     def sync_location(self, latitude: float, longitude : float, elevation: float):
@@ -151,7 +171,7 @@ class AlpacaTelescope(TelescopeInterface):
             telescope_state.is_camera_connected = True
         except Exception as e:
             telescope_state.is_camera_connected = False
-            print(f"[CAMERA] - Error connecting camera: {e}")
+            logger.error(f"[CAMERA] - Error connecting camera: {e}")
 
         try:
             telescope_interface.telescope_connect()
@@ -197,7 +217,11 @@ class AlpacaTelescope(TelescopeInterface):
         return alpaca_telescope_client.get_utc_date()
 
     def get_telescope_location(self):
-        return f"{alpaca_telescope_client.get_latitude()}°, {alpaca_telescope_client.get_longitude()}°, {alpaca_telescope_client.get_elevation()}m"
+        try:
+            return f"{alpaca_telescope_client.get_latitude()}°, {alpaca_telescope_client.get_longitude()}°, {alpaca_telescope_client.get_elevation()}m"
+        except Exception as e:
+            logger.error(f"[TELESCOPE] - Error getting telescope location: {e}")
+
 
 
 class SimulatorTelescope(TelescopeInterface):
