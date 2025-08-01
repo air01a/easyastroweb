@@ -38,6 +38,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Spacer from '../../components/plan/spacer';
+import { LoaderCircle } from "lucide-react";
 // Composant wrapper sortable pour chaque ObjectPlanificator
 function SortableObjectPlanificator({ 
   id, 
@@ -151,7 +152,7 @@ export default function PlanPage({refresh}:{refresh: ()=>void}) {
     const { t } = useTranslation();
     const [defaultGain, setDefaultGain] = useState<number[]>([]);
     const [defaultExpositions, setDefaultExpositions] = useState<number[]>([]);
-
+    const [isSending, setIsSending] = useState<boolean>(false);
 
     useEffect(() => {
       const fetchDarks = async () => {
@@ -244,8 +245,10 @@ export default function PlanPage({refresh}:{refresh: ()=>void}) {
     }
 
     const run = async () => {
+      if (isSending) return; 
       const plan : PlanType[] = [];
       let start=dateToNumber(sunSet);
+      setIsSending(true);
       settings.forEach((element, index) => {
         start+=spacer[index]/3600;
         element.forEach((capture) =>{
@@ -271,9 +274,14 @@ export default function PlanPage({refresh}:{refresh: ()=>void}) {
           start+=expo*nExpo / 3600;
         });
       });
-
-      await apiService.sendPlans(plan);
-      refresh();
+      try {
+        await apiService.sendPlans(plan);
+        refresh();
+      } catch {
+        console.log("Error sending plan :( ")
+      } finally {
+        setIsSending(false);
+      }
     }
 
     return (
@@ -311,8 +319,21 @@ export default function PlanPage({refresh}:{refresh: ()=>void}) {
                     ))}
                 </SortableContext>
             </DndContext>
-            <div className="flex items-center justify-center"><Button onClick={() => run()}>{t('global.run')}</Button></div>
-            <History refreshKey={0}/>
+            <div className="flex items-center justify-center">
+                <Button onClick={() => run()} disabled={isSending}>
+                  {isSending ? (
+                    <span className="flex items-center gap-2">
+                      <LoaderCircle className="animate-spin w-4 h-4" />
+                      {t('global.running')} {/* ou un texte comme "En cours..." */}
+                    </span>
+                  ) : (
+                    t('global.run')
+                  )
+                  }
+                </Button>
+            </div>
+
+              <History refreshKey={0}/>
         </div>
     )
 }
