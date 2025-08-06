@@ -116,7 +116,9 @@ class LiveStacker:
 
     def add_initial_live_stack_image(self, img_path: Path):
         print(f"{img_path}", f"{self.config.final_dir / Path('livestack.fit')}")
-        self.siril.livestack(f"{img_path}")
+        livestack_result  = self.siril.livestack(f"{img_path}")
+        print("Initial live stack result:", livestack_result)
+        print(livestack_result)
         if Path("live_stack_00001.fit").is_file():
             shutil.copy("live_stack_00001.fit",f"{self.config.final_dir / Path('livestack.fit')}")
             self.on_image_processed(self.config.final_dir / Path("livestack.fit"))

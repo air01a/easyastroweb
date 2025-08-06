@@ -148,6 +148,7 @@
         "exposition":"Expo",
         "gain":"Gain",
         "captures":"Captures",
-        "name":"Nom"
+        "name":"Nom",
+        "running":"En cours"
     }
 }
