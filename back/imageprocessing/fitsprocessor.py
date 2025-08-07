@@ -77,6 +77,22 @@ class FitsImageManager:
         
     def set_dark(self, dark: np.ndarray):
         self.dark = dark
+
+
+    def set_dark_from_file(self, filename: str):
+        """
+        Charge une image sombre depuis un fichier FITS et la stocke pour utilisation ultérieure.
+        
+        Args:
+            filename: Chemin vers le fichier FITS de l'image sombre
+        """
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f"Fichier sombre non trouvé: {filename}")
+        
+        with fits.open(filename) as hdul:
+            if len(hdul) == 0 or hdul[0].data is None:
+                raise ValueError("Le fichier ne contient pas de données valides")
+            self.dark = np.array(hdul[0].data.copy())
  
     def open_fits(self, filename: str, hdu_index: int = 0) -> FitsImage:
         """
@@ -103,10 +119,10 @@ class FitsImageManager:
             original_shape = original_data.shape
 
         if self.dark is not None and self.dark.shape == original_shape:
-            original_data = (original_data - self.dark)
-            original_data[original_data < 0] = 0
+            dark_data = (original_data.astype(np.float64) - self.dark.astype(np.float64))
+            dark_data = np.clip(dark_data, 0, None)  # Éviter les valeurs négatives
+            original_data = dark_data.astype(original_data.dtype)  # Remettre au type d
             dark_applied=True
-            print("dark applied")
 
         if len(original_shape)==3:
             is_color=True
@@ -122,13 +138,7 @@ class FitsImageManager:
                 is_debayerd=True
 
         
-        print(f"Fichier ouvert: {filename}")
-        print(f"Dimensions: {original_shape}")
-        print(f"Type de données: {original_data.dtype}")
-        if bayer_pattern:
-            print(f"Pattern Bayer détecté: {bayer_pattern}")
-        else:
-            print("Aucun pattern Bayer détecté (image couleur ou monochrome)")
+
 
         if self.auto_normalize:
             return FitsImage(self.normalize(original_data), header = header, is_color=is_color, bayer_pattern=bayer_pattern, filename = filename, is_debayered=is_debayerd, is_normalized=True, has_dark=dark_applied, is_inversed=inversed)
@@ -221,7 +231,6 @@ class FitsImageManager:
             raise ValueError(f"Pattern non supporté: {pattern}. Utilisez: {list(self.BAYER_PATTERNS.keys())}")
         
         self.bayer_pattern = pattern
-        print(f"Pattern Bayer défini: {pattern}")
     
     def debayer(self, data, bayer_pattern, algorithm: str = 'bilinear') -> np.ndarray:
         """
@@ -257,10 +266,6 @@ class FitsImageManager:
         debayered = debayered * (data_max - data_min) + data_min
         debayered = debayered.astype(data.dtype)
         
-
-        
-        print(f"Debayering effectué avec l'algorithme: {algorithm}")
-        print(f"Nouvelles dimensions: {debayered.shape}")
         
         return debayered
     
@@ -290,7 +295,6 @@ class FitsImageManager:
         # Si on veut préserver le format original et que l'image était Bayer
         if preserve_original_format and image.bayer_pattern and image.is_debayered:
             data_to_save = self._convert_to_bayer(data_to_save, image.bayer_pattern)
-            print(f"Image convertie au format Bayer original: {image.bayer_pattern}")
         
         # Mettre à jour le header
         header_to_save['HISTORY'] = f'Processed with FitsImageManager on {Time.now().iso}'
@@ -299,8 +303,6 @@ class FitsImageManager:
         hdu = fits.PrimaryHDU(data=data_to_save, header=header_to_save)
         hdu.writeto(output_filename, overwrite=True)
         
-        print(f"Fichier sauvegardé: {output_filename}")
-        print(f"Dimensions: {data_to_save.shape}")
     
     def _convert_to_bayer(self, color_image: np.ndarray, bayer_pattern: str) -> np.ndarray:
         """
@@ -353,7 +355,6 @@ class FitsImageManager:
     ) -> None:
         
 
-        print(image)
         if image.data is None:
             raise ValueError("Image vide")
 
@@ -429,20 +430,14 @@ class FitsImageManager:
 
         pil_image.save(output_filename, **save_params)
 
-        print(f"[✔] Image sauvegardée : {output_filename}")
-        print(f"     Format : {format.upper()}")
-        print(f"     Mode   : {pil_image.mode}")
-        print(f"     Taille : {pil_image.size}")
 
-    def save_fits_from_array(array, filename:Path, headers: Dict[str,str]):
+    def save_fits_from_array(array : np.ndarray, filename:Path, headers: Dict[str,str]):
         image=np.array(array,dtype=np.uint16)
         if image.ndim==3 : 
             image = np.transpose(image, (2, 0, 1))
         hdu = fits.PrimaryHDU(image)
-        print("headers",headers)
         if headers:
             for key, value in headers.items():
-                print(key, value)
                 hdu.header[key]= value
         
         hdul = fits.HDUList([hdu])

@@ -7,13 +7,17 @@ from utils.logger import logger
 from services.configurator import CONFIG
 from utils.calcul import get_solver, get_slew_error
 from pathlib import Path
-from imageprocessing.fitsstacker import Config, LiveStacker
+#from imageprocessing.stacker.fitsstacker import Config, LiveStacker
 from imageprocessing.fitsprocessor import FitsImageManager
 from imageprocessing.astrofilters import AstroFilters
 from services.dark_manager import DarkManager
 from ws.websocket_manager import ws_manager
 from services.history_manager import HistoryManager
 from models.basic_automate import BasicAutomate
+from numpy import uint16
+from imageprocessing.stacker.fitsstacker_python import ImageStacker
+
+
 
 class Scheduler(BasicAutomate):
     def __init__(self, telescope_interface):
@@ -25,9 +29,10 @@ class Scheduler(BasicAutomate):
         self.astro_filters=AstroFilters()
         self.dark_config = Path(CONFIG['global'].get("dark_directory")) / Path("config.json")
         self.history = HistoryManager()
-
-
-
+        self.captures_done=0
+        self.image_error = 0
+        self.has_to_slew = False
+    """
     def _on_image_stack(self, path: Path):
         try:
             image = self.fits_manager.open_fits(f"{path}")
@@ -48,7 +53,41 @@ class Scheduler(BasicAutomate):
 
             logger.error(f"[FITSSTACKER] - Erreur dans {function_name}() ({filename}:{line_number}): {ex}")
             logger.debug("Traceback complet :\n" + "".join(traceback.format_tb(ex.__traceback__)))
-        
+    """
+
+    def _on_image_stack_(self, stacked_image, metadata, path):
+        try:
+            #image.data  = self.astro_filters.denoise_gaussian(self.astro_filters.replace_lowest_percent_by_zero(self.astro_filters.auto_stretch(image.data, 0.20, algo=1, shadow_clip=0),85))
+            #self.fits_manager.save_as_image(image, output_filename=f"{path}".replace(".fit",".jpg"))
+            if stacked_image is not None:
+                telescope_state.last_stacked_picture = stacked_image
+                FitsImageManager.save_fits_from_array(
+                    (stacked_image*65536).astype(uint16), 
+                    Path(path) / Path(f"stacked_image_{self.captures_done:03d}.fits"), 
+                    []
+                )
+                self.history.update_obs_image(None, Path(path) / Path(f"stacked_image_{self.captures_done:03d}.fits"))
+                ws_manager.broadcast_sync(ws_manager.format_message("SCHEDULER","NEWIMAGE"))
+            else:
+                logger.error("[SCHEDULER] - Stacked image is None, cannot save.")
+                self.image_error += 1
+                if self.image_error > 5:
+                    self.has_to_slew = True
+
+        except Exception as ex: 
+            logger.error("[SCHEDULER] - Error while transforming siril new image")
+            import traceback
+
+            tb = traceback.extract_tb(ex.__traceback__)
+            last_call = tb[-1]  # dernière ligne de la pile
+            filename = last_call.filename
+            line_number = last_call.lineno
+            function_name = last_call.name
+
+            logger.error(f"[FITSSTACKER] - Erreur dans {function_name}() ({filename}:{line_number}): {ex}")
+            logger.debug("Traceback complet :\n" + "".join(traceback.format_tb(ex.__traceback__)))
+    
+            last_call = tb[-1]
 
     def _execute_plan(self, plan: list[Observation]):
         plan = sorted(self.plan, key=lambda obs: obs.start)
@@ -89,7 +128,7 @@ class Scheduler(BasicAutomate):
                     time.sleep(min(1, wait_seconds - waited))
                     waited += 1
 
-            captures_done = 0
+            self.captures_done = 0
             next_time = None
 
             if i + 1 < len(plan):
@@ -113,12 +152,7 @@ class Scheduler(BasicAutomate):
                 self.set_status("focusing")
                 self.telescope_interface.get_focus(obs.ra, obs.dec)
                 telescope_state.is_focused = True
-                
-            if not self.slew_to_target(obs.ra, obs.dec):
-                logger.error("[SCHEDULER] - Failed to slew to target")
-                continue
-
-            
+                        
             dark=DarkManager.choose_dark(self.dark_config, obs.expo, obs.gain, temperature, CONFIG.get('camera',{}).get("id",""))
 
             logger.info(f"[SCHEDULER] - Using Dark {dark}")
@@ -126,24 +160,37 @@ class Scheduler(BasicAutomate):
             directory = self.fit_path / Path(f"{time.strftime('%Y-%m-%d')}-{obs.object.replace(' ', '_')}")
             directory.mkdir(exist_ok=True)
 
-            self.stacker_config = Config(directory / Path("session"), batch_size=CONFIG['global'].get('fits_batch_size',150), initial_batch_size=CONFIG['global'].get('initial_batch_size',140))
-            self.stacker = LiveStacker(self.stacker_config, self._on_image_stack)
-            self.stacker.add_dark(dark)
-
+            self.stacker = ImageStacker(sigma_threshold=3.0, max_history=5, dark=dark)
             self.stacker.start_live_stacking()
+
+            stacked_directory = directory / Path("stacked")
+            stacked_directory.mkdir(exist_ok=True)
+            self.stacker.set_callback(self._on_image_stack_, stacked_directory.resolve())
+            self.has_to_slew = True
             self.history.new_obs()
-            while captures_done < obs.number:
-                self.set_status("capturing")
+
+
+            while self.captures_done < obs.number:
                 if self._stop_requested:
                     logger.info("[SCHEDULER] Stop requested during capture.")
                     break
+
+                if self.has_to_slew:
+                    if not self.slew_to_target(obs.ra, obs.dec):
+                        logger.error("[SCHEDULER] - Failed to slew to target")
+                        time.sleep(min(60*5,next_time - datetime.now()))
+                        continue
+                    self.has_to_slew = False
+                    self.image_error = 0
                 
+                self.set_status("capturing")
+
                 if next_time and datetime.now() >= next_time:
                     
                     logger.info(f"[SCHEDULER] Next observation time reached. Skipping remaining captures.")
                     break
 
-                logger.info(f"[SCHEDULER] Capture {captures_done+1}/{obs.number} of {obs.object}")
+                logger.info(f"[SCHEDULER] Capture {self.captures_done+1}/{obs.number} of {obs.object}")
                 image= self.telescope_interface.capture_to_fit(
                     exposure=obs.expo,
                     gain=obs.gain,
@@ -154,8 +201,8 @@ class Scheduler(BasicAutomate):
                     path=directory
                 )
                 self.stacker.process_new_image(image)
-                captures_done += 1
-                self.history.update_obs_image(captures_done)
+                self.captures_done += 1
+                self.history.update_obs_image(self.captures_done)
             
             # Update History for plan information
 

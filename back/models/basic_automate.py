@@ -7,7 +7,7 @@ from utils.logger import logger
 from services.configurator import CONFIG
 from utils.calcul import get_solver, get_slew_error
 from pathlib import Path
-from imageprocessing.fitsstacker import Config, LiveStacker
+#from imageprocessing.fitsstacker import Config, LiveStacker
 from imageprocessing.fitsprocessor import FitsImageManager
 from imageprocessing.astrofilters import AstroFilters
 from ws.websocket_manager import ws_manager

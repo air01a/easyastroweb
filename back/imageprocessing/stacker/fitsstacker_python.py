@@ -7,7 +7,8 @@ from scipy import stats
 import logging
 from pathlib import Path
 import threading
-
+from utils.logger import logger
+from time import sleep
 from imageprocessing.fitsprocessor import FitsImageManager
 
 class ImageStacker:
@@ -16,7 +17,7 @@ class ImageStacker:
     Utilise astroalign pour l'alignement et un sigma clipping winsorisé pour le stacking.
     """
     
-    def __init__(self, sigma_threshold: float = 3.0, max_history: int = 5):
+    def __init__(self, sigma_threshold: float = 3.0, max_history: int = 5, dark = None):
         """
         Initialise le stacker d'images.
         
@@ -24,12 +25,18 @@ class ImageStacker:
             sigma_threshold: Seuil pour le sigma clipping
             max_history: Nombre d'images à garder en historique pour le sigma clipping
         """
+        self.logger = logger
+
         self.sigma_threshold = sigma_threshold
         self.max_history = max_history
         self.callback = None  # Sera assigné après création
         
         # Instancier FitsImageManager une seule fois
-        self.fits_manager = FitsImageManager(auto_debayer=True, auto_normalize=True)
+        self.fits_manager = FitsImageManager(auto_debayer=True, auto_normalize=True )
+
+        self.dark_file = dark
+        if dark is not None:
+            self.fits_manager.set_dark_from_file(dark)
         
         # Queues pour communication inter-processus
         self.input_queue = mp.Queue()
@@ -50,12 +57,10 @@ class ImageStacker:
         # Compteurs pour synchronisation (gérés via sync_queue)
         self.images_added = 0
         self.images_processed = 0
-        
+        self.path = None
         # Configuration logging
-        logging.basicConfig(level=logging.INFO)
-        self.logger = logging.getLogger(__name__)
     
-    def start(self):
+    def start_live_stacking(self):
         """Démarre le processus de stacking."""
         if self.is_running:
             self.logger.warning("Le processus est déjà en cours d'exécution")
@@ -74,7 +79,7 @@ class ImageStacker:
         self.is_running = True
         self.logger.info("Processus de stacking démarré")
     
-    def stop(self):
+    def stop_live_stacking(self):
         """Arrête le processus de stacking."""
         if not self.is_running:
             return
@@ -94,7 +99,7 @@ class ImageStacker:
         self.is_running = False
         self.logger.info("Processus de stacking arrêté")
     
-    def add_image(self, image_path: str):
+    def process_new_image(self, image_path: str):
         """
         Ajoute une image à stacker.
         
@@ -174,7 +179,7 @@ class ImageStacker:
                     
                     try:
                         # Appeler le callback dans un try/catch pour éviter de crasher
-                        self.callback(stacked_image, metadata)
+                        self.callback(stacked_image, metadata, self.path)
                     except Exception as e:
                         self.logger.error(f"Erreur dans le callback: {e}")
             except queue.Empty:
@@ -192,7 +197,8 @@ class ImageStacker:
         
         logger = logging.getLogger(f"{__name__}.worker")
         logger.info("Worker process démarré")
-        
+        image_batch = []
+
         while True:
             try:
                 # Vérifier les commandes de contrôle
@@ -205,77 +211,103 @@ class ImageStacker:
                     pass
                 
                 # Traiter les nouvelles images
-                try:
-                    image_path = self.input_queue.get(timeout=1.0)
-                    logger.info(f"Traitement de l'image: {image_path}")
+
+                while True:
+                    try:
+                        image_path = self.input_queue.get_nowait()
+                        image_batch.append(image_path)
+                    except queue.Empty:
+                        break
+
+                if len(image_batch)==0:
+                    sleep(1)
+                    continue
+
+                image_path = image_batch[-1]
+                logger.info(f"Traitement de l'image: {image_path}")
+                
+                # Charger l'image
+                image_data, header = self._load_fits_image(image_path)
+                if image_data is None:
+                    continue
+                if reference_image is None:
+                    # Première image = référence
+                    reference_image = image_data.copy()
+                    stacked_image = image_data.copy()
+                    image_history = [image_data.copy()]
+                    total_images_processed = 1
                     
-                    # Charger l'image
-                    image_data, header = self._load_fits_image(image_path)
-                    if image_data is None:
+                    metadata = {
+                        'total_images': total_images_processed,
+                        'last_image_path': image_path,
+                        'shape': stacked_image.shape,
+                        'image_type': 'color' if len(stacked_image.shape) == 3 else 'grayscale',
+                        'channels': stacked_image.shape[2] if len(stacked_image.shape) == 3 else 1
+                    }
+                    
+                    self.output_queue.put((stacked_image.copy(), metadata))
+                    logger.info("Image de référence définie et envoyée")
+                    
+                else:
+                    # Aligner l'image sur la référence
+                    aligned_image = self._align_image(image_data, reference_image)
+                    if aligned_image is None:
+                        logger.warning(f"Impossible d'aligner l'image: {image_path}")
+                        self.output_queue.put((stacked_image.copy(), {'error': 'Alignment failed', 'image_path': image_path}))
                         continue
                     
-                    if reference_image is None:
-                        # Première image = référence
-                        reference_image = image_data.copy()
-                        stacked_image = image_data.copy()
-                        image_history = [image_data.copy()]
-                        total_images_processed = 1
-                        
-                        metadata = {
-                            'total_images': total_images_processed,
-                            'last_image_path': image_path,
-                            'shape': stacked_image.shape,
-                            'image_type': 'color' if len(stacked_image.shape) == 3 else 'grayscale',
-                            'channels': stacked_image.shape[2] if len(stacked_image.shape) == 3 else 1
-                        }
-                        
-                        self.output_queue.put((stacked_image.copy(), metadata))
-                        logger.info("Image de référence définie et envoyée")
-                        
-                    else:
-                        # Aligner l'image sur la référence
-                        aligned_image = self._align_image(image_data, reference_image)
-                        if aligned_image is None:
-                            logger.warning(f"Impossible d'aligner l'image: {image_path}")
-                            continue
-                        
-                        # Appliquer le sigma clipping winsorisé
-                        processed_image = self._winsorized_sigma_clip(
-                            aligned_image, image_history
-                        )
-                        
-                        # Mettre à jour l'historique
-                        image_history.append(processed_image.copy())
-                        if len(image_history) > self.max_history:
-                            image_history.pop(0)
-                        
-                        # Stacker l'image
-                        stacked_image = self._stack_images(stacked_image, processed_image, total_images_processed)
-                        total_images_processed += 1
+                    # Appliquer le sigma clipping winsorisé
+                    processed_image = self._winsorized_sigma_clip(
+                        aligned_image, image_history
+                    )
+                    
+                    # Mettre à jour l'historique
+                    image_history.append(processed_image.copy())
+                    if len(image_history) > self.max_history:
+                        image_history.pop(0)
+                    
+                    # Stacker l'image
+                    stacked_image = self._stack_images(stacked_image, processed_image, total_images_processed)
+                    total_images_processed += 1
 
-                        self.output_queue.put((stacked_image.copy(), metadata))
-                        logger.info(f"Image stackée ({total_images_processed} images au total)")
-                        
-                        # Également sauvegarder directement dans le worker pour debug
-                        if total_images_processed <= 3:  # Sauver les 3 premières pour debug
-                            logger.info(f"Debug - Min/Max dans worker: {np.min(stacked_image):.6f}/{np.max(stacked_image):.6f}")
-                        
-                        metadata = {
-                            'total_images': total_images_processed,
-                            'last_image_path': image_path,
-                            'shape': stacked_image.shape,
-                            'clipped_pixels': np.sum(processed_image != aligned_image),
-                            'image_type': 'color' if len(stacked_image.shape) == 3 else 'grayscale',
-                            'channels': stacked_image.shape[2] if len(stacked_image.shape) == 3 else 1
-                        }
+                    self.output_queue.put((stacked_image.copy(), metadata))
+                    logger.info(f"Image stackée ({total_images_processed} images au total)")
+                    
+                    # Également sauvegarder directement dans le worker pour debug
+                    if total_images_processed <= 3:  # Sauver les 3 premières pour debug
+                        logger.info(f"Debug - Min/Max dans worker: {np.min(stacked_image):.6f}/{np.max(stacked_image):.6f}")
+                    
+                    metadata = {
+                        'total_images': total_images_processed,
+                        'last_image_path': image_path,
+                        'shape': stacked_image.shape,
+                        'clipped_pixels': np.sum(processed_image != aligned_image),
+                        'image_type': 'color' if len(stacked_image.shape) == 3 else 'grayscale',
+                        'channels': stacked_image.shape[2] if len(stacked_image.shape) == 3 else 1
+                    }
                 
-                except queue.Empty:
-                    continue
+
                     
             except Exception as e:
                 logger.error(f"Erreur dans le worker process: {e}")
                 continue
-    
+
+    def set_callback(self, callback, path):
+            """
+            Assigne un callback après le démarrage du processus.
+            Utile pour éviter les problèmes de pickle avec les méthodes d'objet.
+            """
+            self.callback = callback
+            self.path = path
+            # Démarrer le thread callback si pas encore fait
+            if self.is_running and self.callback_thread is None and callback is not None:
+                self.callback_stop_event = threading.Event()
+                self.callback_thread = threading.Thread(target=self._callback_handler)
+                self.callback_thread.daemon = True
+                self.callback_thread.start()
+                self.logger.info("Thread callback démarré")
+
+
     def _load_fits_image(self, image_path: str) -> Tuple[Optional[np.ndarray], Optional[dict]]:
         """Charge une image FITS."""
         try:
@@ -473,13 +505,13 @@ if __name__ == "__main__":
 
     try:
         # Démarrer le processus
-        stacker.start()
+        stacker.start_live_stacking()
         
         print(f"Ajout de {len(fits_files)} images...")
         
         # Ajouter toutes les images
         for path in fits_files:
-            stacker.add_image(path)
+            stacker.process_new_image(path)
             
         print("Toutes les images ajoutées, attente du traitement...")
         

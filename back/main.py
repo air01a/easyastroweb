@@ -57,4 +57,4 @@ async def startup_event():
 
 if __name__ == "__main__":
     import uvicorn 
-    uvicorn.run("main:app", host=config.CONFIG['global']["server_ip"], port=config.CONFIG['global']["server_port"], reload=True)
+    uvicorn.run("main:app", host=config.CONFIG['global']["server_ip"], port=config.CONFIG['global']["server_port"], reload=config.CONFIG['global']["mode_debug"])
