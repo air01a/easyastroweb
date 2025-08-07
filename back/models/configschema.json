@@ -1,4 +1,28 @@
 [
+    {
+    "fieldName": "globl_position",
+    "description": "Global options",
+    "fieldType": "SEPARATOR",
+    "varType": "STR",
+    "defaultValue": "",
+    "required":false
+  },
+      {
+    "fieldName": "log_level",
+    "description": "Log Level",
+    "fieldType": "SELECT",
+    "varType": "STR",
+    "defaultValue": "INFO",
+    "possibleValue": [
+      "DEBUG",
+      "INFO",
+      "WARNING",
+      "ERROR",
+      "CRITICAL"
+    ],
+    "required":true
+  },
+
   {
     "fieldName": "plate_solver_options",
     "description": "Plate solving",

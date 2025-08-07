@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-import threading
 import time
 from models.observation import StopScheduler, Observation
 from models.state import telescope_state
