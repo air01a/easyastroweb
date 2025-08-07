@@ -3,9 +3,9 @@
 EasyAstro is a full-featured web application for automating deep-sky astrophotography.  
 It combines a **React** frontend and a **Python FastAPI** backend to orchestrate the entire process: from site and equipment management to automated capture and live stacking.
 
-Initially, the live stacking was self made in python, but for short exposure, the time to stack is too big, so I now rely on siril. I discovered that there is a lot of bugs with pysiril and lot of change, so I'll develop my own fit stacker in c++.
+Initially, I developped a fits stacker in python, but it was too slow if used with short exposures, so I switched to siril. But there is a lot of bugs with siril, and the python client (pysiril) is not stable. And, with siril, it was quite hard to find if the stacking was ok or not, has the client always return False. So I made a new stacker, using multi process for improving the speed. It always try to stack the last available image, it is slow but ok for live stacking. 
 
-This projects works, but there is still a lot of things to do before releasing the v1...
+This projects works, but there is still a lot of things to do before releasing the v1... It works very well with the simulator, but I now have to try it in the real world :)
 
 
 Work in progress
