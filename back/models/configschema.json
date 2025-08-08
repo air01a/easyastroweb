@@ -187,6 +187,15 @@
     "defaultValue": 20,
     "required":true
   },  
+    {
+    "fieldName": "live_stacking_image_size",
+    "description": "Live stacking image size (0 for no reduction)",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 800,
+    "required":true
+  }, 
+
   {
     "fieldName": "initial_stretch",
     "description": "Default value for histogram strech",

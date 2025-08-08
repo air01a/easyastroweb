@@ -159,7 +159,7 @@ class Scheduler(BasicAutomate):
             directory = self.fit_path / Path(f"{time.strftime('%Y-%m-%d')}-{obs.object.replace(' ', '_')}")
             directory.mkdir(exist_ok=True)
 
-            self.stacker = ImageStacker(sigma_threshold=3.0, max_history=5, dark=dark)
+            self.stacker = ImageStacker(sigma_threshold=3.0, max_history=5, dark=dark, target_width=CONFIG['global'].get("live_stacking_image_size", 800))
             self.stacker.start_live_stacking()
 
             stacked_directory = directory / Path("stacked")

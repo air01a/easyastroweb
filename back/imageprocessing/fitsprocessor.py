@@ -7,6 +7,7 @@ import warnings
 from PIL import Image
 import tifffile as tiff
 from pathlib import Path
+from cv2 import resize, INTER_AREA
 
 try:
     from colour_demosaicing import demosaicing_CFA_Bayer_bilinear, demosaicing_CFA_Bayer_Malvar2004
@@ -270,7 +271,79 @@ class FitsImageManager:
         return debayered
     
     
+    def bin_image(image, bin_factor=2):
+        """
+        Binning compatible N&B et couleur
+        
+        Args:
+            image: Array (H,W) pour N&B ou (H,W,C) pour couleur
+            bin_factor: Facteur de binning (2 = 2x2, 3 = 3x3, etc.)
+        
+        Returns:
+            Array binnée de taille réduite
+        """
+        if len(image.shape) == 2:
+            # Image N&B (H, W)
+            h, w = image.shape
+            new_h, new_w = h // bin_factor, w // bin_factor
+            
+            binned = image[:new_h*bin_factor, :new_w*bin_factor]
+            binned = binned.reshape(new_h, bin_factor, new_w, bin_factor)
+            return binned.mean(axis=(1, 3))
+        
+        elif len(image.shape) == 3:
+            # Image couleur (H, W, C)
+            h, w, c = image.shape
+            new_h, new_w = h // bin_factor, w // bin_factor
+            
+            binned = image[:new_h*bin_factor, :new_w*bin_factor, :]
+            binned = binned.reshape(new_h, bin_factor, new_w, bin_factor, c)
+            return binned.mean(axis=(1, 3))  # Moyenne sur les dimensions de binning
+        
+        else:
+            raise ValueError(f"Format d'image non supporté: {image.shape}")    
+
+
+    def resize_image_cv2(image: np.ndarray, target_width: int, interpolation=INTER_AREA) -> np.ndarray:
+        """
+        Redimensionne une image avec OpenCV (compatible N&B et couleur).
+        
+        Args:
+            image: Array NumPy (H,W) pour N&B ou (H,W,C) pour couleur
+            target_width: Largeur cible en pixels
+            interpolation: Méthode d'interpolation OpenCV
+                        - cv2.INTER_AREA (défaut) : Optimal pour réduction
+                        - cv2.INTER_CUBIC : Meilleur pour agrandissement
+                        - cv2.INTER_LINEAR : Plus rapide
+        
+        Returns:
+            Image redimensionnée en gardant les proportions
+        """
+        if len(image.shape) < 2:
+            raise ValueError("L'image doit avoir au moins 2 dimensions")
+        
+        h, w = image.shape[:2]
+        
+        # Si déjà à la bonne taille ou plus petite
+        if w <= target_width:
+            return image
+        
+        # Calculer les nouvelles dimensions en gardant le ratio
+        ratio = target_width / w
+        new_height = int(h * ratio)
+        
+        # Redimensionner (cv2 gère automatiquement N&B et couleur)
+        return resize(image, (target_width, new_height), interpolation=interpolation)
     
+
+    @classmethod
+    def quick_process(cls, filename, auto_deblayer=True, auto_normalize=False):
+        # cls = FitsManager (la classe)
+        # On peut créer une instance avec cls()
+        instance = cls(auto_deblayer, auto_normalize)
+        return instance.process_file(filename)
+
+
     def save_fits(self, image : FitsImage, output_filename: str, preserve_original_format: bool = True) -> None:
         """
         Sauvegarde l'image traitée au format FITS.

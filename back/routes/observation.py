@@ -60,11 +60,7 @@ def transform_to_jpg(image):
             )
 
 
-        if len(image.shape)<3:
-            # Appliquer les filtres 
-            sensor, bayer, color_type = telescope_interface.get_bayer_pattern()
-            if bayer:
-                image = fits_manager.debayer(image, bayer)
+        
         image = fits_manager.normalize(image)
         processed_image =  astro_filters.replace_lowest_percent_by_zero(astro_filters.auto_stretch(image, telescope_state.image_settings.stretch, algo=0, shadow_clip=-2),telescope_state.image_settings.black_point)
         #processed_image = astro_filters.asinh_stretch_color(image, 0.2)
@@ -138,10 +134,30 @@ def get_last_stacked_image():
 @router.get("/last_image")
 def get_last_image():
     """
-    Retourne une image depuis le dossier images/ au format JPG
+    Return the last image taken by the telescope
+    If the image is not set, return a waiting image
+    The binning is done here instead just after the image is taken for performance reasons
     """
     if telescope_state.last_picture is not None:
         image = telescope_state.last_picture.copy()
+
+        if len(image.shape)<3:
+            # Appliquer les filtres 
+            sensor, bayer, color_type = telescope_interface.get_bayer_pattern()
+            if bayer:
+                image = fits_manager.debayer(image, bayer)
+                telescope_state.last_picture = image.copy()
+                
+        target_width = CONFIG['global'].get("live_stacking_image_size", 800)
+        if target_width>0:
+            # Redimensionner l'image si la taille est spécifiée
+            if image.shape[0] > target_width:
+                h, w = image.shape[:2]
+                bin_factor = max(1, w // target_width)
+                if bin_factor >= 2:
+                    image = FitsImageManager.bin_image(image, bin_factor)
+                    print("Reducing image last captured image to", target_width, "pixels width"," bin factor", bin_factor)
+                    telescope_state.last_picture = image.copy()
     else:
         image=None
     return transform_to_jpg(image)

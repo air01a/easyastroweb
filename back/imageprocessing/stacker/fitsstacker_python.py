@@ -17,7 +17,7 @@ class ImageStacker:
     Uses astroalign for alignment and winsorized sigma clipping for stacking.
     """
     
-    def __init__(self, sigma_threshold: float = 3.0, max_history: int = 5, dark = None):
+    def __init__(self, sigma_threshold: float = 3.0, max_history: int = 5, dark = None, target_width: int = 800):
         """
         Initialize the image stacker.
         
@@ -30,7 +30,7 @@ class ImageStacker:
         self.sigma_threshold = sigma_threshold
         self.max_history = max_history
         self.callback = None  # Will be assigned after creation
-        
+        self.target_width = target_width
         # Instantiate FitsImageManager once
         self.fits_manager = FitsImageManager(auto_debayer=True, auto_normalize=True )
 
@@ -187,7 +187,21 @@ class ImageStacker:
             except Exception as e:
                 self.logger.error(f"Error in callback handler: {e}")
                 break
-    
+
+
+    def prepare_for_live_stacking(self, image):
+        """Optimal pour live stacking astro"""
+        if self.target_width <= 0:
+            return image
+        h, w = image.shape[:2]
+        bin_factor = max(1, w // self.target_width)
+        logger.info(f"[Stacker] - Preparing image for live stacking: original size {w}x{h}, bin factor {bin_factor}")
+        if bin_factor >= 2:
+            return FitsImageManager.bin_image(image, bin_factor)  # ✅ BINNING
+        else:
+            return image  # Small enough, no binning needed
+        
+
     def _worker_process(self):
         """Worker process that performs alignment and stacking."""
         stacked_image = None
@@ -228,6 +242,7 @@ class ImageStacker:
                 
                 # Load the image
                 image_data, header = self._load_fits_image(image_path)
+                image_data = self.prepare_for_live_stacking(image_data)
                 if image_data is None:
                     continue
                 if reference_image is None:
