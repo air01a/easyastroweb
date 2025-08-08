@@ -107,6 +107,7 @@ const AltitudeChart: React.FC<AltitudeChartProps> = ({
         }
       }}
       layout={{
+        autosize: true,
         paper_bgcolor: '#a4a4a8',
         plot_bgcolor: '#a4a4a8',
         dragmode: 'select',
@@ -173,7 +174,7 @@ const AltitudeChart: React.FC<AltitudeChartProps> = ({
         hovermode: 'closest',
       }}
       config={{
-        responsive: false,
+        responsive: true,
         displayModeBar: false,
         scrollZoom: false,
         displaylogo: false,

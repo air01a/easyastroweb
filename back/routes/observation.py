@@ -52,7 +52,6 @@ def transform_to_jpg(image):
     try:
 
         if image is None:
-            print("No image")
             return FileResponse(
                 path=(CURRENT_DIR.parent / Path("assets") /  Path("image_waiting.png")).resolve(),
                 media_type="image/png",  # Adapter selon le type d'image
@@ -147,7 +146,7 @@ def get_last_image():
             if bayer:
                 image = fits_manager.debayer(image, bayer)
                 telescope_state.last_picture = image.copy()
-                
+
         target_width = CONFIG['global'].get("live_stacking_image_size", 800)
         if target_width>0:
             # Redimensionner l'image si la taille est spécifiée
@@ -156,7 +155,6 @@ def get_last_image():
                 bin_factor = max(1, w // target_width)
                 if bin_factor >= 2:
                     image = FitsImageManager.bin_image(image, bin_factor)
-                    print("Reducing image last captured image to", target_width, "pixels width"," bin factor", bin_factor)
                     telescope_state.last_picture = image.copy()
     else:
         image=None
