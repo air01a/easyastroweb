@@ -223,7 +223,7 @@ class ImageStacker:
                     sleep(1)
                     continue
 
-                image_path = image_batch[-1]
+                image_path = image_batch.pop()
                 logger.info(f"Processing image: {image_path}")
                 
                 # Load the image
