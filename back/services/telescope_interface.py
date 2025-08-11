@@ -10,6 +10,7 @@ from models.telescope_interface import TelescopeInterface
 from imageprocessing.fitsprocessor import FitsImageManager
 from utils.calcul import apply_focus_blur
 from datetime import datetime, timezone
+import random
 
 class AlpacaTelescope(TelescopeInterface):
 
@@ -229,7 +230,7 @@ class SimulatorTelescope(TelescopeInterface):
     def __init__(self):
         super().__init__()
         self.fits_dir = Path(CONFIG["global"].get("simulator_light_directory",".")) #        "D:/Astronomie/observations/2024-02-12/DARK"
-        self.fits_files =  (list(self.fits_dir.glob("*.fit")) + list(self.fits_dir.glob("*.fits")))
+        self.fits_files =  sorted(list(self.fits_dir.glob("*.fit")) + list(self.fits_dir.glob("*.fits")))
         self.fits_manager = FitsImageManager(auto_debayer=False)
 
         self.dark_dir = Path(CONFIG["global"].get("simulator_dark_directory",".")) #        "D:/Astronomie/observations/2024-02-12/DARK"
@@ -252,22 +253,82 @@ class SimulatorTelescope(TelescopeInterface):
         logger.info(f"[SIMULATOR] - Setting date to {date}")
         # In a real implementation, this would set the date in the simulator environment.
         # Here we just log it for demonstration purposes.
+    def _add_satellite_trail(self, image_data):
+        """
+        Ajoute une trace de satellite diagonale sur l'image.
+        
+        Args:
+            image_data: Données de l'image (numpy array)
+            
+        Returns:
+            Image avec la trace de satellite ajoutée
+        """
+        import numpy as np
+        
+        # Copie pour ne pas modifier l'original
+        modified_data = image_data.copy()
+        
+        # Déterminer les dimensions
+        if len(modified_data.shape) == 2:  # Image en niveaux de gris
+            h, w = modified_data.shape
+            
+            # Créer une ligne diagonale du coin supérieur gauche au coin inférieur droit
+            for i in range(min(h, w)):
+                # Ligne principale
+                if i < h and i < w:
+                    # Valeur du satellite (très brillante)
+                    satellite_value = np.max(modified_data) * 2.0  # 2x plus brillant que le maximum
+                    modified_data[i, i] = min(satellite_value, 65535)  # Limiter pour éviter overflow
+                    
+                    # Ajouter un peu d'épaisseur à la trace
+                    for offset in [-1, 1]:
+                        if 0 <= i + offset < h and 0 <= i < w:
+                            modified_data[i + offset, i] = min(satellite_value * 0.7, 65535)
+                        if 0 <= i < h and 0 <= i + offset < w:
+                            modified_data[i, i + offset] = min(satellite_value * 0.7, 65535)
+        
+        elif len(modified_data.shape) == 3:  # Image couleur
+            h, w, c = modified_data.shape
+            
+            # Pour les images couleur, appliquer la trace sur tous les canaux
+            for i in range(min(h, w)):
+                if i < h and i < w:
+                    # Satellite blanc (tous les canaux au maximum)
+                    satellite_value = np.max(modified_data) * 2.0
+                    for channel in range(c):
+                        modified_data[i, i, channel] = min(satellite_value, 65535)
+                        
+                        # Épaisseur de la trace
+                        for offset in [-1, 1]:
+                            if 0 <= i + offset < h and 0 <= i < w:
+                                modified_data[i + offset, i, channel] = min(satellite_value * 0.7, 65535)
+                            if 0 <= i < h and 0 <= i + offset < w:
+                                modified_data[i, i + offset, channel] = min(satellite_value * 0.7, 65535)
+        
+        logger.info(f"[SIMULATION] Satellite trail added to image (index=0)")
+        return modified_data
+
 
     def camera_capture(self, expo: float, light: bool = True):
         try:
             if light:
-        
+                
                 new = self.fits_manager.open_fits(self.fits_files[self.index])
                 if self.focuser_position!=25000:
                     new.data = self.fits_manager.debayer(new.data, new.bayer_pattern)
                     new.data = apply_focus_blur(new.data, self.focuser_position, 25000, 0.01)
                     new.data = self.fits_manager._convert_to_bayer(new.data, new.bayer_pattern)
-            
+
+                if random.random() < 1/40:
+                    new.data = self._add_satellite_trail(new.data)
+                    
                 self.index = (self.index + 1) % len(self.fits_files)
 
             else:
                 new = self.fits_manager.open_fits(self.dark_files[self.index_dark])
                 self.index_dark = (self.index_dark + 1) % len(self.dark_files)
+
+
 
             sleep(expo)
             self.bayer = new.bayer_pattern

@@ -209,6 +209,7 @@ class ImageStacker:
         reference_image = None
         total_images_processed = 0
         
+        restack_done = False
         logger = logging.getLogger(f"{__name__}.worker")
         logger.info("Worker process started")
         image_batch = []
@@ -261,15 +262,40 @@ class ImageStacker:
                     }
                     
                     self.output_queue.put((stacked_image.copy(), metadata))
-                    logger.info("Reference image set and sent")
+                    logger.info("[Stacker] - Reference image set and sent")
                     
                 else:
                     # Align the image to the reference
                     aligned_image = self._align_image(image_data, reference_image)
                     if aligned_image is None:
-                        logger.warning(f"Unable to align image: {image_path}")
+                        logger.warning(f"[Stacker] - Unable to align image: {image_path}")
                         self.output_queue.put((stacked_image.copy(), {'error': 'Alignment failed', 'image_path': image_path}))
                         continue
+
+
+
+                    # Restack first images for sigma clipping reference image
+                    # This is done only once after the first images are processed
+                    # Without this, the reference image (the first one) could lead to unwanted artefacts (satellite trails, etc.)
+                    if not restack_done and total_images_processed == self.max_history:
+                        logger.info("[Stacker] - Restacking images for sigma clipping reference")
+                        stacked_image = None
+                        images = image_history.copy()
+                        for image in images:
+                            processed_image = self._winsorized_sigma_clip(
+                                image, image_history
+                            )
+                            # Update history
+                            image_history.append(processed_image.copy())
+                            if len(image_history) > self.max_history:
+                                image_history.pop(0)
+                            if stacked_image is None:
+                                stacked_image = processed_image.copy()
+                            else:
+                                stacked_image = self._stack_images(stacked_image, processed_image, total_images_processed)
+                        restack_done = True
+                        logger.info("[Stacker] - Restacking images for sigma clipping reference done")
+
                     
                     # Apply winsorized sigma clipping
                     processed_image = self._winsorized_sigma_clip(
