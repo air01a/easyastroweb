@@ -297,10 +297,16 @@ class ImageStacker:
                         logger.info("[Stacker] - Restacking images for sigma clipping reference done")
 
                     
-                    # Apply winsorized sigma clipping
-                    processed_image = self._winsorized_sigma_clip(
-                        aligned_image, image_history
-                    )
+                    if not restack_done:
+                        # Apply winsorized sigma clipping
+                        processed_image = self._winsorized_sigma_clip(
+                            aligned_image, image_history
+                        )
+                    else:
+                        # Apply simple outlier rejection
+                        processed_image = self._simple_outlier_rejection(
+                            aligned_image, stacked_image
+                        )
                     
                     # Update history
                     image_history.append(processed_image.copy())
@@ -401,6 +407,60 @@ class ImageStacker:
             self.logger.error(f"Alignment error: {e}")
             return None
     
+    def _simple_outlier_rejection(self, new_image: np.ndarray, reference_image: np.ndarray, 
+                            threshold_factor: float = 3.0) -> np.ndarray:
+        """
+        Rejette les pixels aberrants en comparant avec l'image de référence.
+        
+        Args:
+            new_image: Nouvelle image à nettoyer
+            reference_image: Image de référence
+            threshold_factor: Facteur de seuil pour la détection d'outliers
+            
+        Returns:
+            Image nettoyée
+        """
+        # Calcul de la différence absolue
+        diff = np.abs(new_image.astype(np.float32) - reference_image.astype(np.float32))
+        
+        if len(new_image.shape) == 3:
+            # Images couleur - traiter chaque canal
+            cleaned_image = new_image.copy()
+            
+            for channel in range(new_image.shape[2]):
+                # Seuil adaptatif basé sur les statistiques locales de la différence
+                channel_diff = diff[:, :, channel]
+                
+                # Utiliser le percentile pour un seuil adaptatif
+                threshold = np.percentile(channel_diff, 95) * threshold_factor
+                
+                # Alternative : seuil basé sur la médiane + MAD
+                # median_diff = np.median(channel_diff)
+                # mad_diff = np.median(np.abs(channel_diff - median_diff))
+                # threshold = median_diff + threshold_factor * mad_diff * 1.4826
+                
+                outlier_mask = channel_diff > threshold
+                
+                # Remplacer les outliers par la valeur de référence
+                cleaned_image[:, :, channel][outlier_mask] = reference_image[:, :, channel][outlier_mask]
+                
+                outlier_percent = np.sum(outlier_mask) / outlier_mask.size
+                logger.info(f"[Stacker] - Channel {channel}: {outlier_percent:.1%} outliers rejected")
+                
+        else:
+            # Images en niveaux de gris
+            threshold = np.percentile(diff, 95) * threshold_factor
+            outlier_mask = diff > threshold
+            
+            cleaned_image = new_image.copy()
+            cleaned_image[outlier_mask] = reference_image[outlier_mask]
+            
+            outlier_percent = np.sum(outlier_mask) / outlier_mask.size
+            logger.debug(f"[Stacker] - {outlier_percent:.1%} outliers rejected")
+        
+        return cleaned_image
+
+
     def _winsorized_sigma_clip(self, image: np.ndarray, history: List[np.ndarray]) -> np.ndarray:
         """
         Apply winsorized sigma clipping by comparing with image history.
