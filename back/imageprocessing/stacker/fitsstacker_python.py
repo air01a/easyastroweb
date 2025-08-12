@@ -17,7 +17,7 @@ class ImageStacker:
     Uses astroalign for alignment and winsorized sigma clipping for stacking.
     """
     
-    def __init__(self, sigma_threshold: float = 3.0, max_history: int = 5, dark = None, target_width: int = 800):
+    def __init__(self, sigma_threshold: float = 4, max_history: int = 7, dark = None, target_width: int = 800):
         """
         Initialize the image stacker.
         
@@ -33,7 +33,7 @@ class ImageStacker:
         self.target_width = target_width
         # Instantiate FitsImageManager once
         self.fits_manager = FitsImageManager(auto_debayer=True, auto_normalize=True )
-
+        self.sigma_history = []  # History of images for sigma clipping
         self.dark_file = dark
         if dark is not None:
             self.fits_manager.set_dark_from_file(dark)
@@ -190,7 +190,7 @@ class ImageStacker:
 
 
     def prepare_for_live_stacking(self, image):
-        """Optimal pour live stacking astro"""
+        """Optimal size for live stacking """
         if self.target_width <= 0:
             return image
         h, w = image.shape[:2]
@@ -435,16 +435,20 @@ class ImageStacker:
                 robust_std = mad_channel * 1.4826
                 
                 # Avoid division by zero
-                robust_std = np.maximum(robust_std, np.percentile(robust_std, 1))
-                
+                robust_std = np.maximum(robust_std, np.percentile(robust_std, 5))
+                logger.info(f"[Stacker] - Channel {channel} robust std: {np.mean(robust_std):.6f}")
                 # Identify outlier pixels for this channel
                 deviation = np.abs(image[:, :, channel] - median_channel)
                 outlier_mask = deviation > (self.sigma_threshold * robust_std)
                 
                 # Clip only if the percentage of outliers is reasonable (< 20%)
                 outlier_percentage = np.sum(outlier_mask) / outlier_mask.size
-                if outlier_percentage < 0.2:
+                if outlier_percentage < 0.4:
+                    logger.info(f"[Stacker] - Clipping percent {outlier_percentage}")
                     clipped_image[:, :, channel][outlier_mask] = median_channel[outlier_mask]
+                else:
+                    logger.info(f"[Stacker] - No clippign as Clipping percent too high : {outlier_percentage}")
+
                 
         else:
             # Grayscale images
@@ -462,12 +466,32 @@ class ImageStacker:
             
             # Clip only if the percentage of outliers is reasonable
             outlier_percentage = np.sum(outlier_mask) / outlier_mask.size
-            if outlier_percentage < 0.2:
+            if outlier_percentage < 0.4:
                 clipped_image = image.copy()
                 clipped_image[outlier_mask] = median_image[outlier_mask]
             else:
                 clipped_image = image.copy()  # No clipping if too many outliers
-        
+        """if outlier_percentage > 0.3:  # Si > 30%
+            self.sigma_threshold *= 1.5  # Relâcher le seuil
+            logger.info(f"[Stacker] - Adjusting sigma threshold: {self.sigma_threshold:.2f} (outlier percentage: {outlier_percentage:.2%})")
+        elif outlier_percentage < 0.05:  # Si < 5%
+            self.sigma_threshold *= 0.9  # Resserrer légèrement
+            logger.info(f"[Stacker] - Adjusting sigma threshold: {self.sigma_threshold:.2f} (outlier percentage: {outlier_percentage:.2%})")"""
+        self.sigma_history.append(outlier_percentage)
+        if len(self.sigma_history) > self.max_history:
+            self.sigma_history.pop(0)
+
+
+        if len(self.sigma_history)>4:
+            mean = sum(self.sigma_history)/len(self.sigma_history)
+            if  mean > 0.3:
+                self.sigma_threshold *= 1.2
+                self.sigma_threshold = min(self.sigma_threshold, 5.0)  # Cap at 10
+                self.logger.info(f"[Stacker] - Adjusting sigma threshold: {self.sigma_threshold:.2f} (mean outlier percentage: {mean:.2%})")
+
+            elif mean < 0.05:
+                self.sigma_threshold *= 0.9
+
         return clipped_image
     
     def _stack_images(self, stacked: np.ndarray, new_image: np.ndarray, count: int) -> np.ndarray:
