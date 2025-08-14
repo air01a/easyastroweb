@@ -1,6 +1,7 @@
 import { useState } from "react";
 import CreatableSelect from "react-select/creatable";
 import type { StylesConfig } from "react-select";
+import { useId } from 'react';
 
 type OptionType = { label: string; value: string };
 
@@ -52,6 +53,7 @@ export default function ComboBoxSelect({options, defaultValue,  onSelectValue}: 
   return (
     <div className="ml-3">
       <CreatableSelect
+        id={useId()}
         isClearable
         onChange={(value) => { setSelected(value); onSelectValue(value?.value ||'')}}
         options={options}

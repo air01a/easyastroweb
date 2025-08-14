@@ -70,7 +70,6 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
   availableExposition = Array.from(expositions, (exposition)=>  { return {label:exposition.toString(), value:exposition.toString()}});
   availableGains = Array.from(gains, (gain)=>  { return {label:gain.toString(), value:gain.toString()}});
 
-  console.log(gains);
 
   return (
     <div className="space-y-4 mt-4 items-center">
@@ -94,7 +93,7 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
         />
         <span>|</span>
         
-        <span>{t('form.exposition')}</span>
+        <span>{t('form.exposition')} </span>
         <ComboBoxSelect 
           options={availableExposition}
           onSelectValue={(value)=> { handleChange(config.id, 'exposureTime', Number(value)) }}
@@ -102,7 +101,7 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
         />
         <span>s |</span>
         
-        <span>{t('form.gain')}</span>
+        <span>{t('form.gain')} </span>
         <ComboBoxSelect 
           options={availableGains}
           onSelectValue={(value)=> { handleChange(config.id, 'gain', Number(value)) }}
@@ -214,7 +213,6 @@ export default function ImageSettings( { initialSettings,  onUpdate, maxDuration
       </div>
     </div>
   ))}
-  
   {(!settings || settings.length === 0) && (
     <Button onClick={addRow}>
       {t('form.configurationAdd')}

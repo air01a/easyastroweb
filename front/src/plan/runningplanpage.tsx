@@ -13,7 +13,8 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
   const [image1, setImage1] = useState<string | null>(null);
   const [image2, setImage2] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
-  const [jobStatus, setJobStatus] = useState<string>("En attente d’instructions...");
+  const [modalImageType, setModalImageType] = useState<'image1' | 'image2' | null>(null);
+  const [jobStatus, setJobStatus] = useState<string>("En attente d'instructions...");
   const { t } = useTranslation();
 
   const connect = useWebSocketStore((state) => state.connect);
@@ -29,15 +30,26 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
 
     fetch(`${baseUrl}/observation/last_stacked_image?t=${timestamp}`)
       .then((res) => res.blob())
-      .then((blob) => setImage1(URL.createObjectURL(blob)));
+      .then((blob) => {
+        const newImageUrl = URL.createObjectURL(blob);
+        setImage1(newImageUrl);
+        // Mettre à jour la modal si elle affiche image1
+        if (modalImageType === 'image1') {
+          setModalImage(newImageUrl);
+        }
+      });
 
     fetch(`${baseUrl}/observation/last_image?t=${timestamp}`)
       .then((res) => res.blob())
-      .then((blob) => setImage2(URL.createObjectURL(blob)));
-
-
+      .then((blob) => {
+        const newImageUrl = URL.createObjectURL(blob);
+        setImage2(newImageUrl);
+        // Mettre à jour la modal si elle affiche image2
+        if (modalImageType === 'image2') {
+          setModalImage(newImageUrl);
+        }
+      });
   };
-
 
   useEffect(() => {
     fetchImages();
@@ -77,6 +89,16 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
     });
   };
 
+  const openModal = (imageUrl: string, imageType: 'image1' | 'image2') => {
+    setModalImage(imageUrl);
+    setModalImageType(imageType);
+  };
+
+  const closeModal = () => {
+    setModalImage(null);
+    setModalImageType(null);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center p-4 space-y-6">
       {/* STATUT */}
@@ -91,14 +113,14 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
           <ImageBox
             src={image1}
             label="Last stacked image"
-            onClick={() => setModalImage(image1)}
+            onClick={() => openModal(image1, 'image1')}
           />
         )}
         {image2 && (
           <ImageBox
             src={image2}
             label="Last image taken"
-            onClick={() => setModalImage(image2)}
+            onClick={() => openModal(image2, 'image2')}
           />
         )}
       </div>
@@ -110,11 +132,11 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
       {modalImage && (
         <div
           className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center"
-          onClick={() => setModalImage(null)}
+          onClick={closeModal}
         >
           <div className="relative max-w-6xl w-full px-4" onClick={(e) => e.stopPropagation()}>
             <button
-              onClick={() => setModalImage(null)}
+              onClick={closeModal}
               className="absolute top-2 right-2 text-white bg-black/60 rounded-full p-1 hover:bg-black/80"
             >
               <X className="w-6 h-6" />
@@ -130,5 +152,3 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
     </div>
   );
 }
-
-
