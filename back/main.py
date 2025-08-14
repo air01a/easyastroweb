@@ -14,9 +14,26 @@ import io
 # Remplace stdout par un flux utf-8
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
-app = FastAPI(title="EasyAstro API", version="1.0.0")
 
-# Configuration CORS
+# Gestionnaire de cycle de vie
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup code
+    # Initialize WebSocket manager with the current event loop
+    ws_manager.set_loop(asyncio.get_running_loop())
+    
+    yield
+    
+    # clean up code
+    pass
+
+app = FastAPI(
+    title="EasyAstro API", 
+    version="1.0.0",
+    lifespan=lifespan  # Lifecycle manager
+)
+
+# CORS Configuration 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -29,20 +46,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Inclusion du router principal
+# Include API routes
 app.include_router(api_router, prefix="/api/v1")
-
 
 # Serve frontend static files
 frontend_path = Path(__file__).parent / "frontend" 
 app.mount("/assets", StaticFiles(directory=frontend_path / "assets"), name="assets")
 app.mount("/catalog", StaticFiles(directory=frontend_path / "catalog"), name="catalog")
-# Route racine `/` => sert index.html
+
+# root `/` => serve index.html
 @app.get("/")
 def serve_index():
     return FileResponse(frontend_path / "index.html")
 
-# Pour toutes les autres routes inconnues, on sert aussi index.html (React Router)
+# For all unknown paths, serve the React app
 @app.get("/frontend/{path:path}")
 def serve_react_app(path: str):
     file_path = frontend_path / path
@@ -51,9 +68,6 @@ def serve_react_app(path: str):
         return FileResponse(file_path)  # ex: favicon.ico
     return FileResponse(frontend_path / "index.html")  # fallback pour React Router
 
-@app.on_event("startup")
-async def startup_event():
-    ws_manager.set_loop(asyncio.get_running_loop())
 
 if __name__ == "__main__":
     import uvicorn 

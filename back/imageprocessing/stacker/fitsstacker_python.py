@@ -410,15 +410,15 @@ class ImageStacker:
     def _simple_outlier_rejection(self, new_image: np.ndarray, reference_image: np.ndarray, 
                             threshold_factor: float = 3.0) -> np.ndarray:
         """
-        Rejette les pixels aberrants en comparant avec l'image de référence.
+        Reject outliers in the new image based on the reference image.
         
         Args:
-            new_image: Nouvelle image à nettoyer
-            reference_image: Image de référence
-            threshold_factor: Facteur de seuil pour la détection d'outliers
+            new_image: new image to process
+            reference_image: reference image for comparison
+            threshold_factor: threashold factor for outlier rejection
             
         Returns:
-            Image nettoyée
+            processed image with outliers replaced by reference values
         """
         # Calcul de la différence absolue
         diff = np.abs(new_image.astype(np.float32) - reference_image.astype(np.float32))

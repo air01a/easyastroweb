@@ -113,8 +113,35 @@ Below are some example screenshots showcasing the main features of **AstroAutoma
 
 ## 🛠️ Installation
 
-> **Note:** This is a high-level guide. Please refer to each component’s documentation for details.
+> **Note:** The installation might be a bit tricky if you are not familiar with React and Python. Once this application reaches a good level of reliability, I will create an EXE file to install it.
 
 1. **Clone the repository**
-   ```bash
-   ...
+    ```bash
+    git clone https://github.com/air01a/easyastroweb
+    ```
+
+2. **Compile react frontend for production**
+    ```bash
+    npm run build
+    ```
+
+3. **Copy the frontend**
+   Get all files in front/dist to back/frontend/
+
+4. **Install lib dependancies for the back**
+    ```bash
+    cd back
+    python -m venv . 
+    scripts/activate
+    pip install -r requirements
+    ```
+
+5. **Run the backend**
+    ```bash
+    python main.py
+    ```
+
+6. **Connect to frontend**
+  Simply go to http://localhost:8000
+
+
