@@ -67,4 +67,20 @@ class WebSocketManager:
                 await self.disconnect(websocket)
                 break
 
+    def close_all_connections(self):
+        async def close_connections():
+            async with self.lock:
+                for connection in self.active_connections:
+                    try:
+                        await connection.close()
+                    except Exception as e:
+                        logger.warning(f"[WebSocket] -  Failed to close connection {connection.client}: {e}")
+                self.active_connections.clear()
+        
+        logger.info(f"[WebSocket] -  Closing all connections")
+        if self.loop and self.loop.is_running():
+            asyncio.run_coroutine_threadsafe(close_connections(), self.loop)
+        else:
+            logger.error("[WebSocket] - Cannot close connections: asyncio loop is not running.")
+
 ws_manager = WebSocketManager()

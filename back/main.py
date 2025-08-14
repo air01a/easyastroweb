@@ -21,10 +21,9 @@ async def lifespan(app: FastAPI):
     # Startup code
     # Initialize WebSocket manager with the current event loop
     ws_manager.set_loop(asyncio.get_running_loop())
-    
     yield
-    
     # clean up code
+    ws_manager.close_all_connections()
     pass
 
 app = FastAPI(
@@ -40,6 +39,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        f"http://*:{config.CONFIG['global']["server_port"]}"
     ], 
     allow_credentials=True,
     allow_methods=["*"],
