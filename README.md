@@ -7,6 +7,8 @@ Initially, I developped a fits stacker in python, but it was too slow if used wi
 
 This projects works, but there is still a lot of things to do before releasing the v1... It works very well with the simulator, but I now have to try it in the real world :)
 
+For now, only the alpaca client has been developped. The next will be indi, and after, the legacy ascom. While indi has not been developped, this software can only be used on windows. 
+
 
 Work in progress
 ![Project Status](https://img.shields.io/badge/status-WIP-yellow)
