@@ -16,10 +16,9 @@ class AlpacaTelescope(TelescopeInterface):
 
     def camera_capture(self, expo: float, light: bool = True):
         try:
-            delay=expo
-            expo = ExposureSettings(duration=expo)
-            alpaca_camera_client.start_exposure(expo)
-            sleep(delay)
+            expo_params = ExposureSettings(duration=expo)
+            alpaca_camera_client.start_exposure(expo_params)
+            sleep(expo)
             while alpaca_camera_client.get_camera_state()==CameraState.EXPOSING:
                 sleep(1)
 
@@ -34,7 +33,7 @@ class AlpacaTelescope(TelescopeInterface):
 
             return image
         except Exception as e:
-            print(e)
+            logger.error(f"[CAMERA] - Alpaca Error {e}")
             return None
         
     def set_gain(self, gain: int):
