@@ -78,7 +78,7 @@ async def create_dark(numero_camera: str, plan: List[DarkLibraryType] = Body(...
 async def stop_dark(body: dict = Body(default={}, embed=False)) -> bool:
     """Retrieve the list of darks for a camera."""
     telescope_state.dark_processor.request_stop()
-    if telescope_state.dark_processor.is_alive():
+    if telescope_state.dark_processor and telescope_state.dark_processor.is_alive():
         telescope_state.dark_processor.join(timeout=5)
     
 

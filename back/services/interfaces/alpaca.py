@@ -16,12 +16,13 @@ class AlpacaTelescope(TelescopeInterface):
 
     def camera_capture(self, expo: float, light: bool = True):
         try:
-            delay = expo+0.1*expo
+            delay=expo
             expo = ExposureSettings(duration=expo)
             alpaca_camera_client.start_exposure(expo)
+            sleep(delay)
             while alpaca_camera_client.get_camera_state()==CameraState.EXPOSING:
-                sleep(delay)
-                delay=1
+                sleep(1)
+
             image =  alpaca_camera_client.get_image_array()
             image.data = np.array(image.data)
             if image.data.ndim == 2:
