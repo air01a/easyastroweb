@@ -16,10 +16,12 @@ class AlpacaTelescope(TelescopeInterface):
 
     def camera_capture(self, expo: float, light: bool = True):
         try:
+            delay = expo+0.1*expo
             expo = ExposureSettings(duration=expo)
             alpaca_camera_client.start_exposure(expo)
             while alpaca_camera_client.get_camera_state()==CameraState.EXPOSING:
-                sleep(1)
+                sleep(delay)
+                delay=1
             image =  alpaca_camera_client.get_image_array()
             image.data = np.array(image.data)
             if image.data.ndim == 2:
@@ -158,20 +160,20 @@ class AlpacaTelescope(TelescopeInterface):
 
     def connect(self):
         try:
-            telescope_interface.focuser_connect()
+            self.focuser_connect()
             telescope_state.is_focuser_connected = True
         except:
             telescope_state.is_focuser_connected = False
             
         try:
-            telescope_interface.camera_connect()
+            self.camera_connect()
             telescope_state.is_camera_connected = True
         except Exception as e:
             telescope_state.is_camera_connected = False
             logger.error(f"[CAMERA] - Error connecting camera: {e}")
 
         try:
-            telescope_interface.telescope_connect()
+            self.telescope_connect()
             telescope_state.is_telescope_connected = True
         except:
             telescope_state.is_telescope_connected = False  

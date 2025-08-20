@@ -308,6 +308,14 @@
     "defaultValue": false,
     "required":true
   },
+    {
+    "fieldName": "reload_on_change",
+    "description": "Automatic reload on code change",
+    "fieldType": "CHECKBOX",
+    "varType": "BOOL",
+    "defaultValue": false,
+    "required":true
+  },
      {
     "fieldName": "simulator_options",
     "description": "Simulator options",
