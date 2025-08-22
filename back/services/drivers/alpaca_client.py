@@ -474,11 +474,19 @@ class ImageData(BaseModel):
 
 class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
     """Client ASCOM Alpaca synchrone pour caméra"""
+    DTYPE_MAP = {
+        1: np.int16, 2: np.int32, 3: np.float64, 4: np.float32,
+        5: np.uint64, 6: np.uint8, 7: np.int64, 8: np.uint16, 9: np.uint32,
+    }
+
 
     def __init__(self, host="localhost", port=11111, device_number=0):
         super().__init__(ASCOMDeviceType.CAMERA, host, port, device_number)
         self.last_exposure=0
         self.last_time=None
+        self._cached_dimensions = None
+        self._image_buffer = None
+        self._buffer_shape = None
 
     def set_camera_gain(self, gain: int)-> None :
         self._make_request("PUT", "gain", {
@@ -587,43 +595,39 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         """Vérifie si une image est prête"""
         result = self._make_request("GET", "imageready")
         return result.get("Value", False)
+    
+    def parse_alpaca_imagebytes(self, raw: bytes) -> np.ndarray:
+        header = struct.unpack_from("<11i", raw, 0)
+        _, err_num, _, _, data_start, _, transmission_elem_type, rank, dim1, dim2, dim3 = header
+        
+        if err_num != 0:
+            raise RuntimeError(f"Alpaca camera error {err_num}")
+        
+        dtype = self.DTYPE_MAP.get(transmission_elem_type)
+        if dtype is None:
+            raise ValueError(f"Unsupported TransmissionElementType {transmission_elem_type}")
+        
+        shape = (dim2, dim1) if rank == 2 else (dim3, dim2, dim1) if rank == 3 else None
+        if shape is None:
+            raise ValueError(f"Unsupported rank {rank}")
+        
+        img_bytes = raw[data_start:]
+        total_elements = np.prod(shape)
+        return np.frombuffer(img_bytes, dtype=dtype, count=total_elements).reshape(shape)
+
 
     def get_image_array(self) -> ImageData:
-        """Récupère les données d'image sous forme de tableau"""
-        raw = self._make_request("GET", "imagearray", byte_array=True, raw_response=True)
-        header = struct.unpack("<11i", raw[:44])
-        width  = header[0]
-        height = header[1]
-        element_type = header[2]
-
-        dtype = np.int16
-
-        if  element_type == 2:
-            dtype = np.int32
-        elif element_type == 3:
-            dtype = np.float64
-
-
-        image_data = raw[44:]# result.get("Value", [])
-        image_data = np.frombuffer(image_data, dtype=dtype)  
-
-        # 3. Reshape selon dimensions
-        image_data = image_data.reshape((self.camera_info.camera_y_size, self.camera_info.camera_x_size))
-        """try:
-            last_exposure_duration = self._make_request("GET", "lastexposureduration")
-            last_exposure_start = self._make_request("GET", "lastexposurestarttime")
-        except:
-            last_exposure_duration={"Value":1}
-            last_exposure_start = {"Value":""}"""
-
-
-        return ImageData(
-            width=self.camera_info.camera_x_size,
-            height=self.camera_info.camera_y_size,
-            data=image_data,
-            exposure_duration=self.last_exposure,
-            timestamp=self.last_time
-        )
+            raw = self._make_request("GET", "imagearray", byte_array=True, raw_response=True)
+            image_data = self.parse_alpaca_imagebytes(raw)
+            
+            width, height = self.dimensions
+            return ImageData(
+                width=width,
+                height=height,
+                data=image_data,
+                exposure_duration=self.last_exposure,
+                timestamp=self.last_time
+            )
 
     def set_ccd_temperature(self, temperature: float) -> None:
         """Définit la température cible du CCD"""
