@@ -167,9 +167,10 @@ class AlpacaTelescope(TelescopeInterface):
         try:
             self.focuser_connect()
             telescope_state.is_focuser_connected = True
-        except:
+        except Exception as e:
             telescope_state.is_focuser_connected = False
-            
+            logger.error(f"[Focuser] - Error connecting focuser: {e}")
+
         try:
             self.camera_connect()
             telescope_state.is_camera_connected = True
