@@ -1,13 +1,14 @@
 import httpx
 from typing import Optional, Dict, Any, List, Union
-from pydantic import BaseModel
+from pydantic import BaseModel,ConfigDict
 from enum import Enum
 import threading
 import time
 from utils.logger import logger
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-
+import numpy as np
+import struct
 
 SIMULATOR = True
 # Générateur thread-safe pour les IDs de transaction
@@ -61,7 +62,8 @@ class ASCOMAlpacaBaseClient:
         method: str,
         endpoint: str,
         data: Optional[Dict] = None,
-        raw_response: bool = False
+        raw_response: bool = False,
+        byte_array: bool = False
     ) -> Union[Dict[str, Any], bytes]:
         """
         Effectue une requête HTTP vers l'API Alpaca.
@@ -81,12 +83,19 @@ class ASCOMAlpacaBaseClient:
             "ClientID": self.client_id,
             "ClientTransactionID": transaction_id
         })
-
+        headers={}
+        if byte_array:
+            headers = {
+                "Accept": "application/imagebytes"
+            }
+            print(headers)
+        else:
+            headers= {}
         try:
             if method.upper() == "GET":
-                response = self.client.get(url, params=data)
+                response = self.client.get(url, params=data, headers=headers)
             else:
-                response = self.client.put(url, data=data)
+                response = self.client.put(url, data=data, headers=headers)
 
             response.raise_for_status()
 
@@ -455,9 +464,11 @@ class ExposureSettings(BaseModel):
 class ImageData(BaseModel):
     width: int
     height: int
-    data: List[List[int]]  # Données d'image 2D
+    data: np.ndarray  # Données d'image 2D
     exposure_duration: float
     timestamp: str
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 # ===== CLIENT CAMERA SYNCHRONE =====
 
@@ -502,8 +513,7 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
     def get_camera_info_min(self):
         return self.camera_info
     
-    def get_camera_info(self) -> CameraInfo:
-        """Récupère les informations complètes de la caméra"""
+
 
     def get_camera_info(self) -> CameraInfo:
         """Récupère les informations complètes de la caméra"""
@@ -580,9 +590,25 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
 
     def get_image_array(self) -> ImageData:
         """Récupère les données d'image sous forme de tableau"""
-        result = self._make_request("GET", "imagearray")
-        image_data = result.get("Value", [])
+        raw = self._make_request("GET", "imagearray", byte_array=True, raw_response=True)
+        header = struct.unpack("<11i", raw[:44])
+        width  = header[0]
+        height = header[1]
+        element_type = header[2]
 
+        dtype = np.int16
+
+        if  element_type == 2:
+            dtype = np.int32
+        elif element_type == 3:
+            dtype = np.float64
+
+
+        image_data = raw[44:]# result.get("Value", [])
+        image_data = np.frombuffer(image_data, dtype=dtype)  
+
+        # 3. Reshape selon dimensions
+        image_data = image_data.reshape((self.camera_info.camera_y_size, self.camera_info.camera_x_size))
         """try:
             last_exposure_duration = self._make_request("GET", "lastexposureduration")
             last_exposure_start = self._make_request("GET", "lastexposurestarttime")
@@ -592,8 +618,8 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
 
 
         return ImageData(
-            width=len(image_data[0]) if image_data else 0,
-            height=len(image_data) if image_data else 0,
+            width=self.camera_info.camera_x_size,
+            height=self.camera_info.camera_y_size,
             data=image_data,
             exposure_duration=self.last_exposure,
             timestamp=self.last_time

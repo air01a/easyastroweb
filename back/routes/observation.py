@@ -176,7 +176,10 @@ def get_history_image(index: int):
     history = get_history()
     if index<len(history):
         image = history[index].jpg
-        image = fits_manager.open_fits(image)
+        try:
+            image = fits_manager.open_fits(image)
+        except:
+            raise HTTPException(status_code=404, detail="Chemin invalide")
         if image!=None:
             return transform_to_jpg(image.data)
     raise HTTPException(status_code=404, detail="Chemin invalide")
@@ -247,5 +250,5 @@ def get_capture(exposition: int = Body(..., embed=True)):
         raise HTTPException(status_code=503, detail="Scheduler is running")
     if telescope_state.dark_processor and telescope_state.dark_processor.is_running:
         raise HTTPException(status_code=503, detail="Dark manager is running")
-    telescope_interface.camera_capture(exposition)
+    telescope_interface.capture_to_fit(exposition, 0, 0, "", "", Path("d:\\"),100)
     return get_last_image()
