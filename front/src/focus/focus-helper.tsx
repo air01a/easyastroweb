@@ -1,91 +1,79 @@
 import { useEffect, useState } from "react";
 import { apiService } from "../../api/api";
 
-import { X, LoaderCircle } from "lucide-react";
-import { useWebSocketStore } from "../../store/store";
+import { X } from "lucide-react";
 import ImageBox from "../../design-system/box/imagebox";
 import { useTranslation } from 'react-i18next';
 import FocusSlider from "../../components/image-settings/focus-sliders"
+import LoadingIndicator from "../../design-system/messages/loadingmessage";
+import { useConfigStore } from "../../store/store";
+
 
 export default function FocusHelper() {
   const [image1, setImage1] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
-  const [modalImageType, setModalImageType] = useState<'image1' | 'image2' | null>(null);
-  const [jobStatus, setJobStatus] = useState<string>("En attente d'instructions...");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const  getItem  = useConfigStore((state) => state.getItem);
   const { t } = useTranslation();
+//focuser_exposition
 
-  const connect = useWebSocketStore((state) => state.connect);
-  const messages = useWebSocketStore((state) => state.messages);
-  const isConnected = useWebSocketStore((state) => state.isConnected);
 
   const fetchImages = async () => {
     const baseUrl = apiService.getBaseUrl();
     const timestamp = Date.now();
-
-    fetch(`${baseUrl}/observation/last_image?t=${timestamp}`)
+    setIsLoading(true);
+    fetch(`${baseUrl}/observation/capture?t=${timestamp}`, { 
+        headers: {
+            "Content-Type": "application/json",
+            "accept": "application/json"
+        },
+        method:"POST", 
+        body:JSON.stringify({ exposition :getItem("focuser_exposition")}) 
+    })
       .then((res) => res.blob())
       .then((blob) => {
         const newImageUrl = URL.createObjectURL(blob);
         setImage1(newImageUrl);
-        // Mettre à jour la modal si elle affiche image2
-        if (modalImageType === 'image2') {
-          setModalImage(newImageUrl);
-        }
+        setIsLoading(false);
+
       });
   };
 
   useEffect(() => {
     fetchImages();
-    if (!isConnected) connect();
   }, []);
 
-  useEffect(() => {
-    const newMessage = messages[messages.length - 1];
-    if (!newMessage) return;
-    if (newMessage.sender === "SCHEDULER") {
-      if (newMessage.message === "NEWIMAGE") {
-        fetchImages();
-      } else if (newMessage.message === "STATUS") {
-        setJobStatus((newMessage.data as string) || t("plan.unknown_status"));
-      }  else if (newMessage.message === "TEMPERATURE") {
-        setJobStatus(`${t("plan.temperature")} [${newMessage.data}]`);
-      }
-    }
-  }, [messages]);
+  const captureImage = async () => {
+    fetchImages();
+  }
 
   
 
-  const openModal = (imageUrl: string, imageType: 'image1' | 'image2') => {
+  const openModal = (imageUrl: string) => {
     setModalImage(imageUrl);
-    setModalImageType(imageType);
   };
 
   const closeModal = () => {
     setModalImage(null);
-    setModalImageType(null);
   };
 
   return (
     <div className="flex flex-col items-center justify-center p-4 space-y-6">
-      {/* STATUT */}
-      <div className="w-full max-w-4xl bg-blue-50 text-blue-800 border border-blue-200 rounded-md px-4 py-3 flex items-center gap-3 shadow-sm">
-        {jobStatus!="finished" && (<LoaderCircle className="animate-spin w-5 h-5" />)}
-        <p className="text-sm font-medium">{jobStatus}</p>
-      </div>
 
       {/* IMAGES EN COURS */}
       <div className="flex flex-wrap gap-6 h-[40%]">
         {image1 && (
           <ImageBox
             src={image1}
-            label="Last stacked image"
-            onClick={() => openModal(image1, 'image1')}
+            label=""
+            onClick={() => openModal(image1)}
             className={'max-h-[50vh] max-w-full h-auto w-auto object-contain'}
           />
         )}
-        
+       
       </div>
-        <FocusSlider onUpdate={fetchImages}/>
+      {(isLoading) && <LoadingIndicator text={t("global.loading")}/>}
+        <FocusSlider onUpdate={captureImage}/>
 
 
       {/* MODAL IMAGE */}

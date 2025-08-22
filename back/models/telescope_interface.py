@@ -28,6 +28,10 @@ class TelescopeInterface(ABC):
     @abstractmethod
     def move_focuser(self, position: int):
         pass
+    
+    @abstractmethod
+    def focuser_halt(self):
+        pass
 
     @abstractmethod
     def camera_connect(self):

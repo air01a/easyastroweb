@@ -37,6 +37,8 @@ class SimulatorTelescope(TelescopeInterface):
         self.bayer = None
         self.location = "0.0°, 0.0°, 0.0m"  # Default simulated location
 
+        self.focuser_is_moving = False
+
     def set_utc_date(self, date: str):
         """
         Set the simulator date (for logging purposes only).
@@ -245,8 +247,26 @@ class SimulatorTelescope(TelescopeInterface):
         """
         Move the simulated focuser to a new position.
         """
-        self.focuser_position = position
-        sleep(4)  # Simulate movement time
+        number_step=20
+        delta = position - self.focuser_position
+        step = delta // number_step
+        self.focuser_is_moving = True
+
+        i=0
+        while self.focuser_is_moving and i<number_step:
+            self.focuser_position += step
+            sleep(10/number_step)
+            i+=1
+        if self.focuser_is_moving:
+            self.focuser_position=position
+        self.focuser_is_moving = False
+
+
+    def focuser_halt(self):
+        try:
+            self.focuser_is_moving = False
+        except Exception as e:
+            logger.error(f"[FOCUSER] - Focuser error: {e}")
 
     def focuser_connect(self):
         self.focuser_name = "test"

@@ -50,9 +50,8 @@ export default function ObjectDetails({ item }: { item: CatalogItem }) {
       </div>
 
       {!item.dynamic && (
-        <div className="bg-gray-900 p-4 rounded-lg shadow space-y-2">
+        <div className="bg-gray-900 mt-4 p-4 rounded-lg shadow space-y-2">
           <h3 className="text-xl font-semibold">{t('details.position')}</h3>
-          <p className="text-gray-300 mb-2">{item.description}</p>
           <img
             src={`/catalog/location/${item.name}.jpg`}
             alt={`Localisation de ${item.name}`}

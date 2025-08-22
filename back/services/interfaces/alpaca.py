@@ -74,7 +74,13 @@ class AlpacaTelescope(TelescopeInterface):
             return alpaca_focuser_client.get_max_step()
         except Exception as e:
             logger.error(f"[FOCUSER] - Focuser error: {e}")
-            
+
+    def focuser_halt(self):
+        try:
+            return alpaca_focuser_client.halt()
+        except Exception as e:
+            logger.error(f"[FOCUSER] - Focuser error: {e}")
+
     def telescope_disconnect(self):
         return alpaca_telescope_client.disconnect()
 

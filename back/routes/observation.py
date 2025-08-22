@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Body
 from fastapi.responses import StreamingResponse, FileResponse
 from typing import List
 from models.api import PlanType, ImageSettings
@@ -241,8 +241,8 @@ def stop_observation():
     return {"status": "stopped", "message": "Observation stopped"}
 
 
-@router.get('/capture')
-def get_capture(exposition: int = 2):
+@router.post('/capture')
+def get_capture(exposition: int = Body(..., embed=True)):
     if telescope_state.scheduler and telescope_state.scheduler.is_alive():
         raise HTTPException(status_code=503, detail="Scheduler is running")
     if telescope_state.dark_processor and telescope_state.dark_processor.is_running:

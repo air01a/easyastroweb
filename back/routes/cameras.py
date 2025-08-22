@@ -19,7 +19,6 @@ async def api_set_cameras(payload: List[ConfigPayload]):
     (error, error_str) = await save_telescope_config(CAMERAS_PATH, payload, 'camera', CAMERAS_SCHEMA_PATH)
     if not error:
         raise HTTPException(status_code=500, detail=error_str)
-
     return {"ok"}
 
 

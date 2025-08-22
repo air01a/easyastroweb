@@ -153,7 +153,7 @@ async def save_telescope_config(filepath: Path, telescope_config: List[Dict[str,
 async def set_default_telescope_config(item: str, type: str, filepath: Path):
     global CONFIG
     await change_default(type, item)
-    CONFIG[item] = find_item_from_id(item, await get_telescope_config(filepath))
+    CONFIG[type] = find_item_from_id(item, await get_telescope_config(filepath))
 
 
 async def get_default() -> Dict[str, ConfigAllowedValue]:

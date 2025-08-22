@@ -151,6 +151,7 @@
         "gain":"Gain",
         "captures":"Captures",
         "name":"Nom",
-        "running":"En cours"
+        "running":"En cours",
+        "loading":"Chargement"
     }
 }

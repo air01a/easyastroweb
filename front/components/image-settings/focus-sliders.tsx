@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Input from '../../design-system/inputs/input'
 import Button from "../../design-system/buttons/main";
-import { ArrowBigLeft, ArrowBigRight, ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowBigLeft, ArrowBigRight, ArrowLeft, ArrowRight, CameraIcon, StopCircleIcon } from "lucide-react";
 import { apiService } from "../../api/api";
 
 export default function FocusSlider( { onUpdate} : {onUpdate :  ()=>void}) {
@@ -28,23 +28,23 @@ export default function FocusSlider( { onUpdate} : {onUpdate :  ()=>void}) {
   };
 
   const moveFocuser = async (position:number) => {
-    await apiService.setFocuserPosition(position);
-    setPosition(position);
-
+    const newPosition = await apiService.setFocuserPosition(position);
+    setPosition(newPosition);
     setIsMoving(false);
+    onUpdate();
   }
 
-  const handlePositionChange = (position: number) => {
+  const handlePositionChange = async (position: number) => {
     setIsMoving(true);
     moveFocuser(position);
+
   };
   
 
-
-
-  const sendValues = async () => {
-    onUpdate();
-  }
+  const halt = async () => {
+    await apiService.focuserHalt();
+  };
+  
 
 
   return (
@@ -58,7 +58,7 @@ export default function FocusSlider( { onUpdate} : {onUpdate :  ()=>void}) {
         <div className="flex flex-wrap justify-center align-center mb-4">
             <Button disabled={isMoving} className="mr-4" onClick={() => {handlePositionChange(position-50) }}><ArrowBigLeft/></Button>
             <Button disabled={isMoving}  className="mr-4" onClick={() => {handlePositionChange(position-10) }}><ArrowLeft/></Button>
-            <Input  disabled={isMoving}  type="text" value={position} className="mr-4"/>
+            <Input  disabled={isMoving}  type="text" value={position} className="mr-4 text-center" size={5} readOnly />
             <Button disabled={isMoving}  className="mr-4"  onClick={() => {handlePositionChange(position+10) }}><ArrowBigRight/></Button>
             <Button disabled={isMoving}  className="mr-4"  onClick={() => {handlePositionChange(position+50) }}><ArrowRight/></Button>
         </div>
@@ -70,12 +70,16 @@ export default function FocusSlider( { onUpdate} : {onUpdate :  ()=>void}) {
           step="10"
           value={position}
           onChange={handlePositionChangeSlider}
-          onMouseUp={sendValues}
-          onTouchEnd={sendValues}
+          onMouseUp={()=> {handlePositionChange(position) }}
+          onTouchEnd={()=> {handlePositionChange(position) }}
           className="w-full"
           disabled={isMoving} 
         />
+        <div className="flex justify-center"><Button onClick={onUpdate} disabled={isMoving} ><CameraIcon /></Button></div>
       </div>
+      {isMoving && (
+        <div className="flex align-center justify-center"><Button onClick={()=>halt()}><StopCircleIcon/></Button></div>
+      )}
     </div>
   );
 }

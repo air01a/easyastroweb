@@ -15,6 +15,21 @@ def get_focuser_position():
     raise HTTPException(status_code=503, detail="No Focuser")
 
 
+@router.post('/stop')
+def get_focuser_position():
+    if telescope_state.is_focuser_connected:
+        telescope_interface.focuser_halt()
+        return True
+    raise HTTPException(status_code=503, detail="No Focuser")
+
+
+@router.get('/max')
+def get_focuser_position():
+    if telescope_state.is_focuser_connected:
+        return telescope_interface.get_max_focuser_step()
+    raise HTTPException(status_code=503, detail="No Focuser")
+
+
 @router.post('/{position}')
 def move_focuser(position: int) -> int:
     global lock_focuser
@@ -26,10 +41,3 @@ def move_focuser(position: int) -> int:
         lock_focuser=False
         return telescope_interface.focuser_get_current_position()
     raise HTTPException(status_code=503, detail="No Focuser")
-
-@router.get('/max')
-def get_focuser_position():
-    if telescope_state.is_focuser_connected:
-        return telescope_interface.get_max_focuser_step()
-    raise HTTPException(status_code=503, detail="No Focuser")
-

@@ -25,7 +25,7 @@ export default function AstronomyObjectList({
       {objects.map((obj, index) => (
         <div
           key={index}
-          className={`relative flex-grow min-w-[500px] max-w-sm border-4 rounded-lg p-2  ${obj.isSelected?"bg-gray-700 border-red-100":statusColors[obj.status]}`}
+          className={`relative flex-grow min-w-[300px] max-w-sm border-4 rounded-lg p-2  ${obj.isSelected?"bg-gray-700 border-red-100":statusColors[obj.status]}`}
           onClick={() => onClick(index)}
         >
           {/* Status centered on top */}

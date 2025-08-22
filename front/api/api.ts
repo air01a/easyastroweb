@@ -332,6 +332,13 @@ export class ApiService {
     });
   }
 
+  async focuserHalt(): Promise<void> {
+    this.request<void>(`/focuser/stop`, {
+      method: 'POST',
+    });
+  }
+
+
   // Exemple pour un GET générique
   async getSomething<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {
