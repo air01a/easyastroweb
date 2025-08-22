@@ -637,7 +637,15 @@ class ASCOMAlpacaFocuserClient(ASCOMAlpacaBaseClient):
 
     def __init__(self, host="localhost", port=11111, device_number=0):
         super().__init__(ASCOMDeviceType.FOCUSER, host, port, device_number)
+        self.infos=None
 
+    def connect(self):
+        self.infos = self.get_focuser_info()
+
+    def get_max_step(self):
+        result = self._make_request("GET", "maxstep")
+        return result.get("Value", 0)
+    
     def get_focuser_info(self) -> FocuserInfo:
         """Récupère les informations complètes du focuser"""
         base_info = self.get_device_info()

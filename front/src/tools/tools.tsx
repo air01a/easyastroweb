@@ -1,35 +1,41 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Settings, Telescope, MapPin, CameraIcon } from "lucide-react";
+import { Settings, Telescope, MapPin, CameraIcon, Focus } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
 const ToolsDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const cards = [
+     {
+      title: t('config.focus'),
+      description: t('config.focusDesc'),
+      icon: <Focus className="w-8 h-8 text-orange-600" />,
+      route: "/tools/focus",
+    },
     {
       title: t('config.dark'),
       description: t('config.darkDesc'),
-      icon: <CameraIcon className="w-8 h-8 text-orange-600" />,
-      route: "/dark/config",
+      icon: <CameraIcon className="w-8 h-8 text-red-600" />,
+      route: "/tools/dark",
     },
     {
       title: t('config.telescopeConfig'),
       description: t('config.telescopeConfigDesc'),
       icon: <Telescope className="w-8 h-8 text-green-600" />,
-      route: "/config/telescopes",
+      route: "/tools/telescopes",
     },
     {
       title: t('config.observatoryConfig'),
       description: t('config.observatoryConfigDesc'),
       icon: <MapPin className="w-8 h-8 text-purple-600" />,
-      route: "/config/observatories",
+      route: "/tools/observatories",
     },
     {
       title: t('config.generalConfig'),
       description: t('config.generalConfigDesc'),
       icon: <Settings className="w-8 h-8 text-blue-600" />,
-      route: "/config/general",
+      route: "/tools/config",
     }
   ];
 

@@ -110,7 +110,9 @@
         "optics":"Optiques",
         "dark":"Darks",
         "darkDesc":"Gestion des darks",
-        "tools":"Outils"
+        "tools":"Outils",
+        "focus":"Focus",
+        "focusDesc":"Aide au focus"
     },
     "details": {
         "ra":"RA",

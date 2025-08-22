@@ -246,7 +246,7 @@ class SimulatorTelescope(TelescopeInterface):
         Move the simulated focuser to a new position.
         """
         self.focuser_position = position
-        sleep(1)  # Simulate movement time
+        sleep(4)  # Simulate movement time
 
     def focuser_connect(self):
         self.focuser_name = "test"
@@ -313,7 +313,11 @@ class SimulatorTelescope(TelescopeInterface):
         except:
             logger.info(f"[FILTERWHEEL] - Error during filter change")
             return False
-
+    
+    
+    def get_max_focuser_step(self):
+        return 40000
+          
     def telescope_set_tracking(self, rate: int):
         pass
 

@@ -312,6 +312,26 @@ export class ApiService {
     });
   }
 
+
+  async getMaxFocuser(): Promise<number> {
+    return this.request<number>('/focuser/max', {
+      method: 'GET',
+    });
+  }
+
+  
+  async getFocuserPosition(): Promise<number> {
+    return this.request<number>('/focuser/', {
+      method: 'GET',
+    });
+  }
+
+  async setFocuserPosition(position: number): Promise<number> {
+    return this.request<number>(`/focuser/${position}`, {
+      method: 'POST',
+    });
+  }
+
   // Exemple pour un GET générique
   async getSomething<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {

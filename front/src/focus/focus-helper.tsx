@@ -1,17 +1,14 @@
 import { useEffect, useState } from "react";
 import { apiService } from "../../api/api";
-import Button from "../../design-system/buttons/main";
-import Swal from "sweetalert2";
+
 import { X, LoaderCircle } from "lucide-react";
 import { useWebSocketStore } from "../../store/store";
 import ImageBox from "../../design-system/box/imagebox";
-import History from "../../components/history/history"
 import { useTranslation } from 'react-i18next';
-import ImageSettingsSliders from "../../components/image-settings/image-sliders"
+import FocusSlider from "../../components/image-settings/focus-sliders"
 
-export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
+export default function FocusHelper() {
   const [image1, setImage1] = useState<string | null>(null);
-  const [image2, setImage2] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [modalImageType, setModalImageType] = useState<'image1' | 'image2' | null>(null);
   const [jobStatus, setJobStatus] = useState<string>("En attente d'instructions...");
@@ -20,30 +17,16 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
   const connect = useWebSocketStore((state) => state.connect);
   const messages = useWebSocketStore((state) => state.messages);
   const isConnected = useWebSocketStore((state) => state.isConnected);
-  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   const fetchImages = async () => {
     const baseUrl = apiService.getBaseUrl();
     const timestamp = Date.now();
 
-    console.log("fetch images)");
-
-    fetch(`${baseUrl}/observation/last_stacked_image?t=${timestamp}`)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const newImageUrl = URL.createObjectURL(blob);
-        setImage1(newImageUrl);
-        // Mettre à jour la modal si elle affiche image1
-        if (modalImageType === 'image1') {
-          setModalImage(newImageUrl);
-        }
-      });
-
     fetch(`${baseUrl}/observation/last_image?t=${timestamp}`)
       .then((res) => res.blob())
       .then((blob) => {
         const newImageUrl = URL.createObjectURL(blob);
-        setImage2(newImageUrl);
+        setImage1(newImageUrl);
         // Mettre à jour la modal si elle affiche image2
         if (modalImageType === 'image2') {
           setModalImage(newImageUrl);
@@ -62,32 +45,15 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
     if (newMessage.sender === "SCHEDULER") {
       if (newMessage.message === "NEWIMAGE") {
         fetchImages();
-        setHistoryRefreshKey((prev) => prev + 1);
       } else if (newMessage.message === "STATUS") {
         setJobStatus((newMessage.data as string) || t("plan.unknown_status"));
-      } else if (newMessage.message==="REFRESHINFO") {
-        setHistoryRefreshKey((prev) => prev + 1);
-      } else if (newMessage.message === "TEMPERATURE") {
+      }  else if (newMessage.message === "TEMPERATURE") {
         setJobStatus(`${t("plan.temperature")} [${newMessage.data}]`);
       }
     }
   }, [messages]);
 
-  const handleClick = () => {
-    Swal.fire({
-      title: t("plan.stop_plan"),
-      text: t("plan.confirm"),
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: t("plan.yes"),
-      cancelButtonText: t("plan.cancel"),
-    }).then((result) => {
-      if (result.isConfirmed) {
-        apiService.stopPlan();
-        refresh();
-      }
-    });
-  };
+  
 
   const openModal = (imageUrl: string, imageType: 'image1' | 'image2') => {
     setModalImage(imageUrl);
@@ -108,26 +74,20 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
       </div>
 
       {/* IMAGES EN COURS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl">
+      <div className="flex flex-wrap gap-6 h-[40%]">
         {image1 && (
           <ImageBox
             src={image1}
             label="Last stacked image"
             onClick={() => openModal(image1, 'image1')}
+            className={'max-h-[50vh] max-w-full h-auto w-auto object-contain'}
           />
         )}
-        {image2 && (
-          <ImageBox
-            src={image2}
-            label="Last image taken"
-            onClick={() => openModal(image2, 'image2')}
-          />
-        )}
+        
       </div>
-        <ImageSettingsSliders onUpdate={fetchImages}/>
-      <Button onClick={handleClick}>Arrêter le plan</Button>
+        <FocusSlider onUpdate={fetchImages}/>
 
-      <History refreshKey={historyRefreshKey} />
+
       {/* MODAL IMAGE */}
       {modalImage && (
         <div

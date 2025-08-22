@@ -106,6 +106,10 @@ class TelescopeInterface(ABC):
     def get_telescope_location(self):
         pass
 
+    @abstractmethod        
+    def get_max_focuser_step(self):
+        pass
+          
 
     def get_focus(self, ra: float, dec: float):
 

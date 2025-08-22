@@ -241,3 +241,11 @@ def stop_observation():
     return {"status": "stopped", "message": "Observation stopped"}
 
 
+@router.get('/capture')
+def get_capture(exposition: int = 2):
+    if telescope_state.scheduler and telescope_state.scheduler.is_alive():
+        raise HTTPException(status_code=503, detail="Scheduler is running")
+    if telescope_state.dark_processor and telescope_state.dark_processor.is_running:
+        raise HTTPException(status_code=503, detail="Dark manager is running")
+    telescope_interface.camera_capture(exposition)
+    return get_last_image()
