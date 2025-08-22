@@ -88,7 +88,6 @@ class ASCOMAlpacaBaseClient:
             headers = {
                 "Accept": "application/imagebytes"
             }
-            print(headers)
         else:
             headers= {}
         try:
@@ -620,7 +619,7 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
             raw = self._make_request("GET", "imagearray", byte_array=True, raw_response=True)
             image_data = self.parse_alpaca_imagebytes(raw)
             
-            width, height = self.dimensions
+            (height, width) = image_data.shape[0:2]
             return ImageData(
                 width=width,
                 height=height,

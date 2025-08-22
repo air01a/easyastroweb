@@ -13,7 +13,7 @@ class AlpacaTelescope(TelescopeInterface):
     def __init__(self):
         super().__init__()
 
-    """def camera_capture(self, expo: float, light: bool = True):
+    def camera_capture(self, expo: float, light: bool = True):
         try:
             expo_params = ExposureSettings(duration=expo)
             alpaca_camera_client.start_exposure(expo_params)
@@ -23,7 +23,7 @@ class AlpacaTelescope(TelescopeInterface):
             while not alpaca_camera_client.is_image_ready():
                 sleep(0.1)
             image =  alpaca_camera_client.get_image_array()
-            image.data = np.array(image.data)
+            #image.data = np.array(image.data)
             if image.data.ndim == 2:
                 # Image en niveaux de gris : transposition classique
                 image.data = np.array(image.data).T
@@ -33,11 +33,11 @@ class AlpacaTelescope(TelescopeInterface):
             return image
         except Exception as e:
             logger.error(f"[CAMERA] - Alpaca Error {e}")
-            return None"""
+            return None
     
 
 
-    def camera_capture(self, expo: float, light: bool = True):
+    """def camera_capture(self, expo: float, light: bool = True):
         t_all0 = perf_counter()
         try:
             logger.error(f"[CAMERA] - Capture start | requested_expo={expo:.3f}s light={light}")
@@ -52,7 +52,7 @@ class AlpacaTelescope(TelescopeInterface):
 
             # --- 2) Attente "brute" de l'expo demandée (tel que dans ton code)
             t_sleep0 = perf_counter()
-            sleep(expo)
+            sleep(expo+0.5)
             t_sleep1 = perf_counter()
             dt_sleep_s = (t_sleep1 - t_sleep0)
             logger.error(f"[CAMERA] - slept for requested exposure: {dt_sleep_s:.3f} s")
@@ -122,7 +122,8 @@ class AlpacaTelescope(TelescopeInterface):
         except Exception as e:
             logger.error(f"[CAMERA] - Alpaca Error {e}")
             return None
-        
+    """
+
     def set_gain(self, gain: int):
         logger.info(f"[CAMERA] - Setting gain to {gain}")
         alpaca_camera_client.set_camera_gain(gain)
