@@ -22,7 +22,8 @@ export default function FocusSlider( { onUpdate} : {onUpdate :  ()=>void}) {
 
   const handlePositionChangeSlider = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
-    handlePositionChange(value);
+    //handlePositionChange(value);
+    setPosition(value);
 
   };
 
