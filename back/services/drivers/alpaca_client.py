@@ -651,28 +651,26 @@ class ASCOMAlpacaFocuserClient(ASCOMAlpacaBaseClient):
         base_info = self.get_device_info()
 
         results = [
-            self._make_request("GET", "absolute"),
+            #self._make_request("GET", "absolute"),
             self._make_request("GET", "ismoving"),
-            self._make_request("GET", "maxincrement"),
+           # self._make_request("GET", "maxincrement"),
             self._make_request("GET", "maxstep"),
             self._make_request("GET", "position"),
-            self._make_request("GET", "stepsize"),
-            self._make_request("GET", "tempcomp"),
-            self._make_request("GET", "tempcompavailable"),
-            self._make_request("GET", "temperature"),
+            #self._make_request("GET", "stepsize"),
+
         ]
 
         return FocuserInfo(
             **base_info.dict(),
-            absolute=results[0].get("Value", False),
-            is_moving=results[1].get("Value", False),
-            max_increment=results[2].get("Value", 0),
-            max_step=results[3].get("Value", 0),
-            position=results[4].get("Value", 0),
-            step_size=results[5].get("Value", 0.0),
-            temp_compensation=results[6].get("Value", False),
-            temp_compensation_available=results[7].get("Value", False),
-            temperature=results[8].get("Value", 0.0)
+            absolute=False, #results[0].get("Value", False),
+            is_moving=results[0].get("Value", False),
+            max_increment=0, #results[2].get("Value", 0),
+            max_step=results[1].get("Value", 0),
+            position=results[2].get("Value", 0),
+            step_size=0, #results[5].get("Value", 0.0),
+            temp_compensation=False, #results[6].get("Value", False),
+            temp_compensation_available=False, #results[7].get("Value", False),
+            temperature=0 #results[8].get("Value", 0.0)
         )
 
     def move_absolute(self, position: int) -> None:
