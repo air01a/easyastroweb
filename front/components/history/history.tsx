@@ -29,7 +29,7 @@ export default function History({ refreshKey }: { refreshKey: number }) {
             return (
               <div
                 key={index}
-                className={`flex flex-col md:flex-row items-center justify-between border-gray-200 text-black border rounded p-3 shadow ${
+                className={`flex flex-col md:flex-row w-full items-center justify-between border-gray-200 text-black border rounded p-3 shadow ${
                   isRunning ? "bg-green-500" : "bg-white"
                 }`}
               >

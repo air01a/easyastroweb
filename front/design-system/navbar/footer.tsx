@@ -56,7 +56,7 @@ export default function Footer() {
                 <ObservatoryCard item={observatory}/>
                 <Button
                   onClick={() => {
-                    navigate("/config/observatories");
+                    navigate("/tools/observatories");
                     setOpenMenu(null);
                   }}
                   className="text-blue-600 hover:underline text-sm"
@@ -107,7 +107,7 @@ export default function Footer() {
                 <TelescopeSumUpCard telescope={telescope} camera={camera} filterWheel={filterWheel}/>
                 <Button
                   onClick={() => {
-                    navigate("/config/telescopes");
+                    navigate("/tools/telescopes");
                     setOpenMenu(null);
                   }}
                   className="text-blue-600 hover:underline text-sm"
