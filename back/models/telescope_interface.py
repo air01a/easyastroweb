@@ -135,8 +135,8 @@ class TelescopeInterface(ABC):
 
 
         current_position = self.focuser_get_current_position()
-        focuser_range = CONFIG['global'].get('focuser_range', 250)
-        focuser_step = CONFIG['global'].get('focuser_step', 50)
+        focuser_range = CONFIG['camera'].get('focuser_range', 250)
+        focuser_step = CONFIG['camera'].get('focuser_step', 50)
         positions = list(range(current_position-focuser_range, current_position+focuser_range, focuser_step))
 
         for position in positions:

@@ -41,6 +41,22 @@
     "fieldType": "CHECKBOX",
     "varType": "BOOL",
     "defaultValue": false
+  },    
+  {
+    "fieldName": "focuser_range",
+    "description": "Search range from initial values for focusers",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 250,
+    "required":true
+  },
+  {
+    "fieldName": "focuser_step",
+    "description": "Increment step for focuser",
+    "fieldType": "INPUT",
+    "varType": "INT",
+    "defaultValue": 50,
+    "required":true
   },
     {
     "fieldName": "has_gps",

@@ -3,11 +3,15 @@ import Input from '../../design-system/inputs/input'
 import Button from "../../design-system/buttons/main";
 import { ArrowBigLeft, ArrowBigRight, ArrowLeft, ArrowRight, CameraIcon, StopCircleIcon } from "lucide-react";
 import { apiService } from "../../api/api";
+import { useObserverStore } from "../../store/store";
 
 export default function FocusSlider( { onUpdate} : {onUpdate :  ()=>void}) {
   const [position, setPosition] = useState(25000);
   const [maxPosition, setMaxPosition] = useState(25000);
+  const [step, setStep] = useState(50);
   const [isMoving, setIsMoving] = useState<boolean>(false);
+  const camera = useObserverStore((state) => state.camera);
+  
  useEffect(() => {
 
     const getParams = async () => {
@@ -15,6 +19,8 @@ export default function FocusSlider( { onUpdate} : {onUpdate :  ()=>void}) {
             setPosition(currentPosition);
             const maxPosition = await apiService.getMaxFocuser();
             setMaxPosition(maxPosition);
+            const step = camera["focuser_step"] ? camera["focuser_step"] as number : 50;
+            setStep(step);
     }
     getParams();
 
@@ -56,11 +62,11 @@ export default function FocusSlider( { onUpdate} : {onUpdate :  ()=>void}) {
           Position: {isMoving}
         </label>
         <div className="flex flex-wrap justify-center align-center mb-4">
-            <Button disabled={isMoving} className="mr-4" onClick={() => {handlePositionChange(position-50) }}><ArrowBigLeft/></Button>
-            <Button disabled={isMoving}  className="mr-4" onClick={() => {handlePositionChange(position-10) }}><ArrowLeft/></Button>
+            <Button disabled={isMoving} className="mr-4" onClick={() => {handlePositionChange(position-step) }}><ArrowBigLeft/></Button>
+            <Button disabled={isMoving}  className="mr-4" onClick={() => {handlePositionChange(position - Math.floor(step/5) )}}><ArrowLeft/></Button>
             <Input  disabled={isMoving}  type="text" value={position} className="mr-4 text-center" size={5} readOnly />
-            <Button disabled={isMoving}  className="mr-4"  onClick={() => {handlePositionChange(position+10) }}><ArrowBigRight/></Button>
-            <Button disabled={isMoving}  className="mr-4"  onClick={() => {handlePositionChange(position+50) }}><ArrowRight/></Button>
+            <Button disabled={isMoving}  className="mr-4"  onClick={() => {handlePositionChange(position + Math.floor(step/5) ) }}><ArrowBigRight/></Button>
+            <Button disabled={isMoving}  className="mr-4"  onClick={() => {handlePositionChange(position+step) }}><ArrowRight/></Button>
         </div>
         <input
           id="position"
