@@ -278,6 +278,12 @@ class AlpacaTelescope(TelescopeInterface):
         except:
             telescope_state.is_telescope_connected = False  
 
+        try:
+            self.filter_wheel_connect()
+            telescope_state.is_fw_connected = True
+        except:
+            telescope_state.is_fw_connected = False
+
         if CONFIG["telescope"].get("has_gps", False):
             logger.info("[TELESCOPE] - Synchronizing location with GPS")
             self.sync_location(
