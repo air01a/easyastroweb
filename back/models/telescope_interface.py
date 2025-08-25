@@ -145,7 +145,8 @@ class TelescopeInterface(ABC):
             for i in range(CONFIG['global'].get('focuser_image_by_position',1)):
                 logger.info(f"[Focuser] - MTaking picture {i}")
                 try:
-                    image = (self.camera_capture(CONFIG['global'].get('focuser_exposition',4)).data/255).astype(np.uint8)
+                    #image = (self.camera_capture(CONFIG['global'].get('focuser_exposition',4)).data/255).astype(np.uint8)
+                    image=(FitsImageManager.quick_process(self.capture_to_fit(CONFIG['global'].get('focuser_exposition',4),0,0,f"{position}","",Path(CONFIG['global'].get("fits_storage_dir")).resolve(),100)).data/255).astype(np.uint8)
                 except:
                     logger.error("[FOCUS] - Error capturing image")
                 result = self.autofocus.analyze_image(image,position)

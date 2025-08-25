@@ -341,7 +341,7 @@ class FitsImageManager:
         # cls = FitsManager (la classe)
         # On peut créer une instance avec cls()
         instance = cls(auto_deblayer, auto_normalize)
-        return instance.process_file(filename)
+        return instance.open_fits(filename)
 
 
     def save_fits(self, image : FitsImage, output_filename: str, preserve_original_format: bool = True) -> None:
