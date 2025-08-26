@@ -597,12 +597,63 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         result = self._make_request("GET", "imageready")
         return result.get("Value", False)
     
+    def _read_exact_from_iter(self, iterator, n: int, *, discard: bool = False, _stash: dict = None) -> memoryview:
+        """
+        Read n bytes from iterator, managing stash.
+        If discard=True, trash the read bytes without returning them (usefull to skip padding)
+        Return a memoryview on the buffer if discard=False, else a empty mv
+        """
+        if _stash is None:
+            _stash = {"leftover": b""}
+
+        if discard:
+            remaining = n
+            # consommer d'abord le leftover
+            if _stash["leftover"]:
+                take = min(len(_stash["leftover"]), remaining)
+                _stash["leftover"] = _stash["leftover"][take:]
+                remaining -= take
+            for chunk in iterator:
+                if remaining <= 0:
+                    break
+                take = min(len(chunk), remaining)
+                remaining -= take
+                # stocker le reste du chunk pour la prochaine lecture
+                _stash["leftover"] = chunk[take:]
+            if remaining != 0:
+                raise RuntimeError(f"Unexpected EOF while discarding {n} bytes (missing {remaining})")
+            return memoryview(b"")
+
+        # lecture “utile”
+        buf = bytearray(n)
+        mv  = memoryview(buf)
+        i   = 0
+
+        # consommer d'abord le leftover
+        if _stash["leftover"]:
+            take = min(len(_stash["leftover"]), n)
+            mv[i:i+take] = _stash["leftover"][:take]
+            _stash["leftover"] = _stash["leftover"][take:]
+            i += take
+
+        for chunk in iterator:
+            if i >= n:
+                # on a déjà tout, conserver ce chunk entier en leftover
+                _stash["leftover"] = (_stash["leftover"] + chunk) if _stash["leftover"] else chunk
+                break
+            take = min(len(chunk), n - i)
+            mv[i:i+take] = chunk[:take]
+            i += take
+            # conserver le reste du chunk
+            if take < len(chunk):
+                _stash["leftover"] = chunk[take:]
+                break
+
+        if i != n:
+            raise RuntimeError(f"Unexpected EOF: wanted {n} bytes, got {i}")
+        return mv
 
     def get_image_array(self) -> ImageData:
-        """
-        Read /imagearray in binary mode, using pre allocated buffer
-        to avoid copy and accelerate this process on small computer
-        """
         url = f"{self.base_url}/imagearray"
         params = {
             "ClientID": self.client_id,
@@ -610,79 +661,59 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         }
         headers = {
             "Accept": "application/imagebytes",
-            "Accept-Encoding": "identity",  # pas de compression
+            "Accept-Encoding": "identity",  # évite une éventuelle décompression
         }
 
         t0 = time.perf_counter()
         with self.client.stream("GET", url, params=params, headers=headers) as r:
             r.raise_for_status()
+            it = r.iter_raw(chunk_size=131072)  # 128 KiB (ajuste si besoin)
+            stash = {"leftover": b""}
 
-            # 1) We read only the header 
-            hdr = r.read(self.HEADER_SIZE)
-            if len(hdr) != self.HEADER_SIZE:
-                raise RuntimeError(f"Alpaca header too short: {len(hdr)} bytes")
-
+            # 1) Read header (44 octets)
+            hdr_mv = self._read_exact_from_iter(it, self.HEADER_SIZE, _stash=stash)
             (meta_ver, err_num, ctid, stid, data_start,
-            img_elem_type, tx_elem_type, rank, dim1, dim2, dim3) = struct.unpack(self.HEADER_FMT, hdr)
+            img_elem_type, tx_elem_type, rank, dim1, dim2, dim3) = struct.unpack(self.HEADER_FMT, hdr_mv)
 
             if err_num != 0:
-                # Read everything to empty queue
-                _ = r.read()
+                # empty buffer
+                for _ in it: pass
                 raise RuntimeError(f"Alpaca camera error {err_num}")
 
-            # 2) read padding
+            # 2) skip padding
             if data_start > self.HEADER_SIZE:
-                _ = r.read(data_start - self.HEADER_SIZE)
+                self._read_exact_from_iter(it, data_start - self.HEADER_SIZE, discard=True, _stash=stash)
 
-            # 3) Prepare the final array dimension
+            # 3) prepare buffer with correct size and shape
             dtype = self.DTYPE_MAP.get(tx_elem_type)
             if dtype is None:
-                _ = r.read()
+                for _ in it: pass
                 raise ValueError(f"Unsupported TransmissionElementType {tx_elem_type}")
 
             if rank == 2:
-                shape = (dim2, dim1)
+                shape = (dim2, dim1)           # (H, W) — D1=width, D2=height
             elif rank == 3:
-                shape = (dim3, dim2, dim1)
+                shape = (dim3, dim2, dim1)     # (C, H, W) or similar
             else:
-                _ = r.read()
+                for _ in it: pass
                 raise ValueError(f"Unsupported rank {rank}")
 
             itemsize = np.dtype(dtype).itemsize
-            n_elems = int(np.prod(shape))
-            expected_bytes = n_elems * itemsize
+            n_elems  = int(np.prod(shape))
+            n_bytes  = n_elems * itemsize
 
-            # 4) Allocate the buffer directly in memory, no copy
-            buf = bytearray(expected_bytes)
-            mv = memoryview(buf)
-            read_total = 0
-            for chunk in r.iter_bytes():
-                end = read_total + len(chunk)
-                if end > expected_bytes:
-                    # trop de données : troncature propre et on vide le reste
-                    mv[read_total:expected_bytes] = chunk[:expected_bytes - read_total]
-                    read_total = expected_bytes
-                    # vider le flux restant
-                    _ = r.read()
-                    break
-                mv[read_total:end] = chunk
-                read_total = end
-                if read_total == expected_bytes:
-                    break
-
-            if read_total != expected_bytes:
-                raise RuntimeError(f"Incomplete image payload: got {read_total} / {expected_bytes} bytes")
+            # 4) Lire le payload image exactement n_bytes
+            payload_mv = self._read_exact_from_iter(it, n_bytes, _stash=stash)
 
         t1 = time.perf_counter()
 
-        # 5) Numpy convert on buffer
-        arr = np.frombuffer(mv, dtype=dtype, count=n_elems).reshape(shape)
+        # 5) numpy zero copy + reshape
+        arr = np.frombuffer(payload_mv, dtype=dtype, count=n_elems).reshape(shape)
 
-        # Check timing
-        logger.debug(
+        logger.info(
             f"[CAMERA] - imagebytes streamed in {(t1 - t0)*1000:.1f} ms | "
-            f"shape={shape} dtype={dtype} size={expected_bytes/1e6:.2f} MB | "
-            f"throughput={expected_bytes/(t1 - t0)/1e6:.1f} MB/s"
+            f"shape={shape} dtype={arr.dtype} size={n_bytes/1e6:.2f} MB | "
+            f"throughput={n_bytes/(t1 - t0)/1e6:.1f} MB/s"
         )
 
         h, w = arr.shape[:2]
@@ -693,7 +724,6 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
             exposure_duration=self.last_exposure,
             timestamp=self.last_time
         )
-    
 
     def set_ccd_temperature(self, temperature: float) -> None:
         """Définit la température cible du CCD"""
