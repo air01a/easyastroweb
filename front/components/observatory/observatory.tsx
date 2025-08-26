@@ -150,7 +150,7 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
                   <DynamicForm  onChange={dynamicFormChange} formDefinition={formLayout} initialValues={item}/> 
                   <div className="flex justify-center items-center">
                     <Button disabled={hasError} onClick={() => {handleSave(currentEdit, index)}}>{t('form.save')}</Button>
-                    <Button  onClick={() => setEdit(null)} className="ml-8 bg-gray-800">{t('form.delete')}</Button>
+                    <Button  onClick={() => setEdit(null)} className="ml-8 bg-gray-800">{t('form.cancel')}</Button>
                   </div>
                 </div>
              ) : ( 

@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Body, HTTPException
-from fastapi.responses import StreamingResponse, FileResponse
 from typing import Dict
-from models.api import PlanType
 from models.state import telescope_state
 from services.telescope_interface import telescope_interface
+from services.configurator import CONFIG
 
 
 router = APIRouter(prefix="/status", tags=["status"])
@@ -31,6 +30,7 @@ def connect_telescope() -> Dict[str, bool]:
     """
 
     try:
+
         telescope_interface.connect()
         return {"telescope_connected": telescope_state.is_telescope_connected, "camera_connected": telescope_state.is_camera_connected, "filter_wheel_connected": telescope_state.is_fw_connected, "focuser_connected": telescope_state.is_focuser_connected}
     except Exception as e:
@@ -41,6 +41,8 @@ def set_telescope_date(date: str = Body(..., embed=True)) -> Dict[str, str]:
     """
     Set the date for the telescope.
     """
+    if CONFIG['telescope'].get('has_gps', False):
+        return {"date": telescope_interface.get_utc_date()}
     try:
         telescope_interface.set_utc_date(date)
         return {"date": date}

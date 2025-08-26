@@ -248,6 +248,10 @@ class AlpacaTelescope(TelescopeInterface):
         Synchronize the telescope's location with the provided latitude, longitude, and elevation.
         """
         try:
+            if CONFIG['telescope'].get('has_gps', False):
+                logger.info(f"[TELESCOPE] - GPS on telescope, no location sync")
+                return True
+            
             alpaca_telescope_client.set_elevation(elevation)
             alpaca_telescope_client.set_latitude(latitude)
             alpaca_telescope_client.set_longitude(longitude) 

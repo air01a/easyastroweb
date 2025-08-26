@@ -250,5 +250,5 @@ def get_capture(exposition: int = Body(..., embed=True)):
         raise HTTPException(status_code=503, detail="Scheduler is running")
     if telescope_state.dark_processor and telescope_state.dark_processor.is_running:
         raise HTTPException(status_code=503, detail="Dark manager is running")
-    telescope_interface.capture_to_fit(exposition, 0, 0, "", "", Path("d:\\"),100)
+    telescope_interface.capture_to_fit(exposition, 0, 0, "", "", Path(CONFIG['global'].get("fits_storage_dir")),100)
     return get_last_image()

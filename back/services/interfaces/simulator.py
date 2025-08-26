@@ -36,7 +36,7 @@ class SimulatorTelescope(TelescopeInterface):
         self.target_temperature = 15
         self.bayer = None
         self.location = "0.0°, 0.0°, 0.0m"  # Default simulated location
-
+        
         self.focuser_is_moving = False
 
     def set_utc_date(self, date: str):
@@ -284,6 +284,9 @@ class SimulatorTelescope(TelescopeInterface):
         """
         Synchronize simulated telescope location.
         """
+        if CONFIG['telescope'].get('has_gps', False):
+            logger.info(f"[TELESCOPE] - GPS on telescope, no location sync")
+            return True
         logger.info(f"[TELESCOPE] - Simulated location synchronized to lat: {latitude}, lon: {longitude}, elev: {elevation}")
         self.location = f"{latitude}°, {longitude}°, {elevation}m"
 
@@ -377,6 +380,11 @@ class SimulatorTelescope(TelescopeInterface):
             telescope_state.is_telescope_connected = True
         except:
             telescope_state.is_telescope_connected = False  
+
+        try:
+            telescope_state.is_fw_connected = True
+        except:
+            telescope_state.is_fw_connected = False  
 
         # Sync simulated location with config
         try:

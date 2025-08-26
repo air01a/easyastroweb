@@ -20,7 +20,6 @@ class BasicAutomate(threading.Thread, ABC):
         self.telescope_interface = telescope_interface
         self._stop_requested = False
         self.name = name
-        print(CONFIG)
         self.solver = get_solver(CONFIG)
         self.has_fw = self.telescope_interface.filter_wheel_connect() if len(CONFIG['filterwheel'].get("filters", []))>1 else False
         self.status = "not_started"
