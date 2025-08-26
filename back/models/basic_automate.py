@@ -1,30 +1,31 @@
-from datetime import datetime, timezone
 import threading
 import time
-from models.observation import StopScheduler, Observation
-from models.state import telescope_state
+
 from utils.logger import logger
 from services.configurator import CONFIG
 from utils.calcul import get_solver, get_slew_error
 from pathlib import Path
-#from imageprocessing.fitsstacker import Config, LiveStacker
 from imageprocessing.fitsprocessor import FitsImageManager
-from imageprocessing.astrofilters import AstroFilters
 from ws.websocket_manager import ws_manager
-from services.history_manager import HistoryManager
+
 from abc import ABC, abstractmethod
+from numpy import uint8
+from services.focuser import AutoFocusLib
 
 
 class BasicAutomate(threading.Thread, ABC):
     def __init__(self, telescope_interface, name: str):
+        global CONFIG
         super().__init__(daemon=True)
         self.telescope_interface = telescope_interface
         self._stop_requested = False
         self.name = name
+        print(CONFIG)
         self.solver = get_solver(CONFIG)
         self.has_fw = self.telescope_interface.filter_wheel_connect() if len(CONFIG['filterwheel'].get("filters", []))>1 else False
         self.status = "not_started"
         self.is_running = False
+        self.autofocus = AutoFocusLib()
 
 
     def set_status(self,status:str, provider:str=None, type="STATUS"):
@@ -114,3 +115,52 @@ class BasicAutomate(threading.Thread, ABC):
         logger.info("[Scheduler] Stop requested.")
         self.is_running=False
         self.set_status("stopped")
+
+
+    def get_focus(self, ra: float, dec: float):
+        self.set_status(f"Finding good stars area for focusing", "FOCUSER", "STATUS")
+        dec = 70 + CONFIG['observatory'].get("latitude", 50) + dec - 90
+
+        self.telescope_interface.telescope_set_tracking(0)
+        stars=0
+        while stars < 10:
+            logger.info(f"[Focuser] - Slewing to RA: {ra}, DEC: {dec}")
+
+            self.telescope_interface.slew_to_target(ra, dec)
+            image = self.telescope_interface.camera_capture(CONFIG['global'].get("focuser_exposition", 4))
+            if image is None:
+                logger.error("[Focuser] - Error capturing image")
+            image.data = (image.data / 255).astype(uint8)
+            stars = self.autofocus.count_stars(image.data)
+            logger.info(f"[Focuser] - Found {stars} stars in the image")
+            ra = (ra+2) % 24
+
+        self.set_status(f"Focusing", "FOCUSER", "STATUS")
+
+        current_position = self.telescope_interface.focuser_get_current_position()
+        focuser_range = CONFIG['camera'].get('focuser_range', 250)
+        focuser_step = CONFIG['camera'].get('focuser_step', 50)
+        positions = list(range(current_position-focuser_range, current_position+focuser_range, focuser_step))
+
+        for position in positions:
+            logger.info(f"[Focuser] - Moving to position {position}")
+
+            self.telescope_interface.move_focuser(position)
+            for i in range(CONFIG['global'].get('focuser_image_by_position',1)):
+                logger.info(f"[Focuser] - MTaking picture {i}")
+                try:
+                    #image = (self.camera_capture(CONFIG['global'].get('focuser_exposition',4)).data/255).astype(np.uint8)
+                    image=(FitsImageManager.quick_process(self.telescope_interface.capture_to_fit(CONFIG['global'].get('focuser_exposition',4),0,0,f"{position}","",Path(CONFIG['global'].get("fits_storage_dir")).resolve(),100)).data/255).astype(uint8)
+                    ws_manager.broadcast_sync(ws_manager.format_message("FOCUSER","NEWIMAGE"))
+                except Exception as e:
+                    logger.error(f"[FOCUS] - Error capturing image {e}")
+                result = self.autofocus.analyze_image(image,position)
+                self.set_status(f"Focusing at {position}, FWHM : [{result["fwhm"]}]", "FOCUSER", "STATUS")
+
+                if not result['valid']:
+                    logger.error("[Focuser] - Invalid capture for autofocus")
+
+        best_position, best_method, details = self.autofocus.calculate_best_focus()
+        logger.info(f"[Focuser] - Results {best_position}, method={best_method}")
+
+        self.telescope_interface.move_focuser(best_position)

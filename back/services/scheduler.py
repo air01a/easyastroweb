@@ -149,7 +149,7 @@ class Scheduler(BasicAutomate):
             if CONFIG["telescope"].get("has_focuser", False) and (not telescope_state.is_focused or obs.focus):
                 logger.info("[SCHEDULER] - FOCUS process")
                 self.set_status("focusing")
-                self.telescope_interface.get_focus(obs.ra, obs.dec)
+                self.get_focus(obs.ra, obs.dec)
                 telescope_state.is_focused = True
                         
             dark=DarkManager.choose_dark(self.dark_config, obs.expo, obs.gain, temperature, CONFIG.get('camera',{}).get("id",""))

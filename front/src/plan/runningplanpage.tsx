@@ -59,7 +59,7 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
   useEffect(() => {
     const newMessage = messages[messages.length - 1];
     if (!newMessage) return;
-    if (newMessage.sender === "SCHEDULER") {
+    if (newMessage.sender === "SCHEDULER" || newMessage.sender === "FOCUSER") {
       if (newMessage.message === "NEWIMAGE") {
         fetchImages();
         setHistoryRefreshKey((prev) => prev + 1);

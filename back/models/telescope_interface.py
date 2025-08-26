@@ -1,16 +1,13 @@
 from abc import ABC, abstractmethod
-from services.focuser import AutoFocusLib
 import time
 from imageprocessing.fitsprocessor import FitsImageManager
 from utils.logger import logger
 from services.configurator import CONFIG
-import numpy as np
 from pathlib import Path
 
 
 class TelescopeInterface(ABC):
     def __init__(self):
-        self.autofocus = AutoFocusLib()
         self.mount_name : str = "Not connected"
         self.fw_name : str = "Not connected"
         self.focuser_name : str = "Not connected"
@@ -115,47 +112,7 @@ class TelescopeInterface(ABC):
         pass
           
 
-    def get_focus(self, ra: float, dec: float):
-
-        dec = 70 + CONFIG['observatory'].get("latitude", 50) + dec - 90
-
-        self.telescope_set_tracking(0)
-        stars=0
-        while stars < 10:
-            logger.info(f"[Focuser] - Slewing to RA: {ra}, DEC: {dec}")
-
-            self.slew_to_target(ra, dec)
-            image = self.camera_capture(CONFIG['global'].get("focuser_exposition", 4))
-            if image is None:
-                logger.error("[Focuser] - Error capturing image")
-            image.data = (image.data / 255).astype(np.uint8)
-            stars = self.autofocus.count_stars(image.data)
-            logger.info(f"[Focuser] - Found {stars} stars in the image")
-            ra = (ra+2) % 24
-
-
-        current_position = self.focuser_get_current_position()
-        focuser_range = CONFIG['camera'].get('focuser_range', 250)
-        focuser_step = CONFIG['camera'].get('focuser_step', 50)
-        positions = list(range(current_position-focuser_range, current_position+focuser_range, focuser_step))
-
-        for position in positions:
-            logger.info(f"[Focuser] - Moving to position {position}")
-            self.move_focuser(position)
-            for i in range(CONFIG['global'].get('focuser_image_by_position',1)):
-                logger.info(f"[Focuser] - MTaking picture {i}")
-                try:
-                    #image = (self.camera_capture(CONFIG['global'].get('focuser_exposition',4)).data/255).astype(np.uint8)
-                    image=(FitsImageManager.quick_process(self.capture_to_fit(CONFIG['global'].get('focuser_exposition',4),0,0,f"{position}","",Path(CONFIG['global'].get("fits_storage_dir")).resolve(),100)).data/255).astype(np.uint8)
-                except:
-                    logger.error("[FOCUS] - Error capturing image")
-                result = self.autofocus.analyze_image(image,position)
-                if not result['valid']:
-                    logger.error("[Focuser] - Invalid capture for autofocus")
-
-        best_position, best_method, details = self.autofocus.calculate_best_focus()
-        logger.info(f"[Focuser] - Results {best_position}, method={best_method}")
-        self.move_focuser(best_position)
+    
     
     def set_gain(self, gain: int):
         pass
