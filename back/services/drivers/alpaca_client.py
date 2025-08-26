@@ -478,6 +478,8 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         5: np.uint64, 6: np.uint8, 7: np.int64, 8: np.uint16, 9: np.uint32,
     }
 
+    HEADER_SIZE = 44  # bytes
+    HEADER_FMT = "<iiIIiiiiiii" 
 
     def __init__(self, host="localhost", port=11111, device_number=0):
         super().__init__(ASCOMDeviceType.CAMERA, host, port, device_number)
@@ -595,38 +597,133 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         result = self._make_request("GET", "imageready")
         return result.get("Value", False)
     
-    def parse_alpaca_imagebytes(self, raw: bytes) -> np.ndarray:
-        header = struct.unpack_from("<11i", raw, 0)
-        _, err_num, _, _, data_start, _, transmission_elem_type, rank, dim1, dim2, dim3 = header
-        
-        if err_num != 0:
-            raise RuntimeError(f"Alpaca camera error {err_num}")
-        
-        dtype = self.DTYPE_MAP.get(transmission_elem_type)
-        if dtype is None:
-            raise ValueError(f"Unsupported TransmissionElementType {transmission_elem_type}")
-        
-        shape = (dim2, dim1) if rank == 2 else (dim3, dim2, dim1) if rank == 3 else None
-        if shape is None:
-            raise ValueError(f"Unsupported rank {rank}")
-        
-        img_bytes = raw[data_start:]
-        total_elements = np.prod(shape)
-        return np.frombuffer(img_bytes, dtype=dtype, count=total_elements).reshape(shape)
+    def _read_exact_from_iter(self, iterator, n: int, *, discard: bool = False, _stash: dict = None) -> memoryview:
+        """
+        Read n bytes from iterator, managing stash.
+        If discard=True, trash the read bytes without returning them (usefull to skip padding)
+        Return a memoryview on the buffer if discard=False, else a empty mv
+        """
+        if _stash is None:
+            _stash = {"leftover": b""}
 
+        if discard:
+            remaining = n
+            # consommer d'abord le leftover
+            if _stash["leftover"]:
+                take = min(len(_stash["leftover"]), remaining)
+                _stash["leftover"] = _stash["leftover"][take:]
+                remaining -= take
+            for chunk in iterator:
+                if remaining <= 0:
+                    break
+                take = min(len(chunk), remaining)
+                remaining -= take
+                # stocker le reste du chunk pour la prochaine lecture
+                _stash["leftover"] = chunk[take:]
+            if remaining != 0:
+                raise RuntimeError(f"Unexpected EOF while discarding {n} bytes (missing {remaining})")
+            return memoryview(b"")
+
+        # lecture “utile”
+        buf = bytearray(n)
+        mv  = memoryview(buf)
+        i   = 0
+
+        # consommer d'abord le leftover
+        if _stash["leftover"]:
+            take = min(len(_stash["leftover"]), n)
+            mv[i:i+take] = _stash["leftover"][:take]
+            _stash["leftover"] = _stash["leftover"][take:]
+            i += take
+
+        for chunk in iterator:
+            if i >= n:
+                # on a déjà tout, conserver ce chunk entier en leftover
+                _stash["leftover"] = (_stash["leftover"] + chunk) if _stash["leftover"] else chunk
+                break
+            take = min(len(chunk), n - i)
+            mv[i:i+take] = chunk[:take]
+            i += take
+            # conserver le reste du chunk
+            if take < len(chunk):
+                _stash["leftover"] = chunk[take:]
+                break
+
+        if i != n:
+            raise RuntimeError(f"Unexpected EOF: wanted {n} bytes, got {i}")
+        return mv
 
     def get_image_array(self) -> ImageData:
-            raw = self._make_request("GET", "imagearray", byte_array=True, raw_response=True)
-            image_data = self.parse_alpaca_imagebytes(raw)
-            
-            (height, width) = image_data.shape[0:2]
-            return ImageData(
-                width=width,
-                height=height,
-                data=image_data,
-                exposure_duration=self.last_exposure,
-                timestamp=self.last_time
-            )
+        url = f"{self.base_url}/imagearray"
+        params = {
+            "ClientID": self.client_id,
+            "ClientTransactionID": _transaction_id_generator.get_next_id(),
+        }
+        headers = {
+            "Accept": "application/imagebytes",
+            "Accept-Encoding": "identity",  # évite une éventuelle décompression
+        }
+
+        t0 = time.perf_counter()
+        with self.client.stream("GET", url, params=params, headers=headers) as r:
+            r.raise_for_status()
+            it = r.iter_raw(chunk_size=131072)  # 128 KiB (ajuste si besoin)
+            stash = {"leftover": b""}
+
+            # 1) Read header (44 octets)
+            hdr_mv = self._read_exact_from_iter(it, self.HEADER_SIZE, _stash=stash)
+            (meta_ver, err_num, ctid, stid, data_start,
+            img_elem_type, tx_elem_type, rank, dim1, dim2, dim3) = struct.unpack(self.HEADER_FMT, hdr_mv)
+
+            if err_num != 0:
+                # empty buffer
+                for _ in it: pass
+                raise RuntimeError(f"Alpaca camera error {err_num}")
+
+            # 2) skip padding
+            if data_start > self.HEADER_SIZE:
+                self._read_exact_from_iter(it, data_start - self.HEADER_SIZE, discard=True, _stash=stash)
+
+            # 3) prepare buffer with correct size and shape
+            dtype = self.DTYPE_MAP.get(tx_elem_type)
+            if dtype is None:
+                for _ in it: pass
+                raise ValueError(f"Unsupported TransmissionElementType {tx_elem_type}")
+
+            if rank == 2:
+                shape = (dim2, dim1)           # (H, W) — D1=width, D2=height
+            elif rank == 3:
+                shape = (dim3, dim2, dim1)     # (C, H, W) or similar
+            else:
+                for _ in it: pass
+                raise ValueError(f"Unsupported rank {rank}")
+
+            itemsize = np.dtype(dtype).itemsize
+            n_elems  = int(np.prod(shape))
+            n_bytes  = n_elems * itemsize
+
+            # 4) Lire le payload image exactement n_bytes
+            payload_mv = self._read_exact_from_iter(it, n_bytes, _stash=stash)
+
+        t1 = time.perf_counter()
+
+        # 5) numpy zero copy + reshape
+        arr = np.frombuffer(payload_mv, dtype=dtype, count=n_elems).reshape(shape)
+
+        logger.info(
+            f"[CAMERA] - imagebytes streamed in {(t1 - t0)*1000:.1f} ms | "
+            f"shape={shape} dtype={arr.dtype} size={n_bytes/1e6:.2f} MB | "
+            f"throughput={n_bytes/(t1 - t0)/1e6:.1f} MB/s"
+        )
+
+        h, w = arr.shape[:2]
+        return ImageData(
+            width=w,
+            height=h,
+            data=arr,
+            exposure_duration=self.last_exposure,
+            timestamp=self.last_time
+        )
 
     def set_ccd_temperature(self, temperature: float) -> None:
         """Définit la température cible du CCD"""

@@ -154,7 +154,7 @@ class BasicAutomate(threading.Thread, ABC):
                 except Exception as e:
                     logger.error(f"[FOCUS] - Error capturing image {e}")
                 result = self.autofocus.analyze_image(image,position)
-                self.set_status(f"Focusing at {position}, FWHM : [{result["fwhm"]}]", "FOCUSER", "STATUS")
+                self.set_status(f"Focusing at {position}, FWHM : [{result['fwhm']}]", "FOCUSER", "STATUS")
 
                 if not result['valid']:
                     logger.error("[Focuser] - Invalid capture for autofocus")
