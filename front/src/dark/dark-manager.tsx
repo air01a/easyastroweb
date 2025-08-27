@@ -3,10 +3,13 @@ import DarkEditor from "./dark-editor";
 import type { DarkLibraryProcessType } from "../../types/api.type";
 import { apiService } from "../../api/api";
 import DarkProcessStatus from './dark-waiting';
+import {  useObserverStore } from "../../store/store";
+import ServiceUnavailable from "../../design-system/messages/service-unavailable"
 
 export default function DarkManager() {
   const [isProcessing, setIsProcessing] = useState<DarkLibraryProcessType[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null); // pour garder une référence claire au setInterval
+  const { isConnected } = useObserverStore(); 
 
   const refreshProcessing = async () => {
     const data = await apiService.getDarkProcessing();
@@ -15,7 +18,7 @@ export default function DarkManager() {
 
   // Initial fetch
   useEffect(() => {
-    refreshProcessing();
+    if (isConnected) refreshProcessing();
   }, []);
 
   // Gère l’intervalle de rafraîchissement si processing actif
@@ -45,7 +48,7 @@ export default function DarkManager() {
   return (
     <div>
       {(isProcessing.length === 0) ? (
-        <DarkEditor refresh={refreshProcessing} />
+         isConnected ? <DarkEditor refresh={refreshProcessing} /> : <ServiceUnavailable />
       ) : (
         <DarkProcessStatus processList={isProcessing} refresh={refreshProcessing} />
       )}

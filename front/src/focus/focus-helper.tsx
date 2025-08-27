@@ -1,22 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiService } from "../../api/api";
 
-import { X } from "lucide-react";
+import { X  } from "lucide-react";
 import ImageBox from "../../design-system/box/imagebox";
 import { useTranslation } from 'react-i18next';
 import FocusSlider from "../../components/image-settings/focus-sliders"
 import LoadingIndicator from "../../design-system/messages/loadingmessage";
-import { useConfigStore } from "../../store/store";
-
+import { useConfigStore, useObserverStore } from "../../store/store";
+import ServiceUnavailable from "../../design-system/messages/service-unavailable"
 
 export default function FocusHelper() {
   const [image1, setImage1] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { isConnected } = useObserverStore(); 
   const  getItem  = useConfigStore((state) => state.getItem);
   const { t } = useTranslation();
-//focuser_exposition
+  const [loopEnabled, setLoopEnabled] = useState<boolean>(false);
 
+  const loopEnabledRef = useRef(loopEnabled);
+  useEffect(() => { loopEnabledRef.current = loopEnabled; }, [loopEnabled]);
 
   const fetchImages = async () => {
     const baseUrl = apiService.getBaseUrl();
@@ -35,12 +38,12 @@ export default function FocusHelper() {
         const newImageUrl = URL.createObjectURL(blob);
         setImage1(newImageUrl);
         setIsLoading(false);
-
+        if (loopEnabledRef.current) fetchImages();
       });
   };
 
   useEffect(() => {
-    fetchImages();
+    if (isConnected) fetchImages();
   }, []);
 
   const captureImage = async () => {
@@ -56,8 +59,8 @@ export default function FocusHelper() {
   const closeModal = () => {
     setModalImage(null);
   };
-
-  return (
+  if (isConnected) {
+    return (
     <div className="flex flex-col items-center justify-center p-4 space-y-6">
 
       {/* IMAGES EN COURS */}
@@ -73,7 +76,7 @@ export default function FocusHelper() {
        
       </div>
       {(isLoading) && <LoadingIndicator text={t("global.loading")}/>}
-        <FocusSlider onUpdate={captureImage}/>
+       <FocusSlider onUpdate={captureImage} loopEnable={setLoopEnabled}/>
 
 
       {/* MODAL IMAGE */}
@@ -99,4 +102,7 @@ export default function FocusHelper() {
       )}
     </div>
   );
+  } else {
+    return (<ServiceUnavailable />)
+  }
 }

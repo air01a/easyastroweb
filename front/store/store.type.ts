@@ -20,8 +20,17 @@ export type ObserverStore = {
   camera: ConfigItems;
   filterWheel : ConfigItems;
   isConnected: boolean;
+  isFWConnected: boolean;
+  isCameraConnected: boolean;
+  isFocuserConnected: boolean;
+  isTelescopeConnected: boolean;
   setFilterWheel : (filterWheel : ConfigItems)=> void;
   setConnected: (isConnected: boolean) => void;
+  setCameraConnected: (isConnected: boolean) => void;
+  setFWConnected: (isConnected: boolean) => void;
+  setTelescopeConnected: (isConnected: boolean) => void;
+  setFocuserConnected: (isConnected: boolean) => void;
+
   setCamera : (camera : ConfigItems)=> void;
   initializeObserver: (telescope: ConfigItems, observatory: ConfigItems, date: Date, sunSet: Date, sunRise: Date) =>void,
 

@@ -14,7 +14,7 @@ export default function Home() {
 
   const { catalog } = useCatalogStore()
   //const messages = useWebSocketStore((state) => state.messages);
-  const {observatory, telescope, camera, filterWheel, setConnected} = useObserverStore();
+  const {observatory, telescope, camera, filterWheel, setConnected, setFWConnected, setCameraConnected, setFocuserConnected, setTelescopeConnected} = useObserverStore();
   const [hardware, setHardware] = useState<Record<string, string>|null>(null);
   const { t } = useTranslation();
 
@@ -55,7 +55,19 @@ export default function Home() {
   useEffect(() => {
     const checkConnection = async () => {
       const isConnected = await apiService.getIsConnected();
-      if (isConnected && isConnected.telescope_connected && isConnected.camera_connected) setConnected(true);
+      if (isConnected) {
+        if (isConnected.telescope_connected && isConnected.camera_connected) {
+          setConnected(true);
+        } else {
+          setConnected(false);
+        }
+        setFWConnected(isConnected.filter_wheel_connected);
+        setCameraConnected(isConnected.camera_connected);
+        setFocuserConnected(isConnected.focuser_connected);
+        setTelescopeConnected(isConnected.telescope_connected);
+
+      }
+
     }
 
     checkConnection();

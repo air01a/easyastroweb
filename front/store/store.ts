@@ -51,6 +51,10 @@ export const useObserverStore = create<ObserverStore>()(
       camera : {},
       filterWheel : {},
       isConnected: false,
+      isFWConnected: false,
+      isCameraConnected: false,
+      isFocuserConnected: false,
+      isTelescopeConnected: false,
 
       setCamera : (camera : ConfigItems)=> 
         set({
@@ -60,7 +64,18 @@ export const useObserverStore = create<ObserverStore>()(
       setConnected(isConnected: boolean) {
         set({ isConnected })
       },
-
+      setCameraConnected(isConnected: boolean) {
+        set({ isConnected })
+      },
+      setFWConnected(isConnected: boolean) {
+        set({ isConnected })
+      },
+      setTelescopeConnected(isConnected: boolean) {
+        set({ isConnected })
+      },
+      setFocuserConnected(isConnected: boolean) {
+        set({ isConnected })
+      },
       setFilterWheel : (filterWheel : ConfigItems) => 
         set({
           filterWheel
