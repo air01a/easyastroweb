@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { apiService } from "../../api/api";
 
-import { X  } from "lucide-react";
+import { Focus, StopCircleIcon, X  } from "lucide-react";
 import ImageBox from "../../design-system/box/imagebox";
 import { useTranslation } from 'react-i18next';
-import FocusSlider from "../../components/image-settings/focus-sliders"
+import FocusSlider from "../../components/focus/focus-sliders"
 import LoadingIndicator from "../../design-system/messages/loadingmessage";
 import { useConfigStore, useObserverStore } from "../../store/store";
 import ServiceUnavailable from "../../design-system/messages/service-unavailable"
+import type  { FwhmResults,  FhwmType } from "../../types/api.type";
+import Button from "../../design-system/buttons/main";
+import { useWebSocketStore } from "../../store/store";
+import FwhmChart from "../../components/focus/focus-graph";
 
 export default function FocusHelper() {
   const [image1, setImage1] = useState<string | null>(null);
@@ -17,9 +21,50 @@ export default function FocusHelper() {
   const  getItem  = useConfigStore((state) => state.getItem);
   const { t } = useTranslation();
   const [loopEnabled, setLoopEnabled] = useState<boolean>(false);
-
+  const [fwhm, setFwhm] = useState<FhwmType>(null);
+  const [fwhmLoading, setFwhmLoading] = useState<boolean>(false);
+  const [fwhmResults, setFwhmResults] = useState<FwhmResults|null>()
+  const [isAutofocusRunning, setIsAutoFocusRunning] = useState<boolean>(false);
+  const connect = useWebSocketStore((state) => state.connect);
+  const messages = useWebSocketStore((state) => state.messages);
   const loopEnabledRef = useRef(loopEnabled);
   useEffect(() => { loopEnabledRef.current = loopEnabled; }, [loopEnabled]);
+  const lastMessageRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        if (!isConnected) connect();
+      }, [isConnected, connect]);
+
+
+    useEffect(() => {
+       const refreshOnMessage = async () => {
+       if (messages.length === lastMessageRef.current)  return;
+
+        lastMessageRef.current = messages.length;
+        const newMessage = messages[messages.length - 1];
+        if (!newMessage) return;
+        if (newMessage.sender === "FOCUSER") {
+          if (newMessage.message === "NEWIMAGE") {
+            console.log("refresh graph")
+            const results = await apiService.getFocus();
+
+            setFwhmResults(results);
+            if (results && results[1].best_position) setIsAutoFocusRunning(false);
+          }
+        }
+        }
+        refreshOnMessage();
+      }, [messages, t]);
+
+  const loadFwhm = async() => {
+    setFwhmLoading(true);
+    apiService.getFhwm()
+      .then((result) => {
+        setFwhm(result);
+        setFwhmLoading(false);
+      });
+  }
+
 
   const fetchImages = async () => {
     const baseUrl = apiService.getBaseUrl();
@@ -38,7 +83,9 @@ export default function FocusHelper() {
         const newImageUrl = URL.createObjectURL(blob);
         setImage1(newImageUrl);
         setIsLoading(false);
+        loadFwhm();
         if (loopEnabledRef.current) fetchImages();
+        
       });
   };
 
@@ -59,7 +106,24 @@ export default function FocusHelper() {
   const closeModal = () => {
     setModalImage(null);
   };
+
+
+  const handleAutofocus = async () => {
+    if (isAutofocusRunning) {
+      apiService.stopPlan();
+      setIsAutoFocusRunning(false);
+      return ;
+    }
+    setLoopEnabled(false);
+    setIsAutoFocusRunning(true);
+    apiService.startAutoFocus();
+    
+
+  };
+
+
   if (isConnected) {
+    const formattedFwhm = fwhm?.fwhm != null ? (fwhm.fwhm as number).toFixed(2) : 'N/A';
     return (
     <div className="flex flex-col items-center justify-center p-4 space-y-6">
 
@@ -76,8 +140,28 @@ export default function FocusHelper() {
        
       </div>
       {(isLoading) && <LoadingIndicator text={t("global.loading")}/>}
-       <FocusSlider onUpdate={captureImage} loopEnable={setLoopEnabled}/>
+      {( fwhmResults) && (
+        <FwhmChart data={fwhmResults} />
+      )}
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-400">FWHM:</span>
+        {fwhmLoading && ! isAutofocusRunning? (
+          // petit loader inline
+          <span
+            className="inline-block h-4 w-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin"
+            aria-label={t("global.loading")}
+          />
+        ) : (
+          <span className="font-mono">{formattedFwhm}</span>
+        )}
+      </div>
+       <FocusSlider onUpdate={captureImage} loopEnable={setLoopEnabled} disabled={isAutofocusRunning} />
 
+       <div className="flex items-center justify-center gap-4 mt-4">
+          <Button onClick={handleAutofocus} >
+            {isAutofocusRunning ? <StopCircleIcon /> : <div className="flex flex-col justify-center items-center">Start Autotofocus<Focus /></div>}
+          </Button>
+          </div>
 
       {/* MODAL IMAGE */}
       {modalImage && (

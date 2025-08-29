@@ -1,5 +1,5 @@
 // services/api.ts
-import type { PlanType, DarkLibraryType, DarkLibraryProcessType, PlansHistory, ImageSettings} from "../types/api.type";
+import type { PlanType, DarkLibraryType, DarkLibraryProcessType, PlansHistory, ImageSettings, FhwmType, FwhmResults} from "../types/api.type";
 import type { ConfigItems } from "../store/config.type";
 import type {Field} from '../types/dynamicform.type'
 
@@ -326,6 +326,12 @@ export class ApiService {
     });
   }
 
+  async getFhwm(): Promise<FhwmType> {
+    return this.request<FhwmType>('/observation/fwhm', {
+      method: 'GET',
+    });
+  }
+
   async setFocuserPosition(position: number): Promise<number> {
     return this.request<number>(`/focuser/${position}`, {
       method: 'POST',
@@ -339,6 +345,17 @@ export class ApiService {
   }
 
 
+  async getFocus(): Promise<FwhmResults> {
+    return this.request<FwhmResults>(`/focuser/lastfocus`, {
+      method: 'GET',
+    });
+  }
+
+  async startAutoFocus(): Promise<void> {
+    this.request<void>(`/focuser/autofocus`, {
+      method: 'PUT',
+    });
+  }
   // Exemple pour un GET générique
   async getSomething<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {

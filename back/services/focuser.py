@@ -6,6 +6,9 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from photutils.detection import DAOStarFinder
 from photutils.psf import fit_fwhm
+from models.state import telescope_state
+from utils.logger import logger
+
 
 class AutoFocusLib:
     """
@@ -25,6 +28,9 @@ class AutoFocusLib:
         self.window_size=window_size
         # Stockage des mesures
         self.measurements: List[Dict[str, Any]] = []
+        self.result: Dict[str, Any] = {}
+        telescope_state.last_focus = [self.measurements, self.result]
+        self.image_buffer = None
         
     def clear_measurements(self) -> None:
         """
@@ -33,6 +39,13 @@ class AutoFocusLib:
         self.measurements.clear()
         self.logger.info("Mesures effacées")
     
+
+    def set_buffer_image(self, image:np.ndarray):
+        self.image_buffer = image.copy()
+
+    def analyze_buffer_image(self) -> Dict [str,any]:
+        return self.analyze_image(self.image_buffer, None)
+
     def analyze_image(self, image: np.ndarray, focus_position: int) -> Dict[str, Any]:
         """
         Analyzes an image and stores the results
@@ -60,7 +73,8 @@ class AutoFocusLib:
         }
         
         # Store measurement
-        self.measurements.append(result)
+        if focus_position!=None:
+            self.measurements.append(result)
         
         self.logger.info(f"[AutoFocus] - Position {focus_position}: FWHM = {fwhm if fwhm else 'N/A'}, "
                         f"Étoiles = {num_stars}, Valide = {result['valid']}")
@@ -269,7 +283,7 @@ class AutoFocusLib:
             'fwhm_range': (float(np.min(fwhm_values)), float(np.max(fwhm_values))),
             'position_range': (int(np.min(positions)), int(np.max(positions)))
         }
-        
+        telescope_state.last_focus[1]={'best_position':best_focus_pos, 'total_measurements':len(self.measurements), 'fwhm_min':float(np.min(fwhm_values)), 'fwhm_max':float(np.max(fwhm_values)),'position_min':int(np.min(positions)), 'position_max':int(np.max(positions))}
         self.logger.info(f"Meilleure position de focus: {best_focus_pos} (méthode: {best_model})")
         return best_focus_pos, best_model, detailed_info
     
@@ -401,6 +415,11 @@ class AutoFocusLib:
             }
         }
 
+
+
+
+
+
 # Exemple d'utilisation
 def example_usage():
     from alpaca_client import alpaca_camera_client, ExposureSettings, CameraState, alpaca_focuser_client
@@ -450,6 +469,8 @@ def example_usage():
 
     print(final_result)
     autofocus.plot_focus_curve()
+
+
 
 if __name__ == "__main__":
     example_usage()

@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Query, HTTPException
 from models.state import telescope_state
+from typing import List,  Dict, Any
 
 from services.telescope_interface import telescope_interface
-
+from services.focuser_automate import FocuserAutomate
 
 router = APIRouter(prefix="/focuser", tags=["focuser"])
 lock_focuser = False
@@ -41,3 +42,15 @@ def move_focuser(position: int) -> int:
         lock_focuser=False
         return telescope_interface.focuser_get_current_position()
     raise HTTPException(status_code=503, detail="No Focuser")
+
+@router.get('/lastfocus')
+def get_last_focus() :
+    return telescope_state.last_focus
+
+@router.put('/autofocus')
+def start_autofocus():
+    if telescope_state.scheduler and telescope_state.scheduler.is_alive():
+        raise HTTPException(status_code=500, detail="Plan already runnning")
+    telescope_state.scheduler = FocuserAutomate(telescope_interface)
+    telescope_state.scheduler.start()
+    telescope_state.plan_active=True

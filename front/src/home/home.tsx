@@ -78,11 +78,6 @@ export default function Home() {
     <main className="text-white p-6 flex flex-col items-center">
       <H1>🌅 {t('home.observatoryWelcome', {observatory:location})}</H1>
 
-
-
-
-
-
       <div className="flex flex-wrap md:flex-wrap gap-6 max-w-4xl w-full">
         <div className="flex-1 bg-yellow-500/10 border border-yellow-300 rounded-2xl p-6 shadow-lg backdrop-blur-md min-w-80 items-center justify-center">
           <h2 className="text-2xl font-semibold mb-4 text-yellow-300">⚙️ {t('home.theHardware')}</h2>

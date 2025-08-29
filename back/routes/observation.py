@@ -16,10 +16,14 @@ from pathlib import Path
 from services.history_manager import HistoryManager
 from imageprocessing.fitsprocessor import FitsImageManager
 from services.configurator import CONFIG
+from services.focuser import AutoFocusLib
+from utils.section_timer import SectionTimer
+
 
 router = APIRouter(prefix="/observation", tags=["observation"])
 astro_filters = AstroFilters()
 fits_manager = FitsImageManager()
+autofocus = AutoFocusLib( )
 
 @router.get("/plot")
 def get_dso_image(object: str = Query(..., description="Nom ou identifiant de l'objet (ex: M31, NGC 7000)")):
@@ -130,36 +134,49 @@ def get_last_stacked_image():
 
 
 
-@router.get("/last_image")
 def get_last_image():
     """
     Return the last image taken by the telescope
     If the image is not set, return a waiting image
     The binning is done here instead just after the image is taken for performance reasons
     """
-    if telescope_state.last_picture is not None:
-        image = telescope_state.last_picture.copy()
+    timer = SectionTimer("get_last_image")
+    try:
+        if telescope_state.last_picture is not None:
+            image = telescope_state.last_picture.copy()
+            timer.mark("copy last_picture")
 
-        if len(image.shape)<3:
-            # Appliquer les filtres 
-            sensor, bayer, color_type = telescope_interface.get_bayer_pattern()
-            if bayer:
-                image = fits_manager.debayer(image, bayer)
-                telescope_state.last_picture = image.copy()
+            if len(image.shape) < 3:
+                sensor, bayer, color_type = telescope_interface.get_bayer_pattern()
+                timer.mark("get_bayer_pattern")
 
-        target_width = CONFIG['global'].get("live_stacking_image_size", 800)
-        if target_width>0:
-            # Redimensionner l'image si la taille est spécifiée
-            if image.shape[0] > target_width:
-                h, w = image.shape[:2]
-                bin_factor = max(1, w // target_width)
-                if bin_factor >= 2:
-                    image = FitsImageManager.bin_image(image, bin_factor)
+                if bayer:
+                    image = fits_manager.debayer(image, bayer)
+                    timer.mark("debayer")
                     telescope_state.last_picture = image.copy()
-    else:
-        image=None
-    return transform_to_jpg(image)
-        
+                    timer.mark("cache_debayered_copy")
+
+            target_width = CONFIG['global'].get("live_stacking_image_size", 800)
+            if target_width > 0:
+                h, w = image.shape[:2]
+                if w > target_width:
+                    bin_factor = max(1, w // target_width)
+                    timer.mark("compute_bin_factor")
+                    if bin_factor >= 2:
+                        image = FitsImageManager.bin_image(image, bin_factor)
+                        timer.mark(f"bin_image x{bin_factor}")
+                        telescope_state.last_picture = image.copy()
+                        timer.mark("cache_binned_copy")
+        else:
+            image = None
+            timer.mark("no_last_picture")
+
+        jpg = transform_to_jpg(image)
+        timer.mark("transform_to_jpg")
+        return jpg
+
+    finally:
+        timer.end()
 
 
 @router.get("/history")
@@ -246,9 +263,32 @@ def stop_observation():
 
 @router.post('/capture')
 def get_capture(exposition: int = Body(..., embed=True)):
+    global autofocus
+    timer = SectionTimer("get_capture")
+
     if telescope_state.scheduler and telescope_state.scheduler.is_alive():
         raise HTTPException(status_code=503, detail="Scheduler is running")
     if telescope_state.dark_processor and telescope_state.dark_processor.is_running:
         raise HTTPException(status_code=503, detail="Dark manager is running")
-    telescope_interface.capture_to_fit(exposition, 0, 0, "", "", Path(CONFIG['global'].get("fits_storage_dir")),100)
+    timer.mark("check")
+
+    if CONFIG['global'].get('debug', False):
+        telescope_interface.capture_to_fit(exposition, 0, 0, "", "", Path(CONFIG['global'].get("fits_storage_dir")),100)
+    else:
+        telescope_interface.camera_capture(exposition,True)
+    timer.mark("capture")
+
+    #telescope_state.last_analyzed_image=autofocus.analyze_image(telescope_state.last_picture,None)
+    autofocus.set_buffer_image(telescope_state.last_picture)
+    timer.mark("fhwm")
+    timer.end()
     return get_last_image()
+
+@router.get('/last_analyzed')
+def get_last_fhwm():
+    return telescope_state.last_analyzed_image
+
+@router.get('/fwhm')
+def get_fhwm():
+    telescope_state.last_analyzed_image=autofocus.analyze_buffer_image()
+    return get_last_fhwm()

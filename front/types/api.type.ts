@@ -49,3 +49,24 @@ export interface ImageSettings {
   stretch: number;
   black_point: number;
 }
+
+export type FhwmType = Record<string, number|string>|null;
+
+
+export interface FwhmPoint {
+  focus_position: number;
+  fwhm: number;
+  num_stars: number;
+  valid: boolean;
+}
+
+export interface AutofocusResult {
+  best_position: number;
+  total_measurements: number;
+  fwhm_min: number;
+  fwhm_max: number;
+  position_min: number;
+  position_max: number;
+}
+
+export type FwhmResults = [FwhmPoint[], AutofocusResult ];

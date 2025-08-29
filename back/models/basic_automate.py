@@ -25,6 +25,7 @@ class BasicAutomate(threading.Thread, ABC):
         self.status = "not_started"
         self.is_running = False
         self.autofocus = AutoFocusLib()
+        self.plan = None
 
 
     def set_status(self,status:str, provider:str=None, type="STATUS"):
@@ -118,21 +119,23 @@ class BasicAutomate(threading.Thread, ABC):
 
     def get_focus(self, ra: float, dec: float):
         self.set_status(f"Finding good stars area for focusing", "FOCUSER", "STATUS")
-        dec = 70 + CONFIG['observatory'].get("latitude", 50) + dec - 90
 
-        self.telescope_interface.telescope_set_tracking(0)
-        stars=0
-        while stars < 10:
-            logger.info(f"[Focuser] - Slewing to RA: {ra}, DEC: {dec}")
+        if (ra!=None):
+            dec = 70 + CONFIG['observatory'].get("latitude", 50) + dec - 90
 
-            self.telescope_interface.slew_to_target(ra, dec)
-            image = self.telescope_interface.camera_capture(CONFIG['global'].get("focuser_exposition", 4))
-            if image is None:
-                logger.error("[Focuser] - Error capturing image")
-            image.data = (image.data / 255).astype(uint8)
-            stars = self.autofocus.count_stars(image.data)
-            logger.info(f"[Focuser] - Found {stars} stars in the image")
-            ra = (ra+2) % 24
+            self.telescope_interface.telescope_set_tracking(0)
+            stars=0
+            while stars < 10:
+                logger.info(f"[Focuser] - Slewing to RA: {ra}, DEC: {dec}")
+
+                self.telescope_interface.slew_to_target(ra, dec)
+                image = self.telescope_interface.camera_capture(CONFIG['global'].get("focuser_exposition", 4))
+                if image is None:
+                    logger.error("[Focuser] - Error capturing image")
+                image.data = (image.data / 255).astype(uint8)
+                stars = self.autofocus.count_stars(image.data)
+                logger.info(f"[Focuser] - Found {stars} stars in the image")
+                ra = (ra+2) % 24
 
         self.set_status(f"Focusing", "FOCUSER", "STATUS")
 
@@ -150,11 +153,11 @@ class BasicAutomate(threading.Thread, ABC):
                 try:
                     #image = (self.camera_capture(CONFIG['global'].get('focuser_exposition',4)).data/255).astype(np.uint8)
                     image=(FitsImageManager.quick_process(self.telescope_interface.capture_to_fit(CONFIG['global'].get('focuser_exposition',4),0,0,f"{position}","",Path(CONFIG['global'].get("fits_storage_dir")).resolve(),100)).data/255).astype(uint8)
-                    ws_manager.broadcast_sync(ws_manager.format_message("FOCUSER","NEWIMAGE"))
                 except Exception as e:
                     logger.error(f"[FOCUS] - Error capturing image {e}")
                 result = self.autofocus.analyze_image(image,position)
                 self.set_status(f"Focusing at {position}, FWHM : [{result['fwhm']}]", "FOCUSER", "STATUS")
+                ws_manager.broadcast_sync(ws_manager.format_message("FOCUSER","NEWIMAGE"))
 
                 if not result['valid']:
                     logger.error("[Focuser] - Invalid capture for autofocus")
