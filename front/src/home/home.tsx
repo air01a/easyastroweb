@@ -13,7 +13,6 @@ import { useTranslation } from 'react-i18next';
 export default function Home() {
 
   const { catalog } = useCatalogStore()
-  //const messages = useWebSocketStore((state) => state.messages);
   const {observatory, telescope, camera, filterWheel, setConnected, setFWConnected, setCameraConnected, setFocuserConnected, setTelescopeConnected} = useObserverStore();
   const [hardware, setHardware] = useState<Record<string, string>|null>(null);
   const { t } = useTranslation();
@@ -24,36 +23,14 @@ export default function Home() {
     set: catalog[0]?.sunset?.toLocaleString().split(' ')[1] || '',
     meridian: catalog[0]?.meridian?.toLocaleString().split(' ')[1] || '',
   }
-  //console.log(catalog[0].sunrise?.toLocaleString())
   const moon = {
-    rise: catalog[1]?.sunrise?.toLocaleString().split(' ')[1] || '', // Assure-toi que l'index est correct
+    rise: catalog[1]?.sunrise?.toLocaleString().split(' ')[1] || '',
     set: catalog[1]?.sunset?.toLocaleString().split(' ')[1] || '',
-    illumination: catalog[1]?.illumination || 0, // Assure-toi que l'index est correct
-    image: catalog[1]?.image||'', // Remplace par le bon chemin
+    illumination: catalog[1]?.illumination || 0, 
+    image: catalog[1]?.image||'', 
   }
 
-  const fetchHardware = async (rescan=false) => {
-      try {
-        if (rescan) {
-          const connection = await apiService.connectHardWare();
-          const nowUtcIso = new Date().toISOString();
-
-          if (connection && connection.telescope_connected && connection.camera_connected) {
-            await apiService.setUtcDate(nowUtcIso);
-            setConnected(true); 
-          }
-
-        } 
-        const hardwareData = await apiService.getHardwareName();
-        setHardware(hardwareData);
-      } catch (error) {
-        console.error("Error fetching hardware data:", error);
-      }
-    };
-
-
-  useEffect(() => {
-    const checkConnection = async () => {
+  const checkConnection = async () => {
       const isConnected = await apiService.getIsConnected();
       if (isConnected) {
         if (isConnected.telescope_connected && isConnected.camera_connected) {
@@ -69,6 +46,30 @@ export default function Home() {
       }
 
     }
+
+  const fetchHardware = async (rescan=false) => {
+      try {
+        if (rescan) {
+          const connection = await apiService.connectHardWare();
+          const nowUtcIso = new Date().toISOString();
+
+          if (connection && connection.telescope_connected && connection.camera_connected) {
+            await apiService.setUtcDate(nowUtcIso);
+            checkConnection();
+          }
+
+        } 
+        const hardwareData = await apiService.getHardwareName();
+        setHardware(hardwareData);
+        
+      } catch (error) {
+        console.error("Error fetching hardware data:", error);
+      }
+    };
+
+
+  useEffect(() => {
+    
 
     checkConnection();
     fetchHardware();

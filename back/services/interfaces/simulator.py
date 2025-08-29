@@ -30,7 +30,6 @@ class SimulatorTelescope(TelescopeInterface):
         logger.info(f"[SIMULATOR] - Found {len(self.dark_files)} DARK FITS files in {self.dark_dir}")
         self.index = 0
         self.index_dark = 0
-        self.focuser_name = "Simulator Focuser"
         self.focuser_position = 25000
         self.initial_temperature = 15
         self.target_temperature = 15

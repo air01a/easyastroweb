@@ -133,7 +133,7 @@ def get_last_stacked_image():
     return transform_to_jpg(image)
 
 
-
+@router.get("/last_image")
 def get_last_image():
     """
     Return the last image taken by the telescope

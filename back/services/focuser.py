@@ -8,8 +8,7 @@ from photutils.detection import DAOStarFinder
 from photutils.psf import fit_fwhm
 from models.state import telescope_state
 from utils.logger import logger
-
-
+from models.constants import AUTOMATE_STEP
 class AutoFocusLib:
     """
     Library for astronomical autofocus based on FWHM analysis

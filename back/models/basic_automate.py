@@ -11,7 +11,7 @@ from ws.websocket_manager import ws_manager
 from abc import ABC, abstractmethod
 from numpy import uint8
 from services.focuser import AutoFocusLib
-
+from models.constants import AUTOMATE_STEP
 
 class BasicAutomate(threading.Thread, ABC):
     def __init__(self, telescope_interface, name: str):
@@ -26,6 +26,7 @@ class BasicAutomate(threading.Thread, ABC):
         self.is_running = False
         self.autofocus = AutoFocusLib()
         self.plan = None
+        self.automate_step = AUTOMATE_STEP["IDLE"]
 
 
     def set_status(self,status:str, provider:str=None, type="STATUS"):
@@ -40,6 +41,8 @@ class BasicAutomate(threading.Thread, ABC):
 
     def slew_to_target(self, ra: float, dec: float):
         logger.info(f"[{self.name}] - Slewing to {ra}/{dec}")
+        self.automate_step = AUTOMATE_STEP["SLEWING"]
+
         final=False
         retry=0
         self.set_status("slewing")
@@ -82,6 +85,8 @@ class BasicAutomate(threading.Thread, ABC):
 
     def set_temperature(self) -> tuple[int, bool]:
         if CONFIG.get('camera',{}).get("is_cooled", False):
+            self.automate_step = AUTOMATE_STEP["TEMPERATURE"]
+
             temperature = CONFIG.get('camera',{}).get("temperature",0)
             if temperature is not None:
                 try:
@@ -119,6 +124,7 @@ class BasicAutomate(threading.Thread, ABC):
 
     def get_focus(self, ra: float, dec: float):
         self.set_status(f"Finding good stars area for focusing", "FOCUSER", "STATUS")
+        self.automate_step = AUTOMATE_STEP["FOCUSING"]
 
         if (ra!=None):
             dec = 70 + CONFIG['observatory'].get("latitude", 50) + dec - 90

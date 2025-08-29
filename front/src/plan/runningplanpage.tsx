@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { apiService } from "../../api/api";
 import Button from "../../design-system/buttons/main";
 import Swal from "sweetalert2";
-import { X, LoaderCircle } from "lucide-react";
+import { X, LoaderCircle,  Focus } from "lucide-react";
 import { useWebSocketStore } from "../../store/store";
 import ImageBox from "../../design-system/box/imagebox";
 import History from "../../components/history/history"
 import { useTranslation } from 'react-i18next';
 import ImageSettingsSliders from "../../components/image-settings/image-sliders"
+import FwhmChart from "../../components/focus/focus-graph";
+import type  { FwhmResults } from "../../types/api.type";
 
 export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
   const [image1, setImage1] = useState<string | null>(null);
@@ -20,6 +22,12 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
   const connect = useWebSocketStore((state) => state.connect);
   const messages = useWebSocketStore((state) => state.messages);
   const isConnected = useWebSocketStore((state) => state.isConnected);
+  const [isFocusing, setIsFocusing] = useState<boolean>(false);
+  const [forceShowFocus, setforceShowFocus] = useState<boolean>(false);
+
+  const [isStacking, setIsStacking] = useState<boolean>(false);
+  const [fwhmResults, setFwhmResults] = useState<FwhmResults|null>(null)
+
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   const fetchImages = async () => {
@@ -49,9 +57,20 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
           setModalImage(newImageUrl);
         }
       });
+    if (isFocusing) {
+        const results = await apiService.getFocus();
+        setFwhmResults(results);
+    }
   };
 
   useEffect(() => {
+    const getStatus = async() => {
+      const status = await apiService.getOperationStatus();
+      if (status===1) setIsFocusing(true);
+      if (status===4) setIsStacking(true);
+    }
+
+    getStatus();
     fetchImages();
     if (!isConnected) connect();
   }, []);
@@ -60,8 +79,16 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
     const newMessage = messages[messages.length - 1];
     if (!newMessage) return;
     if (newMessage.sender === "SCHEDULER" || newMessage.sender === "FOCUSER") {
+      if (newMessage.sender==="FOCUSER") { 
+        setIsFocusing(true);
+      } else {
+        if (isFocusing) setIsFocusing(false);
+      }
       if (newMessage.message === "NEWIMAGE") {
         fetchImages();
+        if (newMessage.sender=="SCHEDULER") {
+          setIsStacking(true);
+        }
         setHistoryRefreshKey((prev) => prev + 1);
       } else if (newMessage.message === "STATUS") {
         setJobStatus((newMessage.data as string) || t("plan.unknown_status"));
@@ -76,7 +103,7 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
   const handleClick = () => {
     Swal.fire({
       title: t("plan.stop_plan"),
-      text: t("plan.confirm"),
+      text: `${t("plan.confirm_stop")}?`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: t("plan.yes"),
@@ -99,6 +126,11 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
     setModalImageType(null);
   };
 
+  const imgCount =
+  (isStacking && image1 ? 1 : 0) +
+  (image2 ? 1 : 0);
+
+
   return (
     <div className="flex flex-col items-center justify-center p-4 space-y-6">
       {/* STATUT */}
@@ -108,26 +140,42 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
       </div>
 
       {/* IMAGES EN COURS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl">
-        {image1 && (
-          <ImageBox
-            src={image1}
-            label="Last stacked image"
-            onClick={() => openModal(image1, 'image1')}
-          />
-        )}
-        {image2 && (
-          <ImageBox
-            src={image2}
-            label="Last image taken"
-            onClick={() => openModal(image2, 'image2')}
-          />
-        )}
+      <div className="flex items-center justify-center">
+        <div className="flex flex-wrap justify-center gap-6 max-w-8xl w-full">
+          {isStacking && image1 && (
+            <div className={imgCount === 1 ? "w-full md:w-1/2 mx-auto" : "w-full md:basis-[48%]"}>
+              <ImageBox
+                src={image1}
+                label="Last stacked image"
+                onClick={() => openModal(image1, 'image1')}
+                className="w-full h-auto object-contain max-h-[70vh]"
+              />
+            </div>
+          )}
+
+          {image2 && (
+            <div className={imgCount === 1 ? "w-full md:w-1/2 mx-auto" : "w-full md:basis-[48%]"}>
+              <ImageBox
+                src={image2}
+                label="Last taken"
+                onClick={() => openModal(image2, 'image2')}
+                className="w-full h-auto object-contain max-h-[70vh]"
+              />
+            </div>
+          )}
+        </div>
       </div>
-        <ImageSettingsSliders onUpdate={fetchImages}/>
-      <Button onClick={handleClick}>Arrêter le plan</Button>
+      {isStacking &&  <ImageSettingsSliders onUpdate={fetchImages}/>}
+      {((isFocusing||forceShowFocus) && fwhmResults) && <FwhmChart data={fwhmResults} />}
+            {(!isFocusing && fwhmResults) && (
+        <div><Button onClick={()=> {setforceShowFocus(!forceShowFocus)}} >
+            {forceShowFocus ? <div className="flex flex-col justify-center items-center text-red-500">{t('focuser.hideFocus')}<Focus className="color-red-500" /> </div>: <div className="flex flex-col justify-center items-center">{t('focuser.showFocus')}<Focus /></div>}
+          </Button></div>
+      )}
 
       <History refreshKey={historyRefreshKey} />
+      <Button onClick={handleClick}>{t('plan.stop_plan')}</Button>
+
       {/* MODAL IMAGE */}
       {modalImage && (
         <div
@@ -149,6 +197,8 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
           </div>
         </div>
       )}
+
+
     </div>
   );
 }

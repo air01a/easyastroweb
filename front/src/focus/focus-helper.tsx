@@ -159,7 +159,7 @@ export default function FocusHelper() {
 
        <div className="flex items-center justify-center gap-4 mt-4">
           <Button onClick={handleAutofocus} >
-            {isAutofocusRunning ? <StopCircleIcon /> : <div className="flex flex-col justify-center items-center">Start Autotofocus<Focus /></div>}
+            {isAutofocusRunning ? <StopCircleIcon /> : <div className="flex flex-col justify-center items-center">{t('focuser.startAutofocus')}<Focus /></div>}
           </Button>
           </div>
 

@@ -65,3 +65,10 @@ def get_connected_hardware() -> Dict[str, str]:
         "telescope_location": telescope_interface.get_telescope_location(),
         "utc_date": telescope_interface.get_utc_date()
     }
+
+@router.get("/operation_status")
+def get_operation_status():
+    if telescope_state.scheduler:
+        return telescope_state.scheduler.automate_step
+    else:
+        return -1

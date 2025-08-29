@@ -15,7 +15,7 @@ from services.history_manager import HistoryManager
 from models.basic_automate import BasicAutomate
 from numpy import uint16
 from imageprocessing.stacker.fitsstacker_python import ImageStacker
-
+from models.constants import AUTOMATE_STEP
 
 
 class Scheduler(BasicAutomate):
@@ -170,6 +170,8 @@ class Scheduler(BasicAutomate):
 
 
             while self.captures_done < obs.number:
+                self.automate_step = AUTOMATE_STEP["TEMPERATURE"]
+
                 if self._stop_requested:
                     logger.info("[SCHEDULER] Stop requested during capture.")
                     break

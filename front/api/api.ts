@@ -356,6 +356,13 @@ export class ApiService {
       method: 'PUT',
     });
   }
+
+
+  async getOperationStatus(): Promise<number> {
+    return this.request<number>('/status/operation_status',
+      {method:"GET"}
+    )
+  }
   // Exemple pour un GET générique
   async getSomething<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {
