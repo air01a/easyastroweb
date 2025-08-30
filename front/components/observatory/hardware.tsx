@@ -46,7 +46,7 @@ const DeviceStatus: React.FC<DeviceStatusProps> = ({
           key={index}
           className="bg-gray-400 p-2 rounded flex justify-between items-center"
         >
-          <span className="flex-1 text-gray-800">{t(devices[index].label)} : {truncateWithTooltip(device.name)}</span>
+          <span className="flex-1 text-gray-800">{t(`global.${devices[index].label}`)} : {truncateWithTooltip(device.name)}</span>
           <span className="ml-2">
             {isConnected(device.name) ? "✅" : "❌"}
           </span>

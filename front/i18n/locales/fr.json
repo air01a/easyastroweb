@@ -157,6 +157,11 @@
         "captures":"Captures",
         "name":"Nom",
         "running":"En cours",
-        "loading":"Chargement"
+        "loading":"Chargement",
+        "focuser":"Focuser",
+        "filterWheel":"Roue à filtres",
+        "camera":"Caméra",
+        "telescope":"Télescope",
+        "mount":"Monture"
     }
 }
