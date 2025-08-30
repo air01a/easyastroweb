@@ -267,9 +267,9 @@ def get_capture(exposition: int = Body(..., embed=True)):
     timer = SectionTimer("get_capture")
 
     if telescope_state.scheduler and telescope_state.scheduler.is_alive():
-        raise HTTPException(status_code=503, detail="Scheduler is running")
+        return get_last_image()
     if telescope_state.dark_processor and telescope_state.dark_processor.is_running:
-        raise HTTPException(status_code=503, detail="Dark manager is running")
+        return get_last_image()
     timer.mark("check")
 
     if CONFIG['global'].get('debug', False):

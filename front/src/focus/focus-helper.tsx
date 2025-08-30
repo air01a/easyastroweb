@@ -26,18 +26,21 @@ export default function FocusHelper() {
   const [fwhmResults, setFwhmResults] = useState<FwhmResults|null>()
   const [isAutofocusRunning, setIsAutoFocusRunning] = useState<boolean>(false);
   const connect = useWebSocketStore((state) => state.connect);
+  const isWebSocketConnected = useWebSocketStore((state) => state.isConnected);
+
   const messages = useWebSocketStore((state) => state.messages);
   const loopEnabledRef = useRef(loopEnabled);
   useEffect(() => { loopEnabledRef.current = loopEnabled; }, [loopEnabled]);
   const lastMessageRef = useRef<number | null>(null);
 
     useEffect(() => {
-        if (!isConnected) connect();
-      }, [isConnected, connect]);
+        if (!isWebSocketConnected) connect();
+      }, [isWebSocketConnected, connect]);
 
 
     useEffect(() => {
        const refreshOnMessage = async () => {
+        console.log("new message", messages.length, lastMessageRef.current);
        if (messages.length === lastMessageRef.current)  return;
 
         lastMessageRef.current = messages.length;
@@ -141,7 +144,7 @@ export default function FocusHelper() {
       </div>
       {(isLoading) && <LoadingIndicator text={t("global.loading")}/>}
       {( fwhmResults) && (
-        <div className="w-[60%]"><FwhmChart data={fwhmResults} /></div>
+        <div className="w-[50%] "><FwhmChart data={fwhmResults} /></div>
       )}
       <div className="flex items-center gap-2">
         <span className="text-sm text-gray-400">FWHM:</span>

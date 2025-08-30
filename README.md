@@ -98,6 +98,11 @@ Below are some example screenshots showcasing the main features of **AstroAutoma
   <br>
   <em>🔹 Manage sigma clipping for removing artefact</em>
 </p>
+<p align="center">
+  <img src="./doc/autofocus.png" alt="Observation Planner" width="70%">
+  <br>
+  <em>🔹 Manage focuser (manual & autofocus)</em>
+</p>
 
 
 
