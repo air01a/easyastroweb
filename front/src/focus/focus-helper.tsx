@@ -141,7 +141,7 @@ export default function FocusHelper() {
       </div>
       {(isLoading) && <LoadingIndicator text={t("global.loading")}/>}
       {( fwhmResults) && (
-        <FwhmChart data={fwhmResults} />
+        <div className="w-[60%]"><FwhmChart data={fwhmResults} /></div>
       )}
       <div className="flex items-center gap-2">
         <span className="text-sm text-gray-400">FWHM:</span>

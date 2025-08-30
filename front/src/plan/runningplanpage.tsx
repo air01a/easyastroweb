@@ -166,7 +166,7 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
         </div>
       </div>
       {isStacking &&  <ImageSettingsSliders onUpdate={fetchImages}/>}
-      {((isFocusing||forceShowFocus) && fwhmResults) && <FwhmChart data={fwhmResults} />}
+      {((isFocusing||forceShowFocus) && fwhmResults) && ( <div className="w-60%"><FwhmChart data={fwhmResults}/></div>)}
             {(!isFocusing && fwhmResults) && (
         <div><Button onClick={()=> {setforceShowFocus(!forceShowFocus)}} >
             {forceShowFocus ? <div className="flex flex-col justify-center items-center text-red-500">{t('focuser.hideFocus')}<Focus className="color-red-500" /> </div>: <div className="flex flex-col justify-center items-center">{t('focuser.showFocus')}<Focus /></div>}
