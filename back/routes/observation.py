@@ -18,7 +18,7 @@ from imageprocessing.fitsprocessor import FitsImageManager
 from services.configurator import CONFIG
 from services.focuser import AutoFocusLib
 from utils.section_timer import SectionTimer
-
+from time import sleep
 
 router = APIRouter(prefix="/observation", tags=["observation"])
 astro_filters = AstroFilters()
@@ -264,6 +264,14 @@ def stop_observation():
 @router.post('/capture')
 def get_capture(exposition: int = Body(..., embed=True)):
     global autofocus
+    if (telescope_state.bin_x!=CONFIG['camera'].get("binx_focuser",1)):
+        telescope_state.bin_x = CONFIG['camera'].get("binx_focuser",1)
+        telescope_state.bin_y=CONFIG['camera'].get("biny_focuser",1)
+        telescope_interface.set_bin_x(CONFIG['camera'].get("binx_focuser",1))
+        telescope_interface.set_bin_y(CONFIG['camera'].get("biny_focuser",1))
+
+        sleep(0.5)
+
     timer = SectionTimer("get_capture")
 
     if telescope_state.scheduler and telescope_state.scheduler.is_alive():

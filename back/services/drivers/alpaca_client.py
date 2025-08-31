@@ -488,6 +488,7 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         self._cached_dimensions = None
         self._image_buffer = None
         self._buffer_shape = None
+        self._binning = [1,1]
 
     def set_camera_gain(self, gain: int)-> None :
         self._make_request("PUT", "gain", {
@@ -571,6 +572,12 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
 
     def start_exposure(self, settings: ExposureSettings) -> None:
         """Démarre une exposition"""
+        (binx, biny) = self._binning
+        if not settings.num_x and binx+biny!=2:
+            settings.num_x = self.camera_info.camera_x_size//self._binning[0]
+            settings.num_y = self.camera_info.camera_y_size//self._binning[1]
+            settings.bin_x = binx
+            settings.bin_y = biny
         self.last_exposure=settings.duration
         self.last_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         #print(settings)
@@ -743,8 +750,29 @@ class ASCOMAlpacaCameraClient(ASCOMAlpacaBaseClient):
         result = self._make_request("GET", "cooleron")
         return result.get("Value", False)
 
+    def set_bin_x(self, binx) -> None:
+        """Définit le binning"""
+        self._make_request("PUT", "binx", {"BinX": binx})
+        self.set_num_x(self.camera_info.camera_x_size//binx)
+        self._binning[0]=binx
 
+    def set_bin_y(self, biny) -> None:
+        """Définit le binning"""
+        self._make_request("PUT", "biny", {"BinY": biny})        
+        self.set_num_y(self.camera_info.camera_x_size//biny)
+        self._binning[1]=biny
 
+    def set_fast_read_out(self, fast_read_out) -> None:
+        """Définit le fastreadlut"""
+        self._make_request("PUT", "fastreadout", {"FastReadout": fast_read_out})    
+
+    def set_num_x(self, numx) -> None:
+        """Définit le binning"""
+        self._make_request("PUT", "numx", {"NumX": numx})
+
+    def set_num_y(self, numy) -> None:
+        """Définit le binning"""
+        self._make_request("PUT", "numy", {"NumY": numy})
 
 class FocuserInfo(BaseDeviceInfo):
     """Informations spécifiques au focuser"""

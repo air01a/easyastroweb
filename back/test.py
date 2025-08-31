@@ -1,31 +1,24 @@
+from services.telescope_interface import telescope_interface
+from time import sleep
 from imageprocessing.fitsprocessor import FitsImageManager
-from services.alpaca_client import alpaca_camera_client, ExposureSettings, CameraState
-from astropy.io import fits 
-import time
-import numpy as np
+from PIL import Image
+from utils.section_timer import SectionTimer
 
+fits_manager = FitsImageManager()
 
-def __main__():
-    alpaca_camera_client.connect()
-    print(alpaca_camera_client.device_type)
-    print(alpaca_camera_client.start_exposure(ExposureSettings()))
-    while alpaca_camera_client.get_camera_state()==CameraState.EXPOSING:
-        print("waiting end of exposure")
-        time.sleep(1)
+telescope_interface.camera_connect()
+#telescope_interface.set_fast_read_out(True)
+print(telescope_interface.camera_name)
+telescope_interface.set_bin_x(2)
+telescope_interface.set_bin_y(2)
+sleep(1)
+timer = SectionTimer("capture")
 
-    print(alpaca_camera_client.get_camera_state())
-    camera_info = alpaca_camera_client.get_camera_info()
-
-    image=alpaca_camera_client.get_image_array()
-    header={}
-    if camera_info:
-        header['INSTRUME'] = camera_info.name
-        header['XPIXSZ'] = camera_info.camera_x_size
-        header['YPIXSZ'] = camera_info.camera_y_size
-    header["EXPTIME"] = 1
-    header['DATE-OBS'] = time.strftime('%Y-%m-%dT%H:%M:%S')
-    FitsImageManager.save_fits_from_array(image.data, "test.fits",header)
-
-if __name__ == "__main__":
-    print("main")
-    __main__()
+image=(telescope_interface.camera_capture(2,True).data)
+sensor, bayer, color_type = telescope_interface.get_bayer_pattern()
+if bayer:
+    print("debayer")
+    image = fits_manager.debayer(image, bayer)
+    timer.mark("debayer")
+    timer.mark("cache_debayered_copy")
+timer.end()

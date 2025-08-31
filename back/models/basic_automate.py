@@ -7,6 +7,7 @@ from utils.calcul import get_solver, get_slew_error
 from pathlib import Path
 from imageprocessing.fitsprocessor import FitsImageManager
 from ws.websocket_manager import ws_manager
+from models.state import telescope_state
 
 from abc import ABC, abstractmethod
 from numpy import uint8
@@ -27,6 +28,11 @@ class BasicAutomate(threading.Thread, ABC):
         self.autofocus = AutoFocusLib()
         self.plan = None
         self.automate_step = AUTOMATE_STEP["IDLE"]
+        if telescope_state.bin_x!=1:
+            telescope_interface.set_bin_x(1)
+
+        if telescope_state.bin_y!=1:
+            telescope_interface.set_bin_y(1)
 
 
     def set_status(self,status:str, provider:str=None, type="STATUS"):
@@ -112,7 +118,8 @@ class BasicAutomate(threading.Thread, ABC):
 
     @abstractmethod
     def _execute_plan(self,  *args, **kwargs):
-       pass
+        pass
+
 
 
     def _request_stop(self): 
@@ -143,6 +150,7 @@ class BasicAutomate(threading.Thread, ABC):
                 logger.info(f"[Focuser] - Found {stars} stars in the image")
                 ra = (ra+2) % 24
 
+
         self.set_status(f"Focusing", "FOCUSER", "STATUS")
 
         current_position = self.telescope_interface.focuser_get_current_position()
@@ -167,7 +175,6 @@ class BasicAutomate(threading.Thread, ABC):
 
                 if not result['valid']:
                     logger.error("[Focuser] - Invalid capture for autofocus")
-
         best_position, best_method, details = self.autofocus.calculate_best_focus()
         logger.info(f"[Focuser] - Results {best_position}, method={best_method}")
 

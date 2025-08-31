@@ -102,6 +102,7 @@ export const useObserverStore = create<ObserverStore>()(
         isLoaded: state.isLoaded,
         sunRise: state.sunRise,
         sunSet: state.sunSet,
+        camera: state.camera
       }),
       // Gestion de la sérialisation/désérialisation des dates
       storage: {

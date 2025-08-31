@@ -55,5 +55,19 @@
         "fieldType": "INPUT",
         "varType": "INT",
         "defaultValue": -15
+    },
+     {
+        "fieldName": "binx_focuser",
+        "description": "Binning X for focusing",
+        "fieldType": "INPUT",
+        "varType": "INT",
+        "defaultValue": 1
+    },
+    {
+        "fieldName": "biny_focuser",
+        "description": "Binning Y for focusing",
+        "fieldType": "INPUT",
+        "varType": "INT",
+        "defaultValue": 1
     }
 ]

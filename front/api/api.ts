@@ -144,6 +144,25 @@ export class ApiService {
   }
 
 
+  async setBinX(binx: number): Promise<void> {
+    console.log(binx);
+    this.request('/cameras/binx', {
+      method: 'PUT',
+      body: JSON.stringify({binx})
+    });
+
+  }
+
+  
+  async setBinY(biny: number): Promise<void> {
+    this.request('/cameras/biny', {
+      method: 'PUT',
+      body: JSON.stringify({biny})
+    });
+
+  }
+
+
   async getImageSettings(): Promise<ImageSettings> {
     return this.request<ImageSettings>('/observation/image_settings', {
       method: 'GET',

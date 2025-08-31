@@ -23,5 +23,7 @@ class TelescopeState:
     image_settings = ImageSettings(stretch=CONFIG['global'].get('initial_stretch',0.15), black_point=CONFIG['global'].get('initial_black_point',80))
     last_focus = [None,None]
     last_analyzed_image = None
+    bin_x : int = 1
+    bin_y : int = 1
 telescope_state = TelescopeState()
 

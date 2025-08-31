@@ -112,7 +112,13 @@ class TelescopeInterface(ABC):
         pass
           
 
-    
+    @abstractmethod
+    def set_bin_x(self, binx):
+        pass
+
+    @abstractmethod
+    def set_bin_y(self, biny):
+        pass 
     
     def set_gain(self, gain: int):
         pass

@@ -10,7 +10,7 @@ import { useConfigStore, useObserverStore } from "../../store/store";
 import ServiceUnavailable from "../../design-system/messages/service-unavailable"
 import type  { FwhmResults,  FhwmType } from "../../types/api.type";
 import Button from "../../design-system/buttons/main";
-import { useWebSocketStore } from "../../store/store";
+import { useWebSocketStore, useCatalogStore } from "../../store/store";
 import FwhmChart from "../../components/focus/focus-graph";
 
 export default function FocusHelper() {
@@ -27,6 +27,7 @@ export default function FocusHelper() {
   const [isAutofocusRunning, setIsAutoFocusRunning] = useState<boolean>(false);
   const connect = useWebSocketStore((state) => state.connect);
   const isWebSocketConnected = useWebSocketStore((state) => state.isConnected);
+  const {camera} = useObserverStore();
 
   const messages = useWebSocketStore((state) => state.messages);
   const loopEnabledRef = useRef(loopEnabled);
@@ -52,7 +53,10 @@ export default function FocusHelper() {
             const results = await apiService.getFocus();
 
             setFwhmResults(results);
-            if (results && results[1].best_position) setIsAutoFocusRunning(false);
+            if (results && results[1].best_position) {
+              setBinning();
+              setIsAutoFocusRunning(false);
+            } 
           }
         }
         }
@@ -92,8 +96,17 @@ export default function FocusHelper() {
       });
   };
 
+  const setBinning = async () => {
+    console.log(camera?.binx_focuser)
+    //if (camera?.binx_focuser!==1) await apiService.setBinX(camera.binx_focuser as number)
+    //if (camera?.biny_focuser!==1) await apiService.setBinY(camera.biny_focuser as number)
+  }
+
   useEffect(() => {
     if (isConnected) fetchImages();
+    console.log(camera)
+    setBinning();
+
   }, []);
 
   const captureImage = async () => {

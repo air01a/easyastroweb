@@ -150,6 +150,13 @@ class SimulatorTelescope(TelescopeInterface):
                     f"slope={slope:.2f}, brightness={brightness_factor:.1f}x, thickness={thickness}px")
         return modified_data
 
+
+    def set_bin_x(self, binx):
+        pass
+
+    def set_bin_y(self, biny):
+        pass
+
     def _bresenham_line(self, x0, y0, x1, y1):
         """
         Bresenham's line drawing algorithm.

@@ -5,6 +5,8 @@ from fastapi import APIRouter, Body, HTTPException
 from services.configurator import save_telescope_config, get_telescope_config, get_telescope_config_schema, set_default_telescope_config, CONFIG, CAMERAS_PATH, CAMERAS_SCHEMA_PATH
 from models.api import ConfigPayload, ConfigAllowedValue
 from typing import Dict, List, Any
+from services.telescope_interface import telescope_interface
+from models.state import telescope_state
 
 router = APIRouter(prefix="/cameras", tags=["cameras"])
 
@@ -38,3 +40,14 @@ async def api_set_current_camera(camera: str = Body(..., embed=True)):
     """Set the current camera configuration."""
     await set_default_telescope_config(camera, "camera", CAMERAS_PATH)
     return camera
+
+@router.put("/binx")
+async def set_bin_x(binx: int = Body(..., embed=True)):
+    telescope_interface.set_bin_x(binx)
+    telescope_state.bin_x = binx
+
+@router.put("/biny")
+async def set_bin_y(biny: int = Body(..., embed=True)):
+    telescope_interface.set_bin_y(biny)
+    telescope_state.bin_y = biny
+
