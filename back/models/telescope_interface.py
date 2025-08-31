@@ -120,8 +120,11 @@ class TelescopeInterface(ABC):
     def set_bin_y(self, biny):
         pass 
     
+    @abstractmethod
     def set_gain(self, gain: int):
         pass
+
+    
 
     def get_fit_header(self, exposure: int, gain:int):
         sensor, bayer, color_type = self.get_bayer_pattern()

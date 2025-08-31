@@ -252,9 +252,13 @@ class AlpacaTelescope(TelescopeInterface):
         except Exception as e:
             logger.error(f"[CAMERA] - Binning error {e}")
 
-    def set_fast_read_out(self, fast_read_out):
-        alpaca_camera_client.set_fast_read_out(fast_read_out)
-
+    def set_fast_read_out(self, fast_read_out)->bool:
+        try:
+            alpaca_camera_client.set_fast_read_out(fast_read_out)
+            return True
+        except:
+            return False
+        
     def sync_location(self, latitude: float, longitude : float, elevation: float):
         """
         Synchronize the telescope's location with the provided latitude, longitude, and elevation.

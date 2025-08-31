@@ -10,7 +10,7 @@ import { useConfigStore, useObserverStore } from "../../store/store";
 import ServiceUnavailable from "../../design-system/messages/service-unavailable"
 import type  { FwhmResults,  FhwmType } from "../../types/api.type";
 import Button from "../../design-system/buttons/main";
-import { useWebSocketStore, useCatalogStore } from "../../store/store";
+import { useWebSocketStore } from "../../store/store";
 import FwhmChart from "../../components/focus/focus-graph";
 
 export default function FocusHelper() {
