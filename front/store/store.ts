@@ -24,7 +24,6 @@ export const useCatalogStore = create<CatalogStore>()(
       },
 
       updateCatalog: (catalog: CatalogItem[]) => {
-        console.log('updateCatalog', catalog)
         set({ catalog })
         set({ isLoaded: true, error: null })
       }
@@ -153,7 +152,6 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
 
     socket.onopen = () => {
       set({isConnected: true})
-      console.log('WebSocket connecté');
     };
 
     socket.onmessage = (event) => {
@@ -166,7 +164,6 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
     };
 
     socket.onclose = () => {
-      console.log('WebSocket fermé');
       set({ socket: null, isConnected: false });
     };
 

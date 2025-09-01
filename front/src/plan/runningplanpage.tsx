@@ -34,7 +34,6 @@ export default function RunningPlanPage({ refresh }: { refresh: () => void }) {
     const baseUrl = apiService.getBaseUrl();
     const timestamp = Date.now();
 
-    console.log("fetch images)");
 
     fetch(`${baseUrl}/observation/last_stacked_image?t=${timestamp}`)
       .then((res) => res.blob())

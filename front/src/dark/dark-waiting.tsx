@@ -32,7 +32,6 @@ export default  function DarkProcessStatus({ processList, refresh }: Props) {
         lastMessageRef.current = messages.length;
         const newMessage = messages[messages.length - 1];
         if (!newMessage) return;
-        console.log(newMessage);
         if (newMessage.sender === "SCHEDULER") {
           if (newMessage.message === "NEWIMAGE") {
             refresh();

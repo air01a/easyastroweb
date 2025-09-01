@@ -27,7 +27,7 @@ export default function FocusHelper() {
   const [isAutofocusRunning, setIsAutoFocusRunning] = useState<boolean>(false);
   const connect = useWebSocketStore((state) => state.connect);
   const isWebSocketConnected = useWebSocketStore((state) => state.isConnected);
-  const {camera} = useObserverStore();
+  //const {camera} = useObserverStore();
 
   const messages = useWebSocketStore((state) => state.messages);
   const loopEnabledRef = useRef(loopEnabled);
@@ -41,7 +41,6 @@ export default function FocusHelper() {
 
     useEffect(() => {
        const refreshOnMessage = async () => {
-        console.log("new message", messages.length, lastMessageRef.current);
        if (messages.length === lastMessageRef.current)  return;
 
         lastMessageRef.current = messages.length;
@@ -49,7 +48,6 @@ export default function FocusHelper() {
         if (!newMessage) return;
         if (newMessage.sender === "FOCUSER") {
           if (newMessage.message === "NEWIMAGE") {
-            console.log("refresh graph")
             const results = await apiService.getFocus();
 
             setFwhmResults(results);
@@ -97,14 +95,12 @@ export default function FocusHelper() {
   };
 
   const setBinning = async () => {
-    console.log(camera?.binx_focuser)
     //if (camera?.binx_focuser!==1) await apiService.setBinX(camera.binx_focuser as number)
     //if (camera?.biny_focuser!==1) await apiService.setBinY(camera.biny_focuser as number)
   }
 
   useEffect(() => {
     if (isConnected) fetchImages();
-    console.log(camera)
     setBinning();
 
   }, []);

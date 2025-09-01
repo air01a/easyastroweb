@@ -45,7 +45,6 @@ export default function DarkEditor({refresh}: {refresh:() => void;}) {
   };
 
   const handleAddRow = () => {
-    console.log(camera)
     setNewRows([
       ...newRows,
       { temperature: camera.temperature as number  , 
@@ -80,7 +79,6 @@ export default function DarkEditor({refresh}: {refresh:() => void;}) {
         setNewRows([]);
         refresh();
     };
-    console.log(camera)
   return (
         <div className="p-4 space-y-6">
             <h2 className="text-xl font-bold text-center">{t('nav.dark_manager')}</h2>

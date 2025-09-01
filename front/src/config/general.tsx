@@ -22,7 +22,6 @@ export default function GeneralConfig() {
             setFormDefinition(formDefinition);
             setInitialValues(config);
             setConfig(config);
-            console.log(formDefinition)
         }
         fetchData();
     },[])

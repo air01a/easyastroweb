@@ -159,7 +159,6 @@ export class ApiService {
 
 
   async setBinX(binx: number): Promise<void> {
-    console.log(binx);
     this.request('/cameras/binx', {
       method: 'PUT',
       body: JSON.stringify({binx})

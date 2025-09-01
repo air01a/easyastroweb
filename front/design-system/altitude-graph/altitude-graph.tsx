@@ -45,7 +45,7 @@ const AltitudeChart: React.FC<AltitudeChartProps> = ({
 
   // Génération des rectangles pour les selectedRanges
   const selectedRangeShapes = useMemo(() => {
-    data.forEach((element) => console.log(element.visibility))
+   
     data.forEach((element, index)=> {
       if (element.visibility && element.visibility=='masked') {
         if ((index*AltitudeGraphStep+data[0]?.time>sunset) && ((index*AltitudeGraphStep+data[0]?.time)<sunrise+24)) {
