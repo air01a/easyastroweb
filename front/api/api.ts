@@ -80,16 +80,23 @@ export class ApiService {
     });
   }
 
-  async setObservatory(observatoryConfiguration : ConfigItems[]) : Promise<void> {
-    this.request<ConfigItems[]>('/observatories', {
+  async setObservatory(observatoryConfiguration : ConfigItems) : Promise<void> {
+    await this.request<ConfigItems[]>('/observatories', {
       method: 'POST',
+      body: JSON.stringify(observatoryConfiguration)
+    });
+  }
+
+  async deleteObservatory(observatoryConfiguration : ConfigItems) : Promise<void> {
+    await this.request<ConfigItems[]>('/observatories', {
+      method: 'DELETE',
       body: JSON.stringify(observatoryConfiguration)
     });
   }
 
 
   async setCurrentObservatory(observatory : string) : Promise<void> {
-      this.request<ConfigItems[]>('/observatories/current', {
+      await this.request<ConfigItems[]>('/observatories/current', {
         method: 'PUT',
         body: JSON.stringify({observatory})
       });
@@ -120,13 +127,20 @@ export class ApiService {
 
 
   }
-  async setTelescope(telescopeConfiguration : ConfigItems[]) : Promise<void> {
-    this.request<ConfigItems[]>('/telescopes', {
+
+  async setTelescope(telescopeConfiguration : ConfigItems) : Promise<void> {
+    await this.request<ConfigItems[]>('/telescopes', {
       method: 'POST',
       body: JSON.stringify(telescopeConfiguration)
     });
   }
 
+  async deleteTelescope(telescopeConfiguration : ConfigItems) : Promise<void> {
+    await this.request<ConfigItems[]>('/telescopes', {
+      method: 'DELETE',
+      body: JSON.stringify(telescopeConfiguration)
+    });
+  }
 
   async getCurrentTelescope(): Promise<ConfigItems> {
     return this.request<ConfigItems>('/telescopes/current', {
@@ -169,8 +183,8 @@ export class ApiService {
     });
   }
 
-    async setImageSettings(stretch:number, black_point: number): Promise<void> {
-    this.request<ConfigItems>('/observation/image_settings', {
+  async setImageSettings(stretch:number, black_point: number): Promise<void> {
+    await this.request<ConfigItems>('/observation/image_settings', {
       method: 'PUT',
       body: JSON.stringify({stretch, black_point})
     });
@@ -190,12 +204,21 @@ export class ApiService {
 
 
   }
-  async setCameras(telescopeConfiguration : ConfigItems[]) : Promise<void> {
-    this.request<ConfigItems[]>('/cameras', {
+
+  async setCameras(telescopeConfiguration : ConfigItems) : Promise<void> {
+    await this.request<ConfigItems[]>('/cameras', {
       method: 'POST',
       body: JSON.stringify(telescopeConfiguration)
     });
   }
+
+  async deleteCameras(telescopeConfiguration : ConfigItems) : Promise<void> {
+    await this.request<ConfigItems[]>('/cameras', {
+      method: 'DELETE',
+      body: JSON.stringify(telescopeConfiguration)
+    });
+  }
+
 
 
   async getCurrentCamera(): Promise<ConfigItems> {
@@ -206,7 +229,7 @@ export class ApiService {
 
 
   async setCurrentCamera(camera: string): Promise<void> {
-    this.request<ConfigItems>('/cameras/current', {
+    await  this.request<ConfigItems>('/cameras/current', {
       method: 'PUT',
       body: JSON.stringify({camera})
     });
@@ -228,13 +251,20 @@ export class ApiService {
 
 
   }
-  async setFilterWheels(wheelConfiguration : ConfigItems[]) : Promise<void> {
-    this.request<ConfigItems[]>('/filterwheels', {
+
+  async setFilterWheels(wheelConfiguration : ConfigItems) : Promise<void> {
+    await this.request<ConfigItems[]>('/filterwheels', {
       method: 'POST',
       body: JSON.stringify(wheelConfiguration)
     });
   }
 
+  async deleteFilterWheels(wheelConfiguration : ConfigItems) : Promise<void> {
+    await this.request<ConfigItems[]>('/filterwheels', {
+      method: 'DELETE',
+      body: JSON.stringify(wheelConfiguration)
+    });
+  }
 
   async getCurrentFilterWheel(): Promise<ConfigItems> {
     return this.request<ConfigItems>('/filterwheels/current', {

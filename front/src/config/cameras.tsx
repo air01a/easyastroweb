@@ -27,8 +27,13 @@ const  CamerasConfig =  () => {
 
 
 
-    const handleEditCameras = async (items: ConfigItems[]) => {
-        await apiService.setCameras(items);
+    const handleEditCameras = async (item: ConfigItems, isDelete: boolean = false) => {
+       
+        if (isDelete) {
+            await apiService.deleteCameras(item);
+        } else {
+            await apiService.setCameras(item);
+        }
         const cameras = await apiService.getCameras();
         setCameras(cameras)
         

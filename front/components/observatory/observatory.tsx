@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 
 export type Props = {
     items: ConfigItems[];
-    onEdit?: (item: ConfigItems[]) => void;
+    onEdit?: (item: ConfigItems, isDelete?: boolean) => void;
     formLayout : Field[];
     editable?: boolean;
     CardComponent: React.ComponentType<{ item: ConfigItems }>;
@@ -60,11 +60,11 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
         if (updatedItem===null) return;
         let selected : ConfigItems|null = null;
         if (currentItems[index].id===selectedId) selected=updatedItem
-        const newItems = currentItems.map((item, newindex) =>
+        /* const newItems = currentItems.map((item, newindex) =>
                             index === newindex ? updatedItem : item
-                        );
+                        );*/
         if (onEdit) {
-           onEdit(newItems);
+           onEdit(updatedItem);
            if (selected && onSelect) {
               onSelect(selected);
             setSelectedId(selected.id as string);
@@ -85,8 +85,8 @@ const ObservatoryList: React.FC<Props> = ({ items, formLayout, onEdit, CardCompo
           confirmButtonText: t('delete')
         }).then((result) => {        
           if (result.isConfirmed) {
-            const newItems = items.filter((item) => item.id !== deletedItem.id);
-            if (onEdit)  onEdit(newItems);
+            //const newItems = items.filter((item) => item.id !== deletedItem.id);
+            if (onEdit)  onEdit(deletedItem, true);
             setEdit(null);
           }
         });

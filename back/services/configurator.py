@@ -5,7 +5,7 @@ import asyncio
 from models.api import ConfigAllowedValue
 from utils.config_layout_parser import load_layout, get_item_to_save_from_layout
 from utils.json_load import load_array_form_json
-
+from os import fsync
 
 ConfigEntry = Dict[str, Union[str, int, bool]]
 ConfigList = List[ConfigEntry]
@@ -54,6 +54,8 @@ async def write_json(path: Path, data: Any):
     def dump():
         with path.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
+            f.flush()  # Force immediate write to disk
+            fsync(f.fileno())
     await loop.run_in_executor(None, dump)
 
 def load_config() -> None:
@@ -138,15 +140,41 @@ async def get_telescope_config_schema(filepath: Path) -> Dict[str, ConfigAllowed
 
 async def save_telescope_config(filepath: Path, telescope_config: List[Dict[str, ConfigAllowedValue]], type:str, schema_path:Path) -> tuple[bool, str]:
     schema = await get_telescope_config_schema(schema_path)
-    for item in telescope_config:
-        error = await check_data_format(item, schema)
-        if error:
-            return (False, error)
-    try : 
-        await write_json(filepath, telescope_config)
+    #for item in telescope_config:
+    error = await check_data_format(telescope_config, schema)
+    if error:
+        return (False, error)
+    try:
+        current_config = await read_json(filepath)
+        found = False
+        for index, item in enumerate(current_config):
+            if item["id"] == telescope_config["id"]:
+                current_config[index]=telescope_config
+                found = True
+        if not found:
+            current_config.append(telescope_config)
+        await write_json(filepath, current_config)
     except Exception as e:
         return (False, str(e))
-    await set_default_telescope_config(telescope_config[0]["id"],type, filepath)
+    #await set_default_telescope_config(telescope_config[0]["id"],type, filepath)
+    return (True, "No Error")
+
+async def delete_telescope_config(filepath: Path, telescope_config: List[Dict[str, ConfigAllowedValue]], type:str) -> tuple[bool, str]:
+
+    try:
+        current_config = await read_json(filepath)
+        for index, item in enumerate(current_config):
+            if item["id"] == telescope_config["id"]:
+                if len(current_config) > 1:
+                    del current_config[index]
+                if telescope_config["id"]==CONFIG[type]['id']:
+                    set_default_telescope_config(current_config[0]["id"],type, filepath)
+                    
+                break
+        await write_json(filepath, current_config)
+    except Exception as e:
+        return (False, str(e))
+    #await set_default_telescope_config(telescope_config[0]["id"],type, filepath)
     return (True, "No Error")
 
 

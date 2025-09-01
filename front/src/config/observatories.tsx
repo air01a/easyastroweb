@@ -28,8 +28,13 @@ const ObservatoryConfig = () => {
         loadObservatory();
     },[])
 
-    const handleEdit = async (items: ConfigItems[]) => {
-        await apiService.setObservatory(items);
+    const handleEdit = async (items: ConfigItems, isDelete: boolean = false) => {
+        if(isDelete) {
+            await apiService.deleteObservatory(items);
+         } else {
+            await apiService.setObservatory(items);
+         }
+            
         const obs = await apiService.getObservatory();
         setItems(obs);
 

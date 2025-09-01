@@ -27,8 +27,12 @@ const  FilterWheelsConfig =  () => {
 
 
 
-    const handleEditFilterWheel = async (items: ConfigItems[]) => {
-        await apiService.setFilterWheels(items);
+    const handleEditFilterWheel = async (item: ConfigItems, isDelete : boolean = false) => {
+        if (isDelete) {
+            await apiService.deleteFilterWheels(item);
+        } else {
+            await apiService.setFilterWheels(item);
+        }
         const wheels = await apiService.getFilterWheels();
         setWheels(wheels);
     };  

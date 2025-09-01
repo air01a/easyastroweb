@@ -2,7 +2,7 @@
 This module defines the API routes for managing camera configurations in the EasyAstro application."""
 
 from fastapi import APIRouter, Body, HTTPException
-from services.configurator import save_telescope_config, get_telescope_config, get_telescope_config_schema, set_default_telescope_config, CONFIG, OBSERVATORY_PATH, OBSERVATORY_SCHEMA_PATH
+from services.configurator import save_telescope_config, get_telescope_config, get_telescope_config_schema, delete_telescope_config, set_default_telescope_config, CONFIG, OBSERVATORY_PATH, OBSERVATORY_SCHEMA_PATH
 from models.api import ConfigPayload, ConfigAllowedValue
 from typing import Dict, List, Any
 
@@ -14,13 +14,23 @@ async def api_get_observatories() -> List[ConfigPayload]:
     return await get_telescope_config(OBSERVATORY_PATH)
 
 @router.post("/")
-async def api_set_observatories(payload: List[ConfigPayload]):
+async def api_set_observatories(payload: ConfigPayload):
     """Set the list of observatories."""
     (error, error_str) = await save_telescope_config(OBSERVATORY_PATH, payload, 'observatory',OBSERVATORY_SCHEMA_PATH)
     if not error:
         raise HTTPException(status_code=500, detail=error_str)
 
     return {"ok"}
+
+@router.delete("/")
+async def api_delete_observatories(payload: ConfigPayload):
+    """Set the list of observatories."""
+    (error, error_str) = await delete_telescope_config(OBSERVATORY_PATH, payload, 'observatory')
+    if not error:
+        raise HTTPException(status_code=500, detail=error_str)
+
+    return {"ok"}
+
 
 
 @router.get("/schema")

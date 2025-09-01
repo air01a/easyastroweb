@@ -24,8 +24,12 @@ const  OpticsConfig =  () => {
         loadTelescope();
     },[])
 
-    const handleEdit = async (items: ConfigItems[]) => {
-        await apiService.setTelescope(items);
+    const handleEdit = async (item: ConfigItems, isDelete: boolean = false) => {
+        if (isDelete) {
+            await apiService.deleteTelescope(item);
+        } else {
+            await apiService.setTelescope(item);
+        }
         const obs = await apiService.getTelescope();
         setItems(obs);
 
