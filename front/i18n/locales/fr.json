@@ -62,7 +62,8 @@
         "azimuth":"Azimuth",
         "altitude":"Altitude",
         "visibleHour":"Nombre d'heures de visibilité",
-        "riseSet":"Lever/Coucher"
+        "riseSet":"Lever/Coucher",
+        "supernova_remnant" :" Rémanant de Supernova"
     },
     "timer": {
         "detailed":"Détaillé",
@@ -159,7 +160,7 @@
         "running":"En cours",
         "loading":"Chargement",
         "focuser":"Focuser",
-        "filterWheel":"Roue à filtres",
+        "filterwheel":"Roue à filtres",
         "camera":"Caméra",
         "telescope":"Télescope",
         "mount":"Monture"
