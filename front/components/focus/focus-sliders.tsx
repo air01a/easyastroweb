@@ -4,6 +4,7 @@ import Button from "../../design-system/buttons/main";
 import { ArrowBigLeft, ArrowBigRight, ArrowLeft, ArrowRight, CameraIcon,  StopCircleIcon } from "lucide-react";
 import { apiService } from "../../api/api";
 import { useObserverStore } from "../../store/store";
+import { useTranslation } from 'react-i18next';
 
 export default function FocusSlider({ onUpdate, loopEnable, disabled }: { onUpdate: () => void , loopEnable: (value: boolean) => void, disabled:boolean }) {
   const [position, setPosition] = useState(25000);
@@ -11,6 +12,7 @@ export default function FocusSlider({ onUpdate, loopEnable, disabled }: { onUpda
   const [step, setStep] = useState(50);
   const [isMoving, setIsMoving] = useState<boolean>(false);
   const [isLooping, setIsLooping] = useState<boolean>(false);
+  const { t } = useTranslation();
 
   // Loop management
   const [loopEnabled, setLoopEnabled] = useState(false);   // Checkbox State
@@ -73,38 +75,107 @@ export default function FocusSlider({ onUpdate, loopEnable, disabled }: { onUpda
 
 
   return (
-    <div className="space-y-4 p-4 w-[50%] min-w-100 bg-gray-900 text-white rounded-xl shadow">
-      <div>
-        <label htmlFor="stretch" className="block mb-1">
-          Position: {isMoving ? "moving..." : position}
-        </label>
+  <div className="space-y-4 p-4 w-[50%] min-w-[400px] bg-gray-900 text-white rounded-xl shadow">
+    <div>
+      <label htmlFor="stretch" className="block mb-1">
+        {t('focuser.position')}: {isMoving ? t('focuser.moving'): position}
+      </label>
 
-        {isFocuserConnected && (
-          <div>
-            <div className="flex flex-wrap justify-center items-center mb-4">
-              <Button disabled={isMoving||disabled} className="mr-4" onClick={() => handlePositionChange(position - step)}>
+      {isFocuserConnected && (
+        <div>
+          {/* Contrôles de position - Responsive */}
+          <div className="mb-4">
+            {/* Desktop: Une seule ligne */}
+            <div className="hidden sm:flex justify-center items-center gap-2">
+              <Button 
+                disabled={isMoving||disabled} 
+                onClick={() => handlePositionChange(position - step)}
+                className="flex-shrink-0"
+              >
                 <ArrowBigLeft />
               </Button>
               <Button
                 disabled={isMoving||disabled}
-                className="mr-4"
                 onClick={() => handlePositionChange(position - Math.floor(step / 5))}
+                className="flex-shrink-0"
               >
                 <ArrowLeft />
               </Button>
-              <Input disabled={isMoving} type="text" value={position} className="mr-4 text-center" size={5} readOnly />
+              <Input 
+                disabled={isMoving} 
+                type="text" 
+                value={position} 
+                className="text-center mx-2 min-w-0 flex-shrink-0" 
+                size={5} 
+                readOnly 
+              />
               <Button
                 disabled={isMoving||disabled}
-                className="mr-4"
                 onClick={() => handlePositionChange(position + Math.floor(step / 5))}
+                className="flex-shrink-0"
+              >
+                <ArrowRight />
+              </Button>
+              <Button 
+                disabled={isMoving||disabled} 
+                onClick={() => handlePositionChange(position + step)}
+                className="flex-shrink-0"
               >
                 <ArrowBigRight />
               </Button>
-              <Button disabled={isMoving||disabled} className="mr-4" onClick={() => handlePositionChange(position + step)}>
-                <ArrowRight />
-              </Button>
             </div>
 
+            {/* Mobile: Disposition en grille */}
+            <div className="sm:hidden space-y-3">
+              {/* Première ligne: gros déplacements */}
+              <div className="flex justify-center items-center gap-4">
+                <Button 
+                  disabled={isMoving||disabled} 
+                  onClick={() => handlePositionChange(position - step)}
+                  className="flex-1 max-w-[80px]"
+                >
+                  <ArrowBigLeft />
+                </Button>
+                <div className="flex-1 max-w-[100px]">
+                  <Input 
+                    disabled={isMoving} 
+                    type="text" 
+                    value={position} 
+                    className="text-center w-full" 
+                    readOnly 
+                  />
+                </div>
+                <Button 
+                  disabled={isMoving||disabled} 
+                  onClick={() => handlePositionChange(position + step)}
+                  className="flex-1 max-w-[80px]"
+                >
+                  <ArrowBigRight />
+                </Button>
+              </div>
+              
+              {/* Deuxième ligne: petits déplacements */}
+              <div className="flex justify-center items-center gap-8">
+                <Button
+                  disabled={isMoving||disabled}
+                  onClick={() => handlePositionChange(position - Math.floor(step / 5))}
+                  className="flex-shrink-0"
+                >
+                  <ArrowLeft />
+                </Button>
+                <Button
+                  disabled={isMoving||disabled}
+                  onClick={() => handlePositionChange(position + Math.floor(step / 5))}
+                  className="flex-shrink-0"
+                >
+                  <ArrowRight />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Slider - Responsive */}
+          <div className="mb-4">
             <input
               id="position"
               type="range"
@@ -115,38 +186,47 @@ export default function FocusSlider({ onUpdate, loopEnable, disabled }: { onUpda
               onChange={handlePositionChangeSlider}
               onMouseUp={() => handlePositionChange(position)}
               onTouchEnd={() => handlePositionChange(position)}
-              className="w-full"
+              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
               disabled={isMoving||disabled}
             />
           </div>
-        )}
-
-        <div className="flex items-center justify-center gap-4 mt-4">
-          <Button onClick={handleMainButton} disabled={isMoving||disabled}>
-            {isLooping ? <StopCircleIcon /> : <CameraIcon />}
-          </Button>
-
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              className="accent-white"
-              checked={loopEnabled}
-              onChange={(e) => handleLoop(e.target.checked)}
-            />
-            <span>Loop</span>
-          </label>
-        </div>
-      </div>
-
-
-
-      {isMoving && (
-        <div className="flex items-center justify-center">
-          <Button onClick={() => halt()}>
-            <StopCircleIcon />
-          </Button>
         </div>
       )}
+
+      {/* Contrôles principaux - Responsive */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4">
+        <Button 
+          onClick={handleMainButton} 
+          disabled={isMoving||disabled}
+          className="w-full sm:w-auto"
+        >
+          {isLooping ? <StopCircleIcon /> : <CameraIcon />}
+        </Button>
+
+        <label className="flex items-center gap-2 cursor-pointer select-none w-full sm:w-auto justify-center">
+          <input
+            type="checkbox"
+            className="accent-white w-4 h-4"
+            checked={loopEnabled}
+            onChange={(e) => handleLoop(e.target.checked)}
+          />
+          <span className="text-sm sm:text-base">{t('focuser.loop')}</span>
+        </label>
+      </div>
     </div>
-  );
+
+    {/* Bouton d'arrêt - Centré et responsive */}
+    {isMoving && (
+      <div className="flex items-center justify-center pt-2">
+        <Button 
+          onClick={() => halt()}
+          className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
+        >
+          <StopCircleIcon className="mr-2" />
+          <span className="sm:hidden">[{t('focuser.stop')}]</span>
+        </Button>
+      </div>
+    )}
+  </div>
+);
 }

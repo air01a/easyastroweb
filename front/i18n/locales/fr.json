@@ -128,7 +128,12 @@
     "focuser": {
         "showFocus":"Afficher les infos",
         "hideFocus":"Masquer les infos",
-        "startAutofocus":"Autofocus"
+        "startAutofocus":"Autofocus",
+        "loop":"Boucle",
+        "stop":"Arrêter",
+        "exposure":"Expo",
+        "position":"Position",
+        "moving":"en mouvement..."
     },
     "global": {
 
