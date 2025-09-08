@@ -12,6 +12,7 @@ import type  { FwhmResults,  FhwmType } from "../../types/api.type";
 import Button from "../../design-system/buttons/main";
 import { useWebSocketStore } from "../../store/store";
 import FwhmChart from "../../components/focus/focus-graph";
+import ExposureTimeInput from "../../components/exposure/expo";
 
 export default function FocusHelper() {
   const [image1, setImage1] = useState<string | null>(null);
@@ -28,6 +29,7 @@ export default function FocusHelper() {
   const connect = useWebSocketStore((state) => state.connect);
   const isWebSocketConnected = useWebSocketStore((state) => state.isConnected);
   //const {camera} = useObserverStore();
+  const [exposure, setExposure] = useState<number>(getItem("focuser_exposition") as number);
 
   const messages = useWebSocketStore((state) => state.messages);
   const loopEnabledRef = useRef(loopEnabled);
@@ -81,7 +83,7 @@ export default function FocusHelper() {
             "accept": "application/json"
         },
         method:"POST", 
-        body:JSON.stringify({ exposition :getItem("focuser_exposition")}) 
+        body:JSON.stringify({ exposition :exposure}) 
     })
       .then((res) => res.blob())
       .then((blob) => {
@@ -168,7 +170,12 @@ export default function FocusHelper() {
         )}
       </div>
        <FocusSlider onUpdate={captureImage} loopEnable={setLoopEnabled} disabled={isAutofocusRunning} />
-
+        <ExposureTimeInput
+          value={exposure}
+          onChange={setExposure}
+          min={1}
+          max={10}
+        />
        <div className="flex items-center justify-center gap-4 mt-4">
           <Button onClick={handleAutofocus} >
             {isAutofocusRunning ? <StopCircleIcon /> : <div className="flex flex-col justify-center items-center">{t('focuser.startAutofocus')}<Focus /></div>}

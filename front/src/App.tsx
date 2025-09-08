@@ -18,7 +18,8 @@ const ToolsDashboard = lazy(() => import("./tools/tools"));
 const ObservatoryConfig = lazy(() => import("./config/observatories"));
 const TelescopeConfig = lazy(() => import("./config/telescopes"));
 const GeneralConfig = lazy(() => import("./config/general"));
-const FocusHelper = lazy(()=>import("./focus/focus-helper"))
+const FocusHelper = lazy(()=>import("./focus/focus-helper"));
+const Map = lazy(()=>import("./map/celestial"));
 
 function App() {
   const isLoaded = useCatalogStore((state) => state.isLoaded);
@@ -131,6 +132,15 @@ function App() {
             element={
               <Suspense fallback={<div>Chargement de l'aide au focus...</div>}>
                 <FocusHelper />
+              </Suspense>
+            }
+          />
+        
+          <Route
+            path="tools/map"
+            element={
+              <Suspense fallback={<div>Chargement de l'aide au focus...</div>}>
+                <Map />
               </Suspense>
             }
           />
