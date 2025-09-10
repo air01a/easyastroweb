@@ -332,7 +332,7 @@ const CircularButtonSelection: React.FC<CircularButtonSelectionProps> = ({
           return (
             <div
               key={`label-${index}`}
-              className="absolute text-xs font-medium text-gray-600 pointer-events-none"
+              className="absolute text-xs font-medium text-gray-600 pointer-events-none text-white"
               style={{
                 left: '50%',
                 top: '50%',

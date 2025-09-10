@@ -39,6 +39,13 @@
         "validate":"Valider",
         "gain":"Gain"
     },
+    "skymap":{
+        "showConstellations":"Afficher les constellations",
+        "showStars":"Afficher les noms des étoiles",
+        "showDso":"Afficher les objets du ciel profond",
+        "maxMagnitude":"Magnitude maximale",
+        "observationTime":"Date & heure d’observation"
+    },
     "catalog": {
         "type":"type",
         "magnitude":"Magnitude",
@@ -101,6 +108,8 @@
     "config": {
         "generalConfig":"Configuration Générale",
         "generalConfigDesc":"Modifier les paramètres globaux de l'application.",
+        "map":"Carte du ciel",
+        "mapDesc":"Carte du ciel interactive",
         "telescopeConfig":"Télescopes",
         "telescopeConfigDesc":"Configurer les différents télescopes.",
         "observatoryConfig":"Lieux d'observation",

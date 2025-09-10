@@ -3,7 +3,20 @@ import { Observer, MakeTime, Equator, Horizon, Body, MoonPhase  } from 'astronom
 import { equCoordStringToDecimal, getMoonCoordinates, angularSeparation,  getHoursForObject, toRadians, getAltitudeData, getNextSunsetDate, getNextSunriseDate, isObjectVisible } from '../astro-utils';
 import i18n from '../../../i18n/i18n';
 
-
+export function getCoordinatesForDynamicObject(
+  object: string,
+  date: Date,
+  latitude: number,
+  longitude: number
+) : {ra:number, dec:number}|null  {
+  const observer: Observer = new Observer(latitude, longitude, 0);
+   const body = Body[object as keyof typeof Body];
+    if (body) {
+      const equ = Equator(body, date, observer, true, true);
+      return {ra:equ.ra, dec:equ.dec};
+    }
+    return null;
+}
 
 export async function computeCatalog(
   catalog: CatalogItem[],

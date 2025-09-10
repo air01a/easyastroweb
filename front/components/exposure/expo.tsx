@@ -98,7 +98,7 @@ const ExposureTimeInput: React.FC<ExposureTimeInputProps> = ({
       <button 
         className={`w-8 h-8 rounded-xl text-white text-xl font-semibold transition-all duration-200 touch-manipulation select-none
           ${canIncrease 
-            ? 'bg-gradient-to-br from-indigo-500 to-purple-600 hover:scale-105 hover:shadow-lg hover:shadow-indigo-300/40 active:scale-95' 
+            ? 'over:bg-blue-800 bg-blue-700 disabled:bg-gray-400 hover:scale-105 hover:shadow-lg hover:shadow-indigo-300/40 active:scale-95' 
             : 'bg-slate-200 text-slate-400 cursor-not-allowed'
           }`}
         onClick={increase}

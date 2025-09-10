@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Settings, Telescope, MapPin, CameraIcon, Focus } from "lucide-react";
+import { Settings, Telescope, MapPin, CameraIcon, Focus, MapIcon } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
 const ToolsDashboard: React.FC = () => {
@@ -18,6 +18,12 @@ const ToolsDashboard: React.FC = () => {
       description: t('config.darkDesc'),
       icon: <CameraIcon className="w-8 h-8 text-red-600" />,
       route: "/tools/dark",
+    },
+     {
+      title: t('config.map'),
+      description: t('config.mapDesc'),
+      icon: <MapIcon className="w-8 h-8 text-green-600" />,
+      route: "/tools/map",
     },
     {
       title: t('config.telescopeConfig'),

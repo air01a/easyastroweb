@@ -31,12 +31,14 @@ Work in progress
 
 - **Observation Planning**
   - Select target objects.
+  - Interactive SkyMap
   - Schedule observation runs with:
     - Number of exposures
     - Exposure duration
     - Filter sequences
 
 - **Automated Execution**
+  - Dark library management
   - Autofocus (if supported by the hardware).
   - Plate solving for mount synchronization.
   - Slewing to targets and automated imaging.
@@ -103,7 +105,16 @@ Below are some example screenshots showcasing the main features of **AstroAutoma
   <br>
   <em>🔹 Manage focuser (manual & autofocus)</em>
 </p>
-
+<p align="center">
+  <img src="./doc/darkmanager.png" alt="Dark Library Manager" width="40%">
+  <br>
+  <em>🔹 Dark library manager</em>
+</p>
+<p align="center">
+  <img src="./doc/interactiveskymap.png" alt="Interactive SkyMap" width="70%">
+  <br>
+  <em>🔹 Interactive SkyMap </em>
+</p>
 
 
 ## 🚀 Technology Stack
