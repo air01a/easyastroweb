@@ -53,7 +53,7 @@ app.include_router(api_router, prefix="/api/v1")
 frontend_path = Path(__file__).parent / "frontend" 
 app.mount("/assets", StaticFiles(directory=frontend_path / "assets"), name="assets")
 app.mount("/catalog", StaticFiles(directory=frontend_path / "catalog"), name="catalog")
-
+app.mount("/skymap", StaticFiles(directory=frontend_path / "skymap"), name="catalog")
 # root `/` => serve index.html
 @app.get("/")
 def serve_index():
