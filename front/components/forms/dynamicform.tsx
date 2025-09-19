@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import SelectInput  from '../../design-system/inputs/select'
 import Input  from '../../design-system/inputs/input'
 import Checkbox  from '../../design-system/inputs/checkbox'
+import { apiService } from "../../api/api";
 
 import type {Field, FieldType} from '../../types/dynamicform.type'
 import CircularButtonSelection from "./circularbutton";
 import MultipleTextInput from './multitextinput';
 import { H2 } from "../../design-system/text/titles";
+import Button from "../../design-system/buttons/main";
 
 type Props = {
   formDefinition: Field[];
@@ -15,12 +17,42 @@ type Props = {
 
 };
 
+type ApiFrom = {
+  value : string;
+}
+
 const DynamicForm: React.FC<Props> = ({
   formDefinition,
   initialValues = {},
   onChange,
 }) => {
 
+  const [autoComplete, setAutoComplete] = useState<boolean>(false);
+
+  const [formData, setFormData] = useState(() =>
+    Object.fromEntries(
+      formDefinition.map((f) => [
+          f.fieldName,
+          initialValues[f.fieldName] ?? getDefaultValue(f),
+      ])
+    )
+  );
+
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+
+  const getInfoFrom = async (url: string, field: Field) => {
+    const baseUrl = apiService.getBaseUrl();
+    
+    const response = await fetch(`${baseUrl}${url}`);
+    if (response.ok) {
+
+      const data: ApiFrom = await response.json();
+      handleChange(field, data.value)
+
+    }
+  }
 
   const getDefaultValue = (field: Field) => {
     if (field.defaultValue !== undefined) return field.defaultValue;
@@ -37,14 +69,7 @@ const DynamicForm: React.FC<Props> = ({
       }
   };
 
-  const [formData, setFormData] = useState(() =>
-    Object.fromEntries(
-      formDefinition.map((f) => [
-          f.fieldName,
-          initialValues[f.fieldName] ?? getDefaultValue(f),
-      ])
-    )
-  );
+  
 
   useEffect(() => {
     const initialFormData = Object.fromEntries(
@@ -56,7 +81,6 @@ const DynamicForm: React.FC<Props> = ({
     setFormData(initialFormData);
   }, [formDefinition, initialValues]);
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   
   const validate = (field: Field, value: string): string | null => {
@@ -107,13 +131,23 @@ const DynamicForm: React.FC<Props> = ({
     setFormData(newFormData);
     onChange?.(newFormData, false)
   }
-
+  
+  const autoCompleteForm = (url:string) => {
+    console.log(url);
+  }
 
   return (
     <form >
+     
       {formDefinition.map((field) => {
         const value = formData[field.fieldName];
         const error = errors[field.fieldName];
+        if (field.fieldType=="AUTOCOMPLETE") {
+          if (!autoComplete) setAutoComplete(true); 
+          return (<div className="flex justify-center items-center"><Button  onClick={() => { autoCompleteForm(field.getInfoFrom as string)}} className="ml-4" type="button">AutoComplete</Button></div>)
+        } 
+
+
         return (
           <div key={field.fieldName} style={{ marginBottom: "1rem" }}>
 
@@ -132,6 +166,10 @@ const DynamicForm: React.FC<Props> = ({
                 value={value as string}
                 onChange={(e) => handleChange(field, e.target.value)}
               />
+            )}
+
+            {field.getInfoFrom && (
+              <Button  className="ml-4" type="button" onClick={(e) => { e.stopPropagation(); getInfoFrom(field.getInfoFrom as string,field)}}>Get info from server</Button>
             )}
 
             {field.fieldType === "SELECT" && (

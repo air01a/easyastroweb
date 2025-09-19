@@ -1,5 +1,12 @@
 [
-
+    {
+        "fieldName":"noname",
+        "description":"Autocomplete",
+        "fieldType":"AUTOCOMPLETE",
+        "varType":"STR",
+        "defaultValue":"",
+        "getInfoFrom":"/cameras/test"
+    },
     {
         "fieldName": "id",
         "description": "Camera id",
@@ -12,7 +19,8 @@
         "description": "Camera Name",
         "fieldType": "INPUT",
         "varType": "STR",
-        "defaultValue": ""
+        "defaultValue": "",
+        "getInfoFrom":"/cameras/name"
     },
     {
         "fieldName": "horizontal_pixels",

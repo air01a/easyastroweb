@@ -60,3 +60,6 @@ async def set_bin_y(biny: int = Body(..., embed=True)):
     telescope_interface.set_bin_y(biny)
     telescope_state.bin_y = biny
 
+@router.get("/name")
+async def getCameraName():
+    return { "value":telescope_interface.camera_name}
