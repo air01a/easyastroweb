@@ -177,9 +177,13 @@ class Scheduler(BasicAutomate):
                     break
 
                 if self.has_to_slew:
-                    if not self.slew_to_target(obs.ra, obs.dec):
+                    slew_success = self.slew_to_target(obs.ra, obs.dec)
+                    if not slew_success:
                         logger.error("[SCHEDULER] - Failed to slew to target")
-                        time.sleep(min(60*5,next_time - datetime.now()))
+                        self.set_status("Critical error, impossible to slew", "SCHEDULER", "STATUS")
+                        if next_time:
+                            time.sleep(min(60*5,next_time - datetime.now()))
+                        
                         continue
                     self.has_to_slew = False
                     self.image_error = 0

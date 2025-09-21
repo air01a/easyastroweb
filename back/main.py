@@ -51,9 +51,13 @@ app.include_router(api_router, prefix="/api/v1")
 
 # Serve frontend static files
 frontend_path = Path(__file__).parent / "frontend" 
-app.mount("/assets", StaticFiles(directory=frontend_path / "assets"), name="assets")
-app.mount("/catalog", StaticFiles(directory=frontend_path / "catalog"), name="catalog")
-app.mount("/skymap", StaticFiles(directory=frontend_path / "skymap"), name="catalog")
+
+if (frontend_path / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=frontend_path / "assets"), name="assets")
+if (frontend_path / "catalog").exists():
+    app.mount("/catalog", StaticFiles(directory=frontend_path / "catalog"), name="catalog")
+if (frontend_path / "skymap").exists():
+    app.mount("/skymap", StaticFiles(directory=frontend_path / "skymap"), name="catalog")
 # root `/` => serve index.html
 @app.get("/")
 def serve_index():
